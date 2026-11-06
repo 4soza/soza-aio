@@ -616,7 +616,11 @@ module.exports = (client) => {
                             )
                             .setThumbnailAccessory(
                                 thumbnail => thumbnail
-                                     .setURL(track.requester?.avatarURL ?? client.user.displayAvatarURL({ dynamic: true, size: 128 }))
+                                     .setURL(
+                                         (typeof track.requester?.avatarURL === 'string' && track.requester.avatarURL) ||
+                                         (typeof track.requester?.displayAvatarURL === 'function' && track.requester.displayAvatarURL({ size: 128 })) ||
+                                         client.user.displayAvatarURL({ dynamic: true, size: 128 })
+                                     )
                                      .setDescription(`Requested by ${track.requester ? track.requester.username : 'Unknown'}`)
                             )
                     );
