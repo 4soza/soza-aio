@@ -14,7 +14,9 @@ const DUPLICATE_KEY = 11000;
 async function sendGame(message, game, client) {
     const name = displayName(message);
     const botName = client.user.username;
-    const sent = await sendEmbed(message, bj.render(game, { name, botName }), bj.buttons(game.userId));
+    // Pesan baru: semua kartu yang terlihat tampil dengan flip.
+    const flip = { player: 0, dealer: 0 };
+    const sent = await sendEmbed(message, bj.render(game, { name, botName, flip }), bj.buttons(game.userId));
     await Blackjack.updateOne(
         { userId: game.userId },
         { $set: { channelId: message.channel.id, messageId: sent.id } }
@@ -34,6 +36,7 @@ module.exports = {
         if (!acquireGambleLock(userId)) return;
 
         try {
+            await bj.ensureLoaded(client);
             // Game belum selesai? Lanjutkan di pesan baru (seperti OwO: "retype the command to resume").
             const existing = await Blackjack.findOne({ userId }).lean();
             if (existing) {
@@ -90,7 +93,12 @@ module.exports = {
                 const outcome = bj.isNatural(game.player) && bj.isNatural(game.dealer) ? 'push'
                     : bj.isNatural(game.player) ? 'win' : 'lose';
                 const result = await bj.finish(userId, game, outcome);
-                const embed = bj.render(game, { name, botName: client.user.username, result: result || undefined });
+                const embed = bj.render(game, {
+                    name,
+                    botName: client.user.username,
+                    result: result || undefined,
+                    flip: { player: 0, dealer: 0 }
+                });
                 return sendEmbed(message, embed);
             }
 
