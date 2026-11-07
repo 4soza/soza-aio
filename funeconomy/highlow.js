@@ -19,7 +19,7 @@ const BUTTON_PREFIX = 'fhl';
 const TERMINAL_STATES = new Set(['lost', 'cashed_out']);
 const GUESS_LABELS = { higher: 'Higher', lower: 'Lower', same: 'Same' };
 const HIDDEN_CARD = '`??`';
-const MAX_SHOWN_CARDS = 8;
+const MAX_SHOWN_CARDS = 3; // seperti OwO: selalu maksimal 3 slot kartu
 
 const hl = () => cfg.HIGHLOW || {};
 const card = (n) => `\`${cardLabel(n)}\``;
@@ -28,12 +28,17 @@ const currentCardOf = (game) => game.status === 'lost'
     ? game.cards[game.cards.length - 2]
     : game.cards[game.cards.length - 1];
 
-/** "`7♦` ▶ `4♠` ▶ `??`" — kartu lama dipotong supaya pesan tidak terlalu panjang. */
+/**
+ * Seperti OwO, baris kartu selalu maksimal 3 slot:
+ * - masih main: 2 kartu terakhir + `??`
+ * - selesai: 3 kartu terakhir
+ */
 function cardRow(game) {
-    const shown = game.cards.slice(-MAX_SHOWN_CARDS).map(card);
-    if (!TERMINAL_STATES.has(game.status)) shown.push(HIDDEN_CARD);
-    const arrow = ` ${hl().ARROW || '▶'} `;
-    return `${game.cards.length > MAX_SHOWN_CARDS ? `… ${hl().ARROW || '▶'} ` : ''}${shown.join(arrow)}`;
+    const ended = TERMINAL_STATES.has(game.status);
+    const visible = ended ? MAX_SHOWN_CARDS : MAX_SHOWN_CARDS - 1;
+    const shown = game.cards.slice(-visible).map(card);
+    if (!ended) shown.push(HIDDEN_CARD);
+    return shown.join(` ${hl().ARROW || '▶'} `);
 }
 
 function render(game) {
@@ -304,4 +309,4 @@ async function startCommand(message, args, client) {
     }
 }
 
-module.exports = { BUTTON_PREFIX, render, handleButton, startCommand };
+module.exports = { BUTTON_PREFIX, render, cardRow, handleButton, startCommand };
