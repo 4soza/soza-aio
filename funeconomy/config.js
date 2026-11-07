@@ -110,7 +110,9 @@ module.exports = {
     BLACKJACK: {
         WIN_MULTIPLIER: 2,
         HIT_EMOJI: '👊',
-        STAND_EMOJI: '🛑'
+        STAND_EMOJI: '🛑',
+        // Gambar ikon dadu di footer (seperti OwO). Kosongkan '' untuk tanpa ikon.
+        FOOTER_ICON: 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/72x72/1f3b2.png'
     },
 
     // HighLow (shl). Higher/Lower dibayar 13 / jumlah kartu menang x RTP (contoh: kartu 7 -> 2.03x).

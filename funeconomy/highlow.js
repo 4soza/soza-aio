@@ -85,9 +85,9 @@ function render(game) {
     const body = [prompt, `-# Current Card: ${card(current)}`].join('\n');
 
     const accentColor = game.status === 'lost'
-        ? 0xe74c3c
+        ? 0xff0000
         : game.streak > 0 || game.status === 'cashed_out'
-            ? 0x2ee820
+            ? 0x00ff00
             : 0x7ab8f5;
 
     const stake = stakeOf(game);
