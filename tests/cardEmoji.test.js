@@ -125,13 +125,36 @@ test('Blackjack: the dealer reveal flips the hidden card and any drawn cards', a
     assert.equal(embed.data.fields[0].value, [find(client, 'card_7s'), find(client, 'card_8s')].join(' '));
 });
 
-test('HighLow: the card row is its own emoji-only text block so Discord shows it large', async () => {
+const textBlocks = (game) => renderHighLow(game).toJSON().components.filter((c) => c.type === 10).map((c) => c.content);
+
+test('HighLow: the card row is its own text block (only an optional heading marker + emoji)', async () => {
     const client = fakeClient();
     await ensureLoaded(client);
     const game = { userId: '1', bet: 100, pot: 100, streak: 0, status: 'playing', cards: [6] };
-    const texts = renderHighLow(game).toJSON().components.filter((c) => c.type === 10).map((c) => c.content);
+    const texts = textBlocks(game);
     const row = cardRow(game);
-    assert.ok(texts.includes(row), 'card row must be a separate text display');
+    const block = texts.find((t) => t.endsWith(row));
+    assert.ok(block, 'card row must be a separate text display');
+    assert.match(block.slice(0, block.length - row.length), /^(#{1,3} )?$/, 'only a heading marker may precede the row');
     assert.equal(row.replace(/<a?:\w+:\d+>/g, '').trim(), '', 'card row must contain only emoji');
-    assert.ok(texts.filter((t) => t !== row).every((t) => !/<a?:card_/.test(t)), 'no card emoji mixed into other text');
+    assert.ok(texts.filter((t) => t !== block).every((t) => !/<a?:card_/.test(t)), 'no card emoji mixed into other text');
+});
+
+test('HighLow: CARD_HEADING controls the card row size and defaults to a big heading', async () => {
+    const client = fakeClient();
+    await ensureLoaded(client);
+    const game = { userId: '1', bet: 100, pot: 100, streak: 0, status: 'playing', cards: [6] };
+    const row = cardRow(game);
+    const saved = cfg.HIGHLOW.CARD_HEADING;
+    try {
+        delete cfg.HIGHLOW.CARD_HEADING;
+        assert.ok(textBlocks(game).includes(`# ${row}`));
+        cfg.HIGHLOW.CARD_HEADING = '##';
+        assert.ok(textBlocks(game).includes(`## ${row}`));
+        cfg.HIGHLOW.CARD_HEADING = '';
+        assert.ok(textBlocks(game).includes(row));
+    } finally {
+        if (saved === undefined) delete cfg.HIGHLOW.CARD_HEADING;
+        else cfg.HIGHLOW.CARD_HEADING = saved;
+    }
 });
