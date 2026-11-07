@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const {
-    EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags
+    EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, escapeMarkdown
 } = require('discord.js');
 const cfg = require('./config');
 const Economy = require('../models/funeconomy/economy');
@@ -11,7 +11,8 @@ const { ensureLoaded, cardEmoji, backEmoji } = require('./cardEmoji');
 const RANKS =['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 const BUTTON_PREFIX = 'fbj';
 
-const COLORS = { playing: 0x3498db, win: 0x2ecc71, lose: 0xe74c3c, push: 0x95a5a6 };
+// Warna mengikuti OwO: menang hijau terang, kalah merah terang, seri abu-abu.
+const COLORS = { playing: 0x3498db, win: 0x00ff00, lose: 0xff0000, push: 0x616063 };
 
 // ---------------------------------------------------------------------------
 // Aturan permainan
@@ -121,13 +122,16 @@ function render(game, { name, avatar, result, flip = {} }) {
             { name: `${name} [${handValue(game.player)}]`, value: hand(game.player, playerFlip) }
         );
 
-    // Baris status mengikuti OwO: emoji dadu + "~ teks" sebagai field (field terakhir, supaya muncul di bawah kartu).
+    // Baris status mengikuti OwO: footer kecil dengan ikon dadu (gambar) dan teks "~ ...".
     let status;
     if (!finished) status = 'game in progress';
     else if (result.outcome === 'win') status = `You won ${fmt(result.payout - game.bet)} ${cfg.CASH_NAME}!`;
     else if (result.outcome === 'push') status = 'You tied!';
     else status = `You lost ${fmt(game.bet)} ${cfg.CASH_NAME}!`;
-    embed.addFields({ name: '\u200b', value: `:game_die: ~ ${status}` });
+    embed.setFooter({
+        text: `~ ${status}`,
+        ...(cfg.BLACKJACK.FOOTER_ICON ? { iconURL: cfg.BLACKJACK.FOOTER_ICON } : {})
+    });
     return embed;
 }
 
@@ -237,7 +241,7 @@ async function handleButton(interaction, client) {
 
         await interaction.deferUpdate();
 
-        const name = interaction.member?.displayName ?? interaction.user.username;
+        const name = escapeMarkdown(interaction.user.username);
         const avatar = interaction.user.displayAvatarURL?.() ?? null;
 
         if (game.outcome) {
