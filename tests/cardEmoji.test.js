@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const cfg = require('../funeconomy/config');
 const { ensureLoaded, cardEmoji, backEmoji } = require('../funeconomy/cardEmoji');
-const { cardRow } = require('../funeconomy/highlow');
+const { cardRow, render: renderHighLow } = require('../funeconomy/highlow');
 const bj = require('../funeconomy/blackjack');
 
 // Catatan: modul cardEmoji menyimpan emoji yang dimuat di level modul. Test pertama sengaja berjalan
@@ -123,4 +123,15 @@ test('Blackjack: the dealer reveal flips the hidden card and any drawn cards', a
     assert.equal(embed.data.fields[1].value,
         [find(client, 'card_As'), find(client, 'card_Js_flip'), find(client, 'card_5s_flip')].join(' '));
     assert.equal(embed.data.fields[0].value, [find(client, 'card_7s'), find(client, 'card_8s')].join(' '));
+});
+
+test('HighLow: the card row is its own emoji-only text block so Discord shows it large', async () => {
+    const client = fakeClient();
+    await ensureLoaded(client);
+    const game = { userId: '1', bet: 100, pot: 100, streak: 0, status: 'playing', cards: [6] };
+    const texts = renderHighLow(game).toJSON().components.filter((c) => c.type === 10).map((c) => c.content);
+    const row = cardRow(game);
+    assert.ok(texts.includes(row), 'card row must be a separate text display');
+    assert.equal(row.replace(/<a?:\w+:\d+>/g, '').trim(), '', 'card row must contain only emoji');
+    assert.ok(texts.filter((t) => t !== row).every((t) => !/<a?:card_/.test(t)), 'no card emoji mixed into other text');
 });
