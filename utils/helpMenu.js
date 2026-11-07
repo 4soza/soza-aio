@@ -46,6 +46,7 @@ const FUN_ECONOMY_INFO = {
     cf:      { usage: '<amount|all> [h/t]',         desc: 'Flip a coin, win 2x' },
     s:       { usage: '<amount|all>',               desc: 'Play slots' },
     bj:      { usage: '<amount|all>',               desc: 'Play blackjack' },
+    hl:      { usage: '<amount|all>',               desc: 'Play HighLow: guess the next card' },
     lottery: { usage: '[amount|all]',               desc: 'Join the daily lottery' },
     drop:    { usage: '<amount|all>',               desc: 'Drop cash in this channel' },
     pickup:  { usage: '',                           desc: 'Pick up cash dropped in this channel' },
@@ -55,6 +56,7 @@ const FUN_ECONOMY_INFO = {
 
 const FUN_ECONOMY_FILE_NAMES = {
     blackjack: 'bj',
+    highlow: 'hl',
     coinflip: 'cf',
     leaderboard: 'lb',
     slots: 's',

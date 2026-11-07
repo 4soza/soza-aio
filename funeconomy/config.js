@@ -3,7 +3,7 @@
  *
  * Command dikirim TANPA titik/prefix bot, cukup ketik langsung di chat:
  *   scash | scf <jumlah|all> [h/t] | ss <jumlah|all> | sdaily | sgive @user <jumlah> | slb
-     *   sbj <jumlah|all> | smines <jumlah|all> [1-8 ranjau, default 3] | slottery [jumlah|all] | sdrop <jumlah|all> | spickup | slb [kategori] [global] [n] | smy
+     *   sbj <jumlah|all> | shl <jumlah|all> | smines <jumlah|all> [1-8 ranjau, default 3] | slottery [jumlah|all] | sdrop <jumlah|all> | spickup | slb [kategori] [global] [n] | smy
  */
 module.exports = {
     // Prefix semua command fun economy ("s" + nama command -> scash, scf, ss, ...)
@@ -26,6 +26,7 @@ module.exports = {
         cf: 15000,
         bj: 15000,
         mines: 15000,
+        hl: 15000,
         lottery: 15000,
         lb: 15000,
         my: 15000
@@ -109,6 +110,16 @@ module.exports = {
         WIN_MULTIPLIER: 2,
         HIT_EMOJI: '👊',
         STAND_EMOJI: '🛑'
+    },
+
+    // HighLow (shl). Higher/Lower dibayar 13 / jumlah kartu menang x RTP (contoh: kartu 7 -> 2.03x).
+    // Same dibayar tetap SAME_MULTIPLIER kali. Kartu ditampilkan seperti blackjack (`7♦`).
+    HIGHLOW: {
+        RTP: 0.94,
+        SAME_MULTIPLIER: 10,
+        ARROW: '▶',
+        // Ganti dengan emoji custom server kalau sudah ada, contoh: '<:card:123456789012345678>'
+        EMOJI: { GAME: '🃏', LOSE: '👎', CASHOUT: '💰' }
     },
 
     // Mines: payout combinatorial dengan RTP 94% (cocok dengan contoh 2.82x pada 1 ranjau/6 pilihan).

@@ -106,6 +106,31 @@ async function addMinesPayout(userId, gameId, amount) {
     ).lean();
 }
 
+/** Deduct a HighLow bet exactly once, including when the game is resumed after a restart. */
+async function deductHighLowBet(userId, gameId, amount) {
+    await ensureAccount(userId);
+    const marker = String(gameId);
+    const updated = await FunEconomy.findOneAndUpdate(
+        { userId, cash: { $gte: amount }, lastHighLowBetId: { $ne: marker } },
+        { $inc: { cash: -amount }, $set: { lastHighLowBetId: marker } },
+        { new: true }
+    ).select('_id').lean();
+    if (updated) return true;
+
+    const existing = await FunEconomy.findOne({ userId }).select('lastHighLowBetId').lean();
+    return existing?.lastHighLowBetId === marker;
+}
+
+/** Credit a HighLow cash-out exactly once if processing is resumed after a restart. */
+async function addHighLowPayout(userId, gameId, amount) {
+    await ensureAccount(userId);
+    return FunEconomy.findOneAndUpdate(
+        { userId, lastHighLowPayoutId: { $ne: String(gameId) } },
+        { $inc: { cash: amount }, $set: { lastHighLowPayoutId: String(gameId) } },
+        { new: true }
+    ).lean();
+}
+
 /**
  * Klaim daily. `today` = nomor hari (sudah disesuaikan zona waktu).
  * `amountForStreak(streak)` menentukan hadiah.
@@ -141,5 +166,6 @@ async function top(limit = 10) {
 
 module.exports = {
     getCash, settleBet, deduct, deductMinesBet, add, addLotteryPayout, addBlackjackPayout, addMinesPayout,
+    deductHighLowBet, addHighLowPayout,
     claimDaily, getLastDailyDay, top, ensureAccount
 };

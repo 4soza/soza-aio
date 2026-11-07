@@ -7,6 +7,7 @@
 
 - Keep pray points and cooldown in the global FunEconomy account with an atomic conditional update, so concurrent commands and bot restarts cannot bypass the cooldown.
 - Keep probability math in funeconomy/luckMath.js and use it in both coinflip and slots, so bonuses stay bounded and payout amounts remain unchanged.
+- Keep HighLow payout math in funeconomy/highlowMath.js and reuse the blackjack card labels, so displayed cards and payouts stay consistent with the other card games.
 - Load pray through the existing fun economy dispatcher and registration gate; never auto-register players through pray.
 
 # Ticket staff roles

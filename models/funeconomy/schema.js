@@ -17,6 +17,8 @@ const funEconomySchema = new mongoose.Schema({
     lastBlackjackPayoutId: { type: String, default: null },
     lastMinesBetId: { type: String, default: null },
     lastMinesPayoutId: { type: String, default: null },
+    lastHighLowBetId: { type: String, default: null },
+    lastHighLowPayoutId: { type: String, default: null },
     // null = belum terdaftar.
     registeredAt: { type: Date, default: null },
     accountNumber: { type: Number, default: null },
