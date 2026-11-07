@@ -3,7 +3,7 @@
  *
  * Command dikirim TANPA titik/prefix bot, cukup ketik langsung di chat:
  *   scash | scf <jumlah|all> [h/t] | ss <jumlah|all> | sdaily | sgive @user <jumlah> | slb
-     *   sbj <jumlah|all> | shl <jumlah|all> | smines <jumlah|all> [1-8 ranjau, default 3] | slottery [jumlah|all] | sdrop <jumlah|all> | spickup | slb [kategori] [global] [n] | smy
+     *   sbj <jumlah|all> | shl <jumlah|all> | srl <jumlah|all> <red/black/green/odd/even/low/high/0-36> | smines <jumlah|all> [1-8 ranjau, default 3] | slottery [jumlah|all] | sdrop <jumlah|all> | spickup | slb [kategori] [global] [n] | smy
  */
 module.exports = {
     // Prefix semua command fun economy ("s" + nama command -> scash, scf, ss, ...)
@@ -27,6 +27,7 @@ module.exports = {
         bj: 15000,
         mines: 15000,
         hl: 15000,
+        rl: 15000,
         lottery: 15000,
         lb: 15000,
         my: 15000
@@ -120,6 +121,17 @@ module.exports = {
         ARROW: '▶',
         // Ganti dengan emoji custom server kalau sudah ada, contoh: '<:card:123456789012345678>'
         EMOJI: { GAME: '🃏', LOSE: '👎', CASHOUT: '💰' }
+    },
+
+    // Roulette (srl). Roda Eropa 0-36: 0 hijau, 18 merah, 18 hitam.
+    // Merah/hitam/ganjil/genap/low(1-18)/high(19-36) dibayar 2x; hijau (0) atau satu angka dibayar 36x.
+    ROULETTE: {
+        EVEN_MONEY_MULTIPLIER: 2,
+        NUMBER_MULTIPLIER: 36,
+        // Jumlah frame "roda berputar" dan jeda tiap frame (ms)
+        ANIMATION_FRAMES: 3,
+        FRAME_MS: 800,
+        EMOJI: { WHEEL: '🎡', WIN: '🎉', LOSE: '😔', red: '🔴', black: '⚫', green: '🟢' }
     },
 
     // Mines: payout combinatorial dengan RTP 94% (cocok dengan contoh 2.82x pada 1 ranjau/6 pilihan).

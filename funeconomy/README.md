@@ -12,6 +12,7 @@ Command diketik **tanpa titik**, langsung di chat. Semua pengaturan ada di `fune
 | `ss <jumlah\|all>` | slots, slot | Slots (lihat tabel di bawah) |
 | `sbj <jumlah\|all>` | blackjack | Blackjack dengan tombol Hit/Stand. Ketik ulang `sbj` untuk melanjutkan game |
 | `shl <jumlah\|all>` | highlow | HighLow: tebak kartu berikutnya Higher/Lower/Same, lalu Cash Out. Ketik ulang `shl` untuk melanjutkan game |
+| `srl <jumlah\|all> <pilihan>` | roulette | Roulette: pilih `red`/`black`/`green`, `odd`/`even`, `low`/`high`, atau satu angka `0-36` |
 | `smines <jumlah\|all> [1-8 ranjau]` | | Mines 3×3 dengan tombol petak dan cash out. Default 3 ranjau |
 | `slottery [jumlah\|all]` | bet, lotto | Lottery harian, satu pool untuk semua server |
 | `sdrop <jumlah\|all>` | | Taruh cash di channel |
@@ -22,11 +23,12 @@ Command diketik **tanpa titik**, langsung di chat. Semua pengaturan ada di `fune
 Kategori ranking: `cash` (default), `daily`, `level`, `guild`. Tanpa `global` = server ini.
 Contoh: `slb`, `slb global`, `slb daily 5`, `slb level g`, `slb guild`, `smy`, `smy cash global`.
 
-- Cooldown **15 detik** per game untuk `ss`, `scf`, `sbj`, `shl`, `smines` (per user). Ubah di `COOLDOWNS` pada `config.js` (0 = mati).
+- Cooldown **15 detik** per game untuk `ss`, `scf`, `sbj`, `shl`, `srl`, `smines` (per user). Ubah di `COOLDOWNS` pada `config.js` (0 = mati).
 - Taruhan minimal **1**, maksimal **250,000**. `all` = `min(saldo, 250,000)`.
 - Slots (odds OwO, RTP 95%): 🍆🍆🍆 x1 (20%), ❤️❤️❤️ x2 (20%), 🍒🍒🍒 x3 (5%), cash x3 x4 (2.5%), ⭕🇼⭕ x10 (1%).
 - Blackjack: menang 2x, seri = taruhan kembali, dealer berhenti di 17, tepat 21 otomatis stand.
 - HighLow: kartu tampil seperti blackjack (`7♦`), As terendah dan K tertinggi. Higher/Lower dibayar 13 ÷ jumlah kartu yang menang × 94% (kartu 7 = 2.03x, kartu 4: Higher 1.35x / Lower 4.07x), Same selalu 10x. Hasil berlipat setiap tebakan benar; salah tebak = taruhan hilang. Cash Out aktif setelah satu tebakan benar. Ubah di `HIGHLOW` pada `config.js`.
+- Roulette (roda Eropa 0-36): **0 = hijau**; **merah** = 1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36; **hitam** = 2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35. Merah/hitam, ganjil/genap (`odd`/`even`), `low` (1-18) dan `high` (19-36) dibayar 2x; kalau bola jatuh di 0 semua taruhan itu kalah. Hijau atau satu angka dibayar 36x. Bisa juga pakai kata `merah`, `hitam`, `hijau`, `ganjil`, `genap`. Contoh: `srl 5000 black`, `srl all red`, `srl 1000 17`. Ubah di `ROULETTE` pada `config.js`.
 - Mines: pilih 1–8 ranjau (default 3), buka petak dengan tombol, lalu cash out sebelum kena ranjau. Semakin banyak ranjau, multiplier semakin besar; dengan RTP 94%, multiplier pada pilihan aman pertama untuk 4–8 ranjau adalah 1.69x, 2.12x, 2.82x, 4.23x, dan 8.46x. Delapan ranjau menyisakan satu petak aman. Game aktif tersimpan agar bisa dilanjutkan dengan mengetik ulang `smines`.
 - Lottery: peluang menang = taruhanmu / total pool, maksimal 250,000 per lottery per user. Undian otomatis setiap pergantian hari; pemenang menerima seluruh pool dan DM.
 - `ss` tanpa angka diabaikan (supaya "ss" = screenshot di chat tidak memicu slots). Ubah lewat `SLOTS_REQUIRE_AMOUNT`.
