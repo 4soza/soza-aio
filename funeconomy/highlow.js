@@ -72,7 +72,10 @@ function render(game) {
     } else {
         prompt = 'Is the next card higher, lower, or the same value?';
     }
-    const body = [cardRow(game), '', prompt, `-# Current Card: ${card(current)}`].join('\n');
+    // Baris kartu dibuat sebagai blok teks sendiri yang hanya berisi emoji, supaya Discord menampilkannya
+    // besar (jumbo). Kalau digabung dengan teks lain, emoji kartu mengecil sebesar huruf.
+    const cards = cardRow(game);
+    const body = [prompt, `-# Current Card: ${card(current)}`].join('\n');
 
     const accentColor = game.status === 'lost'
         ? 0xe74c3c
@@ -105,6 +108,7 @@ function render(game) {
         .addTextDisplayComponents(new TextDisplayBuilder().setContent(heading))
         .addTextDisplayComponents(new TextDisplayBuilder().setContent(summary))
         .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small))
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent(cards))
         .addTextDisplayComponents(new TextDisplayBuilder().setContent(body))
         .addActionRowComponents(guessRow)
         .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small))
