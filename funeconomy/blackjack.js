@@ -100,7 +100,7 @@ function buttons(userId, disabled = false) {
  * `flip` = { player, dealer }: kartu dengan indeks >= nilainya tampil dengan animasi flip
  * (kartu yang baru dibagikan/dibuka). Tanpa `flip`, semua kartu statis.
  */
-function render(game, { name, botName, result, flip = {} }) {
+function render(game, { name, avatar, result, flip = {} }) {
     const finished = !!result;
     const playerFlip = flip.player ?? Infinity;
     const dealerFlip = flip.dealer ?? Infinity;
@@ -109,25 +109,25 @@ function render(game, { name, botName, result, flip = {} }) {
         : `${hand(game.dealer.slice(0, 1), dealerFlip)} ${hiddenCard()}`;
     const dealerValue = finished ? handValue(game.dealer) : handValue(game.dealer.slice(0, 1));
 
+    // Tata letak mengikuti OwO: author di atas, nama + nilai tangan lalu kartu (tidak berdampingan), footer status di bawah.
     const embed = new EmbedBuilder()
-        .setTitle(`${name} bet ${fmt(game.bet)} ${cfg.CASH_NAME}`)
+        .setAuthor({
+            name: `${name}, you bet ${fmt(game.bet)} to play blackjack`,
+            ...(avatar ? { iconURL: avatar } : {})
+        })
         .setColor(COLORS[finished ? result.outcome : 'playing'])
         .addFields(
-            { name: `${name} [${handValue(game.player)}]`, value: hand(game.player, playerFlip), inline: true },
-            { name: `${botName} [${dealerValue}]`, value: dealerCards, inline: true }
+            { name: `Dealer [${finished ? dealerValue : `${dealerValue}+?`}]`, value: dealerCards },
+            { name: `${name} [${handValue(game.player)}]`, value: hand(game.player, playerFlip) }
         );
 
-    if (!finished) {
-        embed.setFooter({ text: `${cfg.BLACKJACK.HIT_EMOJI} Hit  ·  ${cfg.BLACKJACK.STAND_EMOJI} Stand` });
-    } else if (result.outcome === 'win') {
-        const lead = result.natural ? 'Blackjack! ' : result.dealerBust ? 'Dealer busted! ' : '';
-        embed.setDescription(`${lead}You won ${cfg.CASH_EMOJI} **${fmt(result.payout)}**!`);
-    } else if (result.outcome === 'push') {
-        embed.setDescription(`It's a tie! Your ${cfg.CASH_EMOJI} **${fmt(game.bet)}** was returned.`);
-    } else {
-        const lead = result.bust ? 'You busted! ' : '';
-        embed.setDescription(`${lead}You lost ${cfg.CASH_EMOJI} **${fmt(game.bet)}**... :c`);
-    }
+    // Baris status mengikuti OwO: emoji dadu + "~ teks" sebagai field (field terakhir, supaya muncul di bawah kartu).
+    let status;
+    if (!finished) status = 'game in progress';
+    else if (result.outcome === 'win') status = `You won ${fmt(result.payout - game.bet)} ${cfg.CASH_NAME}!`;
+    else if (result.outcome === 'push') status = 'You tied!';
+    else status = `You lost ${fmt(game.bet)} ${cfg.CASH_NAME}!`;
+    embed.addFields({ name: '\u200b', value: `:game_die: ~ ${status}` });
     return embed;
 }
 
@@ -238,13 +238,13 @@ async function handleButton(interaction, client) {
         await interaction.deferUpdate();
 
         const name = interaction.member?.displayName ?? interaction.user.username;
-        const botName = client.user.username;
+        const avatar = interaction.user.displayAvatarURL?.() ?? null;
 
         if (game.outcome) {
             const result = await finish(ownerId, game, game.outcome);
             if (!result) return interaction.editReply({ components: [] });
             return interaction.editReply({
-                embeds: [render(game, { name, botName, result })],
+                embeds: [render(game, { name, avatar, result })],
                 components: []
             });
         }
@@ -259,7 +259,7 @@ async function handleButton(interaction, client) {
             if (value < 21) {
                 await Blackjack.updateOne({ userId: ownerId }, { $set: { deck: game.deck, player: game.player } });
                 return interaction.editReply({
-                    embeds: [render(game, { name, botName, flip: { player: drawn } })],
+                    embeds: [render(game, { name, avatar, flip: { player: drawn } })],
                     components: buttons(ownerId)
                 });
             }
@@ -269,7 +269,7 @@ async function handleButton(interaction, client) {
                 if (!result) return interaction.editReply({ components: [] });
                 // Kartu kedua dealer yang tadinya tertutup ikut dibuka dengan flip.
                 return interaction.editReply({
-                    embeds: [render(game, { name, botName, result, flip: { player: drawn, dealer: 1 } })],
+                    embeds: [render(game, { name, avatar, result, flip: { player: drawn, dealer: 1 } })],
                     components: []
                 });
             }
@@ -280,7 +280,7 @@ async function handleButton(interaction, client) {
         if (!result) return interaction.editReply({ components: [] });
         // Dealer membuka kartu kedua dan kartu tarikannya dengan flip; kartu pemain hanya flip bila baru ditarik.
         const flip = { dealer: 1, ...(action === 'hit' ? { player: game.player.length - 1 } : {}) };
-        return interaction.editReply({ embeds: [render(game, { name, botName, result, flip })], components: [] });
+        return interaction.editReply({ embeds: [render(game, { name, avatar, result, flip })], components: [] });
     } catch (error) {
         console.error('[FUNECONOMY] Blackjack button error:', error);
         if (!interaction.deferred && !interaction.replied) {
