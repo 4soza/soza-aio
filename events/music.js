@@ -11,7 +11,27 @@ const VoicePresence = require('../models/voicePresence/VoicePresence');
 const { start247Monitoring } = require('../utils/voiceStay');
 const { IDLE_VOICE_STATUS, setVoiceChannelStatus } = require('../utils/voiceChannelStatus');
 const { fetchSyncedLyrics, parseSyncedLyrics, getCurrentLineIndex } = require('../utils/lyrics');
+const { isInBotVoiceChannel, notInVoiceMessage } = require('../utils/musicVoiceGuard');
 
+
+// Replies privately and returns true when the clicker is not in the bot's voice channel.
+async function rejectIfNotInBotVoice(interaction, player) {
+    if (isInBotVoiceChannel(interaction, player)) return false;
+    const container = advancedMessageManager.createV2Container('error')
+        .addTextDisplayComponents(
+            textDisplay => textDisplay.setContent(notInVoiceMessage(interaction, player))
+        );
+    const payload = {
+        components: [container],
+        flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
+    };
+    if (interaction.deferred || interaction.replied) {
+        await interaction.followUp(payload).catch(() => {});
+    } else {
+        await interaction.reply(payload).catch(() => {});
+    }
+    return true;
+}
 
 const lyricsStateManager = {
     activeGuilds: new Map(), 
@@ -1024,23 +1044,7 @@ module.exports = (client) => {
                     });
                 }
 
-                const botVoiceChannel = interaction.guild.members.me?.voice?.channel;
-                const userVoiceChannel = interaction.member?.voice?.channel;
-
-                const isInSameChannel = botVoiceChannel && userVoiceChannel && botVoiceChannel.id === userVoiceChannel.id;
-                const isOriginalRequester = sessionManager.isAuthorized(interaction.guildId, interaction.user.id) || interaction.user.id === userId;
-
-                if (!isInSameChannel && !isOriginalRequester && userId !== 'system') {
-                    const authContainer = advancedMessageManager.createV2Container('error')
-                        .addTextDisplayComponents(
-                            textDisplay => textDisplay.setContent('**🚫 VOICE CHANNEL REQUIRED**\n\n**To control the music player, you must:**\n• Join the same voice channel as the bot\n• OR be the original session owner\n\n**Current Bot Channel:** ' + (botVoiceChannel ? botVoiceChannel.name : 'None') + '\n**Your Channel:** ' + (userVoiceChannel ? userVoiceChannel.name : 'None'))
-                        );
-
-                    return interaction.reply({
-                        components: [authContainer],
-                        flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
-                    });
-                }
+                if (await rejectIfNotInBotVoice(interaction, player)) return;
 
                 await interaction.deferReply({ ephemeral: true });
                 sessionManager.updateActivity(interaction.guildId);
@@ -1464,6 +1468,7 @@ module.exports = (client) => {
               
                     const forceCollector = stoppedReply.createMessageComponentCollector({ time: 30000 });
                     forceCollector.on('collect', async (i) => {
+                        if (await rejectIfNotInBotVoice(i, player)) return;
                         if (i.customId === 'v2_lyrics_force_restart') {
                             await i.deferUpdate();
                             lyricsStateManager.clearGuild(interaction.guildId);
@@ -1742,6 +1747,7 @@ module.exports = (client) => {
 
                 collector.on('collect', async (i) => {
                     try {
+                        if (await rejectIfNotInBotVoice(i, player)) return;
                         let hasResponded = false;
 
                         try {
@@ -1921,6 +1927,7 @@ module.exports = (client) => {
                             const additionalCollector = lyricsMessage.createMessageComponentCollector({ time: 300000 });
                             additionalCollector.on('collect', async (ci) => {
                                 try {
+                                    if (await rejectIfNotInBotVoice(ci, player)) return;
                                     await ci.deferUpdate();
 
                                     if (ci.customId === 'v2_lyrics_back') {

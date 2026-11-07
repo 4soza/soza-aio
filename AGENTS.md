@@ -20,3 +20,4 @@
 # Music prefix
 
 - Keep the music-only `s!` prefix and its command list in utils/musicPrefix.js and check it in events/excessCommands.js before the normal prefix, so music gets the extra prefix without changing how other prefix commands are matched.
+- Music panel and lyrics buttons must pass `utils/musicVoiceGuard.js` (clicker in the bot's voice channel; requester/owner gets no bypass) so people outside the call cannot control playback.
