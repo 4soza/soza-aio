@@ -118,7 +118,7 @@ module.exports = {
     HIGHLOW: {
         RTP: 0.94,
         SAME_MULTIPLIER: 10,
-        ARROW: '▶',
+        ARROW: '<:ar:1568499663102025778>',
         // Ganti dengan emoji custom server kalau sudah ada, contoh: '<:card:123456789012345678>'
         EMOJI: { GAME: '🃏', LOSE: '👎', CASHOUT: '💰' }
     },
