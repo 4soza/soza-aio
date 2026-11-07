@@ -129,8 +129,8 @@ module.exports = {
         EVEN_MONEY_MULTIPLIER: 2,
         NUMBER_MULTIPLIER: 36,
         // Jumlah frame "roda berputar" dan jeda tiap frame (ms)
-        ANIMATION_FRAMES: 3,
-        FRAME_MS: 800,
+        ANIMATION_FRAMES: 8,
+        FRAME_MS: 1250,
         EMOJI: { WHEEL: '🎡', WIN: '🎉', LOSE: '😔', red: '🔴', black: '⚫', green: '🟢' }
     },
 
