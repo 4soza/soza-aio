@@ -16,3 +16,7 @@
 - Keep the merged staff role list in utils/ticketRoles.js so channel access, ticket mentions, and permission checks all use the setup admin role plus the added roles.
 - Cap the merged staff role list at the Discord channel permission-overwrite limit so creating a ticket cannot fail.
 - Mention staff roles in the ticket opening message instead of offering a separate staff ping button.
+
+# Music prefix
+
+- Keep the music-only `s!` prefix and its command list in utils/musicPrefix.js and check it in events/excessCommands.js before the normal prefix, so music gets the extra prefix without changing how other prefix commands are matched.

@@ -5,6 +5,7 @@ const path = require('path');
 const config = require('../config.json');
 const DisabledCommand = require('../models/commands/DisabledCommands');
 const { getMatchedPrefix } = require('../utils/prefix');
+const { matchMusicPrefix } = require('../utils/musicPrefix');
 
 module.exports = {
     name: 'messageCreate',
@@ -21,20 +22,31 @@ module.exports = {
             console.error('Error fetching server configuration from Mongoose:', err);
         }
         
-        const prefix = getMatchedPrefix(message.content, serverConfig?.prefix);
+        // "s!play" / "s!p" / "s!stop" only work for music; everything else keeps the normal prefix.
+        const music = matchMusicPrefix(message.content);
+        const prefix = music ? music.prefix : getMatchedPrefix(message.content, serverConfig?.prefix);
 
         if (!prefix) return;
 
-        const args = message.content.slice(prefix.length).trim().split(/ +/);
-        const commandName = args.shift().toLowerCase();
+        let args;
+        let commandName;
+        if (music) {
+            args = music.args;
+            commandName = music.commandName;
+        } else {
+            args = message.content.slice(prefix.length).trim().split(/ +/);
+            commandName = args.shift().toLowerCase();
+        }
 
         const excessCommandsPath = path.join(__dirname, '..', 'excesscommands');
         let command;
 
         try {
-            const commandFolders = fs.readdirSync(excessCommandsPath, { withFileTypes: true })
-                .filter(dirent => dirent.isDirectory())
-                .map(dirent => dirent.name);
+            const commandFolders = music
+                ? ['other']
+                : fs.readdirSync(excessCommandsPath, { withFileTypes: true })
+                    .filter(dirent => dirent.isDirectory())
+                    .map(dirent => dirent.name);
 
             for (const folder of commandFolders) {
                 const commandPath = path.join(excessCommandsPath, folder, `${commandName}.js`);
