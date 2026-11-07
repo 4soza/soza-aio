@@ -7,6 +7,7 @@ const cooldown = require('./cooldown');
 const HighLow = require('../models/funeconomy/highlow');
 const Economy = require('../models/funeconomy/economy');
 const { cardLabel } = require('./blackjack');
+const { ensureLoaded, cardEmoji, backEmoji } = require('./cardEmoji');
 const {
     GUESSES, isCorrect, nextPot, stakeOf, drawCard
 } = require('./highlowMath');
@@ -22,7 +23,8 @@ const HIDDEN_CARD = '`??`';
 const MAX_SHOWN_CARDS = 3; // seperti OwO: selalu maksimal 3 slot kartu
 
 const hl = () => cfg.HIGHLOW || {};
-const card = (n) => `\`${cardLabel(n)}\``;
+const card = (n) => `\`${cardLabel(n)}\``; // teks angka/huruf saja (jenis kartu terlihat di emoji)
+const cardIcon = (n, flip) => cardEmoji(n, { flip }) || card(n);
 const formatMultiplier = (value) => `${value.toFixed(2)}x`;
 const currentCardOf = (game) => game.status === 'lost'
     ? game.cards[game.cards.length - 2]
@@ -32,12 +34,16 @@ const currentCardOf = (game) => game.status === 'lost'
  * Seperti OwO, baris kartu selalu maksimal 3 slot:
  * - masih main: 2 kartu terakhir + `??`
  * - selesai: 3 kartu terakhir
+ * Kartu terbaru tampil dengan emoji flip, kartu sebelumnya statis. Saat cash out tidak ada kartu baru,
+ * jadi semuanya statis.
  */
 function cardRow(game) {
     const ended = TERMINAL_STATES.has(game.status);
     const visible = ended ? MAX_SHOWN_CARDS : MAX_SHOWN_CARDS - 1;
-    const shown = game.cards.slice(-visible).map(card);
-    if (!ended) shown.push(HIDDEN_CARD);
+    const recent = game.cards.slice(-visible);
+    const flipNewest = game.status !== 'cashed_out';
+    const shown = recent.map((n, i) => cardIcon(n, flipNewest && i === recent.length - 1));
+    if (!ended) shown.push(backEmoji() || HIDDEN_CARD);
     return shown.join(` ${hl().ARROW || '<:ar:1568499663102025778>'} `);
 }
 
@@ -196,6 +202,7 @@ async function handleButton(interaction) {
     }
 
     try {
+        await ensureLoaded(interaction.client);
         const game = await HighLow.findOne({ userId: ownerId }).lean();
         if (!game) return interaction.update({ components: [] });
         if (!game.messageId || game.messageId !== interaction.message.id) {
@@ -260,6 +267,7 @@ async function startCommand(message, args, client) {
     if (!acquireGambleLock(userId)) return;
 
     try {
+        await ensureLoaded(client);
         // Game lama? Selesaikan yang sudah berakhir, atau lanjutkan di pesan baru (ketik ulang "shl").
         let game = await HighLow.findOne({ userId }).lean();
         if (game && TERMINAL_STATES.has(game.status)) {

@@ -6,9 +6,9 @@ const cfg = require('./config');
 const Economy = require('../models/funeconomy/economy');
 const Blackjack = require('../models/funeconomy/blackjack');
 const { fmt } = require('./utils');
+const { ensureLoaded, cardEmoji, backEmoji } = require('./cardEmoji');
 
-const SUITS = ['♠', '♥', '♦', '♣'];
-const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+const RANKS =['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 const BUTTON_PREFIX = 'fbj';
 
 const COLORS = { playing: 0x3498db, win: 0x2ecc71, lose: 0xe74c3c, push: 0x95a5a6 };
@@ -16,7 +16,8 @@ const COLORS = { playing: 0x3498db, win: 0x2ecc71, lose: 0xe74c3c, push: 0x95a5a
 // ---------------------------------------------------------------------------
 // Aturan permainan
 // ---------------------------------------------------------------------------
-const cardLabel = (n) => `${RANKS[n % 13]}${SUITS[Math.floor(n / 13)]}`;
+// Teks kartu hanya angka/huruf: jenisnya (sekop, hati, wajik, keriting) sudah terlihat di emoji kartu.
+const cardLabel = (n) => RANKS[n % 13];
 
 function newDeck() {
     const deck = Array.from({ length: 52 }, (_, i) => i);
@@ -67,7 +68,14 @@ function payoutFor(outcome, bet) {
 // ---------------------------------------------------------------------------
 // Tampilan
 // ---------------------------------------------------------------------------
-const hand = (cards) => cards.map((c) => `\`${cardLabel(c)}\``).join(' ');
+/**
+ * Tangan sebagai emoji kartu (teks angka/huruf kalau emojinya belum ada).
+ * Kartu dengan indeks >= flipFrom memakai emoji flip (kartu baru); sisanya statis.
+ */
+const hand = (cards, flipFrom = Infinity) =>
+    cards.map((c, i) => cardEmoji(c, { flip: i >= flipFrom }) || `\`${cardLabel(c)}\``).join(' ');
+
+const hiddenCard = () => backEmoji() || '`??`';
 
 function buttons(userId, disabled = false) {
     return [new ActionRowBuilder().addComponents(
@@ -89,19 +97,23 @@ function buttons(userId, disabled = false) {
 /**
  * Embed game. `result` = undefined saat game masih berjalan (kartu kedua dealer disembunyikan),
  * atau { outcome, payout, natural, bust } saat selesai.
+ * `flip` = { player, dealer }: kartu dengan indeks >= nilainya tampil dengan animasi flip
+ * (kartu yang baru dibagikan/dibuka). Tanpa `flip`, semua kartu statis.
  */
-function render(game, { name, botName, result }) {
+function render(game, { name, botName, result, flip = {} }) {
     const finished = !!result;
+    const playerFlip = flip.player ?? Infinity;
+    const dealerFlip = flip.dealer ?? Infinity;
     const dealerCards = finished
-        ? hand(game.dealer)
-        : `${hand(game.dealer.slice(0, 1))} \`??\``;
+        ? hand(game.dealer, dealerFlip)
+        : `${hand(game.dealer.slice(0, 1), dealerFlip)} ${hiddenCard()}`;
     const dealerValue = finished ? handValue(game.dealer) : handValue(game.dealer.slice(0, 1));
 
     const embed = new EmbedBuilder()
         .setTitle(`${name} bet ${fmt(game.bet)} ${cfg.CASH_NAME}`)
         .setColor(COLORS[finished ? result.outcome : 'playing'])
         .addFields(
-            { name: `${name} [${handValue(game.player)}]`, value: hand(game.player), inline: true },
+            { name: `${name} [${handValue(game.player)}]`, value: hand(game.player, playerFlip), inline: true },
             { name: `${botName} [${dealerValue}]`, value: dealerCards, inline: true }
         );
 
@@ -211,6 +223,7 @@ async function handleButton(interaction, client) {
     busy.add(ownerId);
 
     try {
+        await ensureLoaded(client);
         const game = await Blackjack.findOne({ userId: ownerId }).lean();
         if (!game) {
             return interaction.update({ components: [] });
@@ -240,10 +253,13 @@ async function handleButton(interaction, client) {
             game.player.push(game.deck.pop());
             const value = handValue(game.player);
 
+            // Kartu yang baru ditarik pemain tampil dengan flip, kartu lainnya statis.
+            const drawn = game.player.length - 1;
+
             if (value < 21) {
                 await Blackjack.updateOne({ userId: ownerId }, { $set: { deck: game.deck, player: game.player } });
                 return interaction.editReply({
-                    embeds: [render(game, { name, botName })],
+                    embeds: [render(game, { name, botName, flip: { player: drawn } })],
                     components: buttons(ownerId)
                 });
             }
@@ -251,14 +267,20 @@ async function handleButton(interaction, client) {
             if (value > 21) {
                 const result = await finish(ownerId, game, 'lose');
                 if (!result) return interaction.editReply({ components: [] });
-                return interaction.editReply({ embeds: [render(game, { name, botName, result })], components: [] });
+                // Kartu kedua dealer yang tadinya tertutup ikut dibuka dengan flip.
+                return interaction.editReply({
+                    embeds: [render(game, { name, botName, result, flip: { player: drawn, dealer: 1 } })],
+                    components: []
+                });
             }
         }
 
         playDealer(game);
         const result = await finish(ownerId, game, outcomeOf(game));
         if (!result) return interaction.editReply({ components: [] });
-        return interaction.editReply({ embeds: [render(game, { name, botName, result })], components: [] });
+        // Dealer membuka kartu kedua dan kartu tarikannya dengan flip; kartu pemain hanya flip bila baru ditarik.
+        const flip = { dealer: 1, ...(action === 'hit' ? { player: game.player.length - 1 } : {}) };
+        return interaction.editReply({ embeds: [render(game, { name, botName, result, flip })], components: [] });
     } catch (error) {
         console.error('[FUNECONOMY] Blackjack button error:', error);
         if (!interaction.deferred && !interaction.replied) {
@@ -271,5 +293,5 @@ async function handleButton(interaction, client) {
 
 module.exports = {
     BUTTON_PREFIX, newDeck, handValue, isNatural, playDealer, outcomeOf, payoutFor,
-    cardLabel, render, buttons, finish, retireOldMessage, handleButton
+    cardLabel, render, buttons, finish, retireOldMessage, handleButton, ensureLoaded
 };
