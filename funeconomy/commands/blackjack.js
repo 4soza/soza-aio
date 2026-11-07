@@ -13,10 +13,10 @@ const DUPLICATE_KEY = 11000;
 /** Kirim (atau kirim ulang) pesan game yang sedang berjalan dan catat pesannya. */
 async function sendGame(message, game, client) {
     const name = displayName(message);
-    const botName = client.user.username;
+    const avatar = message.author.displayAvatarURL();
     // Pesan baru: semua kartu yang terlihat tampil dengan flip.
     const flip = { player: 0, dealer: 0 };
-    const sent = await sendEmbed(message, bj.render(game, { name, botName, flip }), bj.buttons(game.userId));
+    const sent = await sendEmbed(message, bj.render(game, { name, avatar, flip }), bj.buttons(game.userId));
     await Blackjack.updateOne(
         { userId: game.userId },
         { $set: { channelId: message.channel.id, messageId: sent.id } }
@@ -46,7 +46,7 @@ module.exports = {
                     if (!result) return;
                     return sendEmbed(message, bj.render(existing, {
                         name,
-                        botName: client.user.username,
+                        avatar: message.author.displayAvatarURL(),
                         result
                     }));
                 }
@@ -95,7 +95,7 @@ module.exports = {
                 const result = await bj.finish(userId, game, outcome);
                 const embed = bj.render(game, {
                     name,
-                    botName: client.user.username,
+                    avatar: message.author.displayAvatarURL(),
                     result: result || undefined,
                     flip: { player: 0, dealer: 0 }
                 });
