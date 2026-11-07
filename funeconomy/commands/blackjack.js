@@ -1,10 +1,11 @@
+const { escapeMarkdown } = require('discord.js');
 const cfg = require('../config');
 const Economy = require('../../models/funeconomy/economy');
 const Blackjack = require('../../models/funeconomy/blackjack');
 const bj = require('../blackjack');
 const cooldown = require('../cooldown');
 const {
-    displayName, send, sendTemporaryError, sendEmbed, canEmbed, resolveBet, errorLine,
+    send, sendTemporaryError, sendEmbed, canEmbed, resolveBet, errorLine,
     acquireGambleLock, releaseGambleLock, onCooldown
 } = require('../utils');
 
@@ -12,7 +13,7 @@ const DUPLICATE_KEY = 11000;
 
 /** Kirim (atau kirim ulang) pesan game yang sedang berjalan dan catat pesannya. */
 async function sendGame(message, game, client) {
-    const name = displayName(message);
+    const name = escapeMarkdown(message.author.username);
     const avatar = message.author.displayAvatarURL();
     // Pesan baru: semua kartu yang terlihat tampil dengan flip.
     const flip = { player: 0, dealer: 0 };
@@ -28,7 +29,7 @@ module.exports = {
     aliases: ['blackjack'],
     async execute(message, args, client) {
         const userId = message.author.id;
-        const name = displayName(message);
+        const name = escapeMarkdown(message.author.username);
 
         if (!canEmbed(message)) {
             return send(message, errorLine(name, 'I need the **Embed Links** permission in this channel to play blackjack!'));
