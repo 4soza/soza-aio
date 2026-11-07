@@ -38,7 +38,7 @@ function cardRow(game) {
     const visible = ended ? MAX_SHOWN_CARDS : MAX_SHOWN_CARDS - 1;
     const shown = game.cards.slice(-visible).map(card);
     if (!ended) shown.push(HIDDEN_CARD);
-    return shown.join(` ${hl().ARROW || '▶'} `);
+    return shown.join(` ${hl().ARROW || '<:ar:1568499663102025778>'} `);
 }
 
 function render(game) {
