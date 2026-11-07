@@ -23,6 +23,13 @@ const HIDDEN_CARD = '`??`';
 const MAX_SHOWN_CARDS = 3; // seperti OwO: selalu maksimal 3 slot kartu
 
 const hl = () => cfg.HIGHLOW || {};
+// Emoji ikut membesar mengikuti ukuran huruf, jadi baris kartu diberi awalan judul markdown.
+// '#' besar (seperti OwO), '##' sedang, '###' agak kecil, '' ukuran emoji biasa.
+// Bisa diubah lewat HIGHLOW.CARD_HEADING di config.js tanpa mengubah file ini.
+const cardHeading = () => {
+    const heading = hl().CARD_HEADING ?? '#';
+    return heading ? `${heading} ` : '';
+};
 const card = (n) => `\`${cardLabel(n)}\``; // teks angka/huruf saja (jenis kartu terlihat di emoji)
 const cardIcon = (n, flip) => cardEmoji(n, { flip }) || card(n);
 const formatMultiplier = (value) => `${value.toFixed(2)}x`;
@@ -72,9 +79,9 @@ function render(game) {
     } else {
         prompt = 'Is the next card higher, lower, or the same value?';
     }
-    // Baris kartu dibuat sebagai blok teks sendiri yang hanya berisi emoji, supaya Discord menampilkannya
-    // besar (jumbo). Kalau digabung dengan teks lain, emoji kartu mengecil sebesar huruf.
-    const cards = cardRow(game);
+    // Baris kartu dibuat sebagai blok teks sendiri berformat judul, supaya emoji kartunya tampil besar
+    // seperti OwO. Kalau digabung dengan teks lain, emoji kartu mengecil sebesar huruf.
+    const cards = `${cardHeading()}${cardRow(game)}`;
     const body = [prompt, `-# Current Card: ${card(current)}`].join('\n');
 
     const accentColor = game.status === 'lost'
