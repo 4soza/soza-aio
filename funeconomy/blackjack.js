@@ -118,8 +118,8 @@ function render(game, { name, avatar, result, flip = {} }) {
         })
         .setColor(COLORS[finished ? result.outcome : 'playing'])
         .addFields(
-            { name: `Dealer [${finished ? dealerValue : `${dealerValue}+?`}]`, value: dealerCards },
-            { name: `${name} [${handValue(game.player)}]`, value: hand(game.player, playerFlip) }
+            { name: `Dealer \`[${finished ? dealerValue : `${dealerValue}+?`}]\``, value: dealerCards },
+            { name: `${name} \`[${handValue(game.player)}]\``, value: hand(game.player, playerFlip) }
         );
 
     // Baris status mengikuti OwO: footer kecil "🎲 ~ ...".
