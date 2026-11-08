@@ -12,7 +12,7 @@ const RANKS =['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 const BUTTON_PREFIX = 'fbj';
 
 // Warna mengikuti OwO: menang hijau terang, kalah merah terang, seri abu-abu.
-const COLORS = { playing: 0x3498db, win: 0x00ff00, lose: 0xff0000, push: 0x616063 };
+const COLORS = { playing: 0x7ab8f5, win: 0x00ff00, lose: 0xff0000, push: 0x616063 };
 
 // ---------------------------------------------------------------------------
 // Aturan permainan
