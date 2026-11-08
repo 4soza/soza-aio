@@ -51,7 +51,7 @@ function cardRow(game) {
     const flipNewest = game.status !== 'cashed_out';
     const shown = recent.map((n, i) => cardIcon(n, flipNewest && i === recent.length - 1));
     if (!ended) shown.push(backEmoji() || HIDDEN_CARD);
-    return shown.join(` ${hl().ARROW || '<:ar:1568499663102025778>'} `);
+    return shown.join(hl().ARROW || '<:ar:1568499663102025778>');
 }
 
 function render(game) {
