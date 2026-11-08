@@ -82,7 +82,7 @@ function render(game) {
     // Baris kartu dibuat sebagai blok teks sendiri berformat judul, supaya emoji kartunya tampil besar
     // seperti OwO. Kalau digabung dengan teks lain, emoji kartu mengecil sebesar huruf.
     const cards = `${cardHeading()}${cardRow(game)}`;
-    const body = prompt;
+    const body = [prompt, `-# Current Card: ${cardLabel(current)}`].join('\n');
 
     const accentColor = game.status === 'lost'
         ? 0xff0000
