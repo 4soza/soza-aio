@@ -8,6 +8,8 @@ const { isBotOwner } = require('../../utils/botOwnerOnly');
 //   suploadcards replace     -> hapus lalu unggah ulang yang sudah ada
 // Setelah selesai, file ini dan cardEmojiData.json boleh dihapus dari repo.
 const DATA_FILE = path.join(__dirname, '..', 'cardEmojiData.json');
+// Opsional: emoji tambahan (mis. ikon dadu footer blackjack: bj_dice).
+const EXTRA_FILE = path.join(__dirname, '..', 'diceEmojiData.json');
 
 const mimeOf = (name) => (name.endsWith('_flip') ? 'image/gif' : 'image/png');
 
@@ -26,6 +28,7 @@ module.exports = {
 
         const replace = String(args[0] || '').toLowerCase() === 'replace';
         const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+        if (fs.existsSync(EXTRA_FILE)) Object.assign(data, JSON.parse(fs.readFileSync(EXTRA_FILE, 'utf8')));
         const names = Object.keys(data);
         const status = await message.reply({
             content: `Mengunggah ${names.length} emoji kartu...`,
@@ -43,7 +46,10 @@ module.exports = {
                 if (existing && !replace) {
                     skipped += 1;
                 } else {
-                    if (existing) await client.application.emojis.delete(existing.id);
+                    if (existing) {
+                        await client.application.emojis.delete(existing.id);
+                        client.application.emojis.cache.delete(existing.id);
+                    }
                     await client.application.emojis.create({
                         attachment: `data:${mimeOf(name)};base64,${data[name]}`,
                         name
