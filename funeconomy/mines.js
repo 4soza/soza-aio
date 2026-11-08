@@ -56,9 +56,9 @@ function render(game, userId) {
     ].join('\n');
 
     const accentColor = game.status === 'lost'
-        ? 0x7a7a7a
+        ? 0xff0000
         : picks > 0 || game.status === 'cashed_out'
-            ? 0x2ee820
+            ? 0x00ff00
             : 0x7ab8f5;
 
     const container = new ContainerBuilder()
