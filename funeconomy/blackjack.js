@@ -6,7 +6,7 @@ const cfg = require('./config');
 const Economy = require('../models/funeconomy/economy');
 const Blackjack = require('../models/funeconomy/blackjack');
 const { fmt } = require('./utils');
-const { ensureLoaded, cardEmoji, backEmoji, emojiUrl } = require('./cardEmoji');
+const { ensureLoaded, cardEmoji, backEmoji } = require('./cardEmoji');
 
 const RANKS =['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 const BUTTON_PREFIX = 'fbj';
@@ -101,12 +101,6 @@ function buttons(userId, disabled = false) {
  * `flip` = { player, dealer }: kartu dengan indeks >= nilainya tampil dengan animasi flip
  * (kartu yang baru dibagikan/dibuka). Tanpa `flip`, semua kartu statis.
  */
-function footerIcon(value) {
-    const match = /^<(a?):\w+:(\d+)>$/.exec(String(value || '').trim());
-    if (match) return `https://cdn.discordapp.com/emojis/${match[2]}.${match[1] ? 'gif' : 'png'}?size=64`;
-    return String(value || '').trim() || null;
-}
-
 function render(game, { name, avatar, result, flip = {} }) {
     const finished = !!result;
     const playerFlip = flip.player ?? Infinity;
@@ -128,16 +122,14 @@ function render(game, { name, avatar, result, flip = {} }) {
             { name: `${name} [${handValue(game.player)}]`, value: hand(game.player, playerFlip) }
         );
 
-    // Baris status mengikuti OwO: footer kecil dengan ikon dadu (gambar) dan teks "~ ...".
+    // Baris status mengikuti OwO: footer kecil "🎲 ~ ...".
     let status;
     if (!finished) status = 'game in progress';
     else if (result.outcome === 'win') status = `You won ${fmt(result.payout - game.bet)} ${cfg.CASH_NAME}!`;
     else if (result.outcome === 'push') status = 'You tied!';
     else status = `You lost ${fmt(game.bet)} ${cfg.CASH_NAME}!`;
-    // Ikon footer harus berupa gambar (URL). FOOTER_ICON boleh diisi URL gambar ATAU kode emoji server
-    // seperti <:dice:123456789>. Kalau kosong, dipakai emoji aplikasi "bj_dice" (kalau sudah diunggah).
-    const icon = footerIcon(cfg.BLACKJACK.FOOTER_ICON) || emojiUrl('bj_dice');
-    embed.setFooter({ text: `~ ${status}`, ...(icon ? { iconURL: icon } : {}) });
+    // Seperti OwO: emoji dadu unicode langsung di teks footer (satu teks, bisa disalin utuh).
+    embed.setFooter({ text: `${cfg.BLACKJACK.STATUS_EMOJI} ~ ${status}` });
     return embed;
 }
 

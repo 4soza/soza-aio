@@ -111,8 +111,8 @@ module.exports = {
         WIN_MULTIPLIER: 2,
         HIT_EMOJI: '👊',
         STAND_EMOJI: '🛑',
-        // Gambar ikon dadu di footer (seperti OwO). Kosongkan '' untuk tanpa ikon.
-        FOOTER_ICON: '<:dice:1568729254282141786>'
+        // Emoji di depan teks footer status (unicode, seperti OwO).
+        STATUS_EMOJI: '🎲'
     },
 
     // HighLow (shl). Higher/Lower dibayar 13 / jumlah kartu menang x RTP (contoh: kartu 7 -> 2.03x).
