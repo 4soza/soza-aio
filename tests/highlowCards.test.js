@@ -5,7 +5,7 @@ const { cardRow } = require('../funeconomy/highlow');
 const { cardLabel } = require('../funeconomy/blackjack');
 
 // Pemisah antar kartu = panah dari config (bisa berupa emoji kustom).
-const slots = (row) => row.split(` ${cfg.HIGHLOW.ARROW} `);
+const slots = (row) => row.split(cfg.HIGHLOW.ARROW);
 const label = (n) => `\`${cardLabel(n)}\``;
 
 test('Card text is only the rank, never a suit symbol', () => {

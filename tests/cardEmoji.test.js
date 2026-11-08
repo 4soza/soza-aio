@@ -9,7 +9,7 @@ const bj = require('../funeconomy/blackjack');
 // SEBELUM emoji dimuat (kondisi "belum diunggah"); test setelahnya memuat emoji tiruan.
 const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 const SUITS = ['s', 'h', 'd', 'c'];
-const arrow = ` ${cfg.HIGHLOW.ARROW} `;
+const arrow = cfg.HIGHLOW.ARROW;
 
 function fakeClient({ withFlip = true } = {}) {
     const cache = new Map();
@@ -161,4 +161,12 @@ test('HighLow: CARD_HEADING controls the card row size and defaults to a big hea
         if (saved === undefined) delete cfg.HIGHLOW.CARD_HEADING;
         else cfg.HIGHLOW.CARD_HEADING = saved;
     }
+});
+
+test('Duplicate emoji names (stale cache after replace): the newest emoji id wins', async () => {
+    const client = fakeClient();
+    client.cache.set('1', { id: '1', name: 'card_7s', animated: false });          // lama (dihapus)
+    client.cache.set('999999999999999999', { id: '999999999999999999', name: 'card_7s', animated: false }); // baru
+    await ensureLoaded(client);
+    assert.equal(cardEmoji(6), '<:card_7s:999999999999999999>');
 });
