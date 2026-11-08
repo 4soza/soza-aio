@@ -26,12 +26,21 @@ function ensureLoaded(client) {
 
 // Dicari langsung di cache (sekitar 110 emoji), jadi emoji yang diganti lewat `suploadcards replace`
 // langsung terpakai tanpa restart.
-function lookup(name) {
+// Kalau ada beberapa emoji bernama sama (mis. sisa cache setelah `suploadcards replace`), pakai yang terbaru
+// (ID snowflake terbesar), karena emoji lama sudah dihapus dan akan tampil sebagai teks :nama:.
+function findEmoji(name) {
     if (!manager) return null;
+    let best = null;
     for (const emoji of manager.cache.values()) {
-        if (emoji.name === name) return `<${emoji.animated ? 'a' : ''}:${emoji.name}:${emoji.id}>`;
+        if (emoji.name !== name) continue;
+        if (!best || BigInt(emoji.id) > BigInt(best.id)) best = emoji;
     }
-    return null;
+    return best;
+}
+
+function lookup(name) {
+    const emoji = findEmoji(name);
+    return emoji ? `<${emoji.animated ? 'a' : ''}:${emoji.name}:${emoji.id}>` : null;
 }
 
 /** Emoji kartu nomor 0-51, atau null kalau belum ada. `flip` = pakai versi animasi bila tersedia. */
@@ -40,7 +49,6 @@ function cardEmoji(n, { flip = false } = {}) {
     return (flip && lookup(`${base}_flip`)) || lookup(base);
 }
 
-/** Emoji punggung kartu (kartu tertutup), atau null kalau belum ada. */
 const backEmoji = () => lookup('card_back');
 
 module.exports = { ensureLoaded, cardEmoji, backEmoji };
