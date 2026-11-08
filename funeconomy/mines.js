@@ -4,6 +4,7 @@ const {
 } = require('discord.js');
 const cfg = require('./config');
 const cooldown = require('./cooldown');
+const expiry = require('./gameExpiry');
 const Mines = require('../models/funeconomy/mines');
 const Economy = require('../models/funeconomy/economy');
 const { ensureRegistered } = require('./register');
@@ -23,7 +24,8 @@ function formatMultiplier(value) {
     return `${value.toFixed(2)}x`;
 }
 
-function render(game, userId) {
+/** opts.resumed = pesan baru hasil melanjutkan game; opts.expired = pesan lama yang kadaluarsa (abu-abu, tombol mati). */
+function render(game, userId, { resumed = false, expired = false } = {}) {
     const picks = game.revealed.length;
     const currentPayout = picks ? payoutFor(game.bet, game.mineCount, picks) : 0;
     const currentAmount = game.status === 'cashed_out' ? game.payout : currentPayout;
@@ -37,6 +39,8 @@ function render(game, userId) {
         heading = `### 💥 **<@${userId}> touched a mine!**`;
     } else if (game.status === 'cashed_out') {
         heading = `### 💎 **<@${userId}> cashed out!**`;
+    } else if (resumed) {
+        heading = `### 💣 **<@${userId}> resumed a mines game.**`;
     } else if (picks === 0) {
         heading = `### 💣 **<@${userId}> started a mines game.**`;
     } else {
@@ -55,11 +59,14 @@ function render(game, userId) {
         ended ? `-# ~~${nextLine}~~` : `-# ${nextLine}`
     ].join('\n');
 
-    const accentColor = game.status === 'lost'
-        ? 0xff0000
-        : picks > 0 || game.status === 'cashed_out'
-            ? 0x00ff00
-            : 0x7ab8f5;
+    // Merah terang saat kalah, hijau terang saat menang/cash out, abu-abu saat kadaluarsa (seperti OwO).
+    const accentColor = expired
+        ? expiry.EXPIRED_COLOR
+        : game.status === 'lost'
+            ? 0xff0000
+            : picks > 0 || game.status === 'cashed_out'
+                ? 0x00ff00
+                : 0x7ab8f5;
 
     const container = new ContainerBuilder()
         .setAccentColor(accentColor)
@@ -81,7 +88,7 @@ function render(game, userId) {
             const button = new ButtonBuilder()
                 .setCustomId(`${BUTTON_PREFIX}:tile:${game.userId}:${index}`)
                 .setStyle(isHitMine ? ButtonStyle.Danger : isSafe ? ButtonStyle.Success : ButtonStyle.Secondary)
-                .setDisabled(ended || isSafe);
+                .setDisabled(expired || ended || isSafe);
 
             if (isMine && ended) button.setEmoji(isHitMine ? '💥' : '💣');
             else if (isSafe || ended) button.setEmoji('💎');
@@ -99,37 +106,48 @@ function render(game, userId) {
         .setLabel('Cash Out')
         .setEmoji(cfg.CASH_EMOJI)
         .setStyle(ButtonStyle.Success)
-        .setDisabled(ended || picks === 0);
+        .setDisabled(expired || ended || picks === 0);
     container.addActionRowComponents(new ActionRowBuilder().addComponents(cashOut));
 
     return container;
 }
 
-function buildComponents(game) {
-    return [render(game, game.userId)];
+function buildComponents(game, opts) {
+    return [render(game, game.userId, opts)];
 }
 
-function boardMessageOptions(game) {
+function boardMessageOptions(game, opts) {
     return {
-        components: buildComponents(game),
+        components: buildComponents(game, opts),
         allowedMentions: { parse: [] }
     };
 }
 
+/** Pesan lama (saat game dilanjutkan di pesan baru) dibuat abu-abu dan tombolnya dimatikan, seperti OwO. */
 async function retireOldMessage(client, game) {
     if (!game.channelId || !game.messageId) return;
-    try {
-        const channel = await client.channels.fetch(game.channelId);
-        const oldMessage = await channel?.messages?.fetch(game.messageId);
-        await oldMessage?.edit({ components: [] });
-    } catch {
-        // A deleted or inaccessible previous message does not prevent resuming the saved game.
-    }
+    const edited = await expiry.editMessage(client, game.channelId, game.messageId, boardMessageOptions(game, { expired: true }));
+    if (!edited) await expiry.editMessage(client, game.channelId, game.messageId, { components: [] });
 }
 
-async function postBoard(message, game, client) {
+/** Setelah 10 menit tanpa aksi, papan berubah abu-abu dan tombolnya mati (game tetap bisa dilanjutkan). */
+function armExpiry(client, game) {
+    expiry.schedule(`mines:${game.userId}`, async () => {
+        if (!acquireGambleLock(game.userId)) return; // pemain sedang beraksi; jadwal baru dibuat setelahnya
+        try {
+            const latest = await Mines.findOne({ userId: game.userId }).lean();
+            if (!latest || latest.status !== 'playing'
+                || latest.messageId !== game.messageId || latest.version !== game.version) return;
+            await expiry.editMessage(client, latest.channelId, latest.messageId, boardMessageOptions(latest, { expired: true }));
+        } finally {
+            releaseGambleLock(game.userId);
+        }
+    });
+}
+
+async function postBoard(message, game, client, opts = {}) {
     const sent = await message.channel.send({
-        ...boardMessageOptions(game),
+        ...boardMessageOptions(game, opts),
         flags: MessageFlags.IsComponentsV2,
     });
     const attached = await Mines.findOneAndUpdate(
@@ -143,6 +161,7 @@ async function postBoard(message, game, client) {
         return false;
     }
     await retireOldMessage(client, game);
+    armExpiry(client, attached);
     return true;
 }
 
@@ -185,6 +204,7 @@ async function completeGame(game) {
         userId: finalGame.userId,
         status: finalGame.status
     });
+    expiry.cancel(`mines:${finalGame.userId}`);
     return finalGame;
 }
 
@@ -302,6 +322,7 @@ async function handleButton(interaction) {
             const completed = await completeGame(updated);
             return interaction.editReply(boardMessageOptions(completed));
         }
+        armExpiry(interaction.client, updated);
         return interaction.editReply(boardMessageOptions(updated));
     } catch (error) {
         console.error('[FUNECONOMY] Mines button error:', error);
@@ -342,7 +363,7 @@ async function startCommand(message, args, client) {
                 game = await Mines.findOne({ userId }).lean();
             }
             if (game) {
-                return await postBoard(message, game, client)
+                return await postBoard(message, game, client, { resumed: true })
                     || send(message, errorLine(name, 'your game changed while resuming. Type `smines` again.'));
             }
         }
@@ -376,7 +397,7 @@ async function startCommand(message, args, client) {
             if (!game) throw error;
             game = await prepareGame(userId, game);
             if (!game) return;
-            return await postBoard(message, game, client)
+            return await postBoard(message, game, client, { resumed: true })
                 || send(message, errorLine(name, 'your game changed while resuming. Type `smines` again.'));
         }
 

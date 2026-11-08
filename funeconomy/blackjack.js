@@ -101,7 +101,7 @@ function buttons(userId, disabled = false) {
  * `flip` = { player, dealer }: kartu dengan indeks >= nilainya tampil dengan animasi flip
  * (kartu yang baru dibagikan/dibuka). Tanpa `flip`, semua kartu statis.
  */
-function render(game, { name, avatar, result, flip = {} }) {
+function render(game, { name, avatar, result, flip = {}, resuming = false }) {
     const finished = !!result;
     const playerFlip = flip.player ?? Infinity;
     const dealerFlip = flip.dealer ?? Infinity;
@@ -124,7 +124,7 @@ function render(game, { name, avatar, result, flip = {} }) {
 
     // Baris status mengikuti OwO: footer kecil "🎲 ~ ...".
     let status;
-    if (!finished) status = 'game in progress';
+    if (!finished) status = resuming ? 'resuming previous game' : 'game in progress';
     else if (result.outcome === 'win') status = `You won ${fmt(result.payout - game.bet)} ${cfg.CASH_NAME}!`;
     else if (result.outcome === 'push') status = 'You tied!';
     else status = `You lost ${fmt(game.bet)} ${cfg.CASH_NAME}!`;

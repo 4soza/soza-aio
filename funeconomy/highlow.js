@@ -4,6 +4,7 @@ const {
 } = require('discord.js');
 const cfg = require('./config');
 const cooldown = require('./cooldown');
+const expiry = require('./gameExpiry');
 const HighLow = require('../models/funeconomy/highlow');
 const Economy = require('../models/funeconomy/economy');
 const { cardLabel } = require('./blackjack');
@@ -54,7 +55,8 @@ function cardRow(game) {
     return shown.join(hl().ARROW || '<:ar:1568499663102025778>');
 }
 
-function render(game) {
+/** opts.resumed = pesan baru hasil melanjutkan game; opts.expired = pesan lama yang kadaluarsa (abu-abu, tombol mati). */
+function render(game, { resumed = false, expired = false } = {}) {
     const userId = game.userId;
     const ended = TERMINAL_STATES.has(game.status);
     const current = currentCardOf(game);
@@ -64,6 +66,7 @@ function render(game) {
     let heading;
     if (game.status === 'lost') heading = `### ${emoji.LOSE || '👎'} **<@${userId}> guessed incorrectly!!**`;
     else if (game.status === 'cashed_out') heading = `### ${emoji.CASHOUT || '💰'} **<@${userId}> cashed out!**`;
+    else if (resumed) heading = `### ${emoji.GAME || '🃏'} **<@${userId}> resumed a HighLow game.**`;
     else if (game.streak === 0) heading = `### ${emoji.GAME || '🃏'} **<@${userId}> started a HighLow game.**`;
     else heading = `### ${emoji.GAME || '🃏'} **<@${userId}> is playing a HighLow game.**`;
 
@@ -84,7 +87,9 @@ function render(game) {
     const cards = `${cardHeading()}${cardRow(game)}`;
     const body = [prompt, `-# Current Card: ${cardLabel(current)}`].join('\n');
 
-    const accentColor = game.status === 'lost'
+    const accentColor = expired
+        ? expiry.EXPIRED_COLOR
+        : game.status === 'lost'
         ? 0xff0000
         : game.streak > 0 || game.status === 'cashed_out'
             ? 0x00ff00
@@ -100,7 +105,7 @@ function render(game) {
                 .setCustomId(`${BUTTON_PREFIX}:${guess}:${userId}`)
                 .setLabel(label)
                 .setStyle(ButtonStyle.Primary)
-                .setDisabled(ended || pot === null)
+                .setDisabled(expired || ended || pot === null)
         );
     }
 
@@ -108,7 +113,7 @@ function render(game) {
         .setCustomId(`${BUTTON_PREFIX}:cash:${userId}`)
         .setLabel(game.streak > 0 ? `Cash Out: ${fmt(game.status === 'cashed_out' ? game.payout : game.pot)}` : 'Cash Out')
         .setStyle(ButtonStyle.Success)
-        .setDisabled(ended || game.streak === 0);
+        .setDisabled(expired || ended || game.streak === 0);
 
     return new ContainerBuilder()
         .setAccentColor(accentColor)
@@ -122,23 +127,34 @@ function render(game) {
         .addActionRowComponents(new ActionRowBuilder().addComponents(cashOut));
 }
 
-function messageOptions(game) {
-    return { components: [render(game)], allowedMentions: { parse: [] } };
+function messageOptions(game, opts) {
+    return { components: [render(game, opts)], allowedMentions: { parse: [] } };
 }
 
+/** Pesan lama (saat game dilanjutkan di pesan baru) dibuat abu-abu dan tombolnya dimatikan, seperti OwO. */
 async function retireOldMessage(client, game) {
     if (!game.channelId || !game.messageId) return;
-    try {
-        const channel = await client.channels.fetch(game.channelId);
-        const oldMessage = await channel?.messages?.fetch(game.messageId);
-        await oldMessage?.edit({ components: [] });
-    } catch {
-        // Pesan lama yang terhapus tidak menghalangi game dilanjutkan.
-    }
+    const edited = await expiry.editMessage(client, game.channelId, game.messageId, messageOptions(game, { expired: true }));
+    if (!edited) await expiry.editMessage(client, game.channelId, game.messageId, { components: [] });
 }
 
-async function postGame(message, game, client) {
-    const sent = await message.channel.send({ ...messageOptions(game), flags: MessageFlags.IsComponentsV2 });
+/** Setelah 10 menit tanpa aksi, pesan game berubah abu-abu dan tombolnya mati (game tetap bisa dilanjutkan). */
+function armExpiry(client, game) {
+    expiry.schedule(`hl:${game.userId}`, async () => {
+        if (!acquireGambleLock(game.userId)) return; // pemain sedang beraksi; jadwal baru dibuat setelahnya
+        try {
+            const latest = await HighLow.findOne({ userId: game.userId }).lean();
+            if (!latest || latest.status !== 'playing'
+                || latest.messageId !== game.messageId || latest.version !== game.version) return;
+            await expiry.editMessage(client, latest.channelId, latest.messageId, messageOptions(latest, { expired: true }));
+        } finally {
+            releaseGambleLock(game.userId);
+        }
+    });
+}
+
+async function postGame(message, game, client, opts = {}) {
+    const sent = await message.channel.send({ ...messageOptions(game, opts), flags: MessageFlags.IsComponentsV2 });
     const attached = await HighLow.findOneAndUpdate(
         { _id: game._id, userId: game.userId, status: 'playing', version: game.version },
         { $set: { channelId: message.channel.id, messageId: sent.id } },
@@ -150,6 +166,7 @@ async function postGame(message, game, client) {
         return false;
     }
     await retireOldMessage(client, game);
+    armExpiry(client, attached);
     return true;
 }
 
@@ -189,6 +206,7 @@ async function completeGame(game) {
     }
 
     await HighLow.deleteOne({ _id: finalGame._id, userId: finalGame.userId, status: finalGame.status });
+    expiry.cancel(`hl:${finalGame.userId}`);
     return finalGame;
 }
 
@@ -258,6 +276,7 @@ async function handleButton(interaction) {
         const updated = await HighLow.findOneAndUpdate(versionFilter, update, { new: true }).lean();
         if (!updated) return sendCurrent(interaction, await HighLow.findOne({ userId: ownerId }).lean());
         if (updated.status === 'lost') return interaction.editReply(messageOptions(await completeGame(updated)));
+        armExpiry(interaction.client, updated);
         return interaction.editReply(messageOptions(updated));
     } catch (error) {
         console.error('[FUNECONOMY] HighLow button error:', error);
@@ -290,7 +309,7 @@ async function startCommand(message, args, client) {
             if (!game) {
                 return sendTemporaryError(message, errorLine(name, `you don't have enough ${cfg.CASH_NAME} to start that game!`));
             }
-            return await postGame(message, game, client)
+            return await postGame(message, game, client, { resumed: true })
                 || send(message, errorLine(name, `your game changed while resuming. Type \`${cfg.PREFIX}hl\` again.`));
         }
 
