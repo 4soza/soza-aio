@@ -7,6 +7,8 @@ const MUSIC_COMMANDS = {
     play: 'play',
     p: 'play',
     stop: 'stop',
+    autoplay: 'autoplay',
+    ap: 'autoplay',
 };
 
 /**
