@@ -8,7 +8,7 @@ const {
 const { releaseVoiceOnlyConnection } = require('../../utils/voiceStay');
 
 function temporaryReply(message, content, timeout = 6000) {
-    return message.reply(content).then(reply => {
+    return message.reply({ content, allowedMentions: { repliedUser: false } }).then(reply => {
         setTimeout(() => reply.delete().catch(() => {}), timeout);
         return reply;
     });
@@ -217,12 +217,12 @@ module.exports = {
     async execute(message, args, client) {
         const query = args.join(' ').trim();
         if (!query) {
-            return temporaryReply(message, '❌ Please provide a song name or URL.\nExample: `.play royalty`');
+            return temporaryReply(message, '❌ Please provide a song name or URL.\nExample: `s!p <song>`');
         }
 
         const voiceChannel = message.member?.voice?.channel;
         if (!voiceChannel) {
-            return temporaryReply(message, '❌ Join a voice channel first, then use `.play <song>`.');
+            return temporaryReply(message, '❌ Join a voice channel first, then use `s!p <song>`.');
         }
 
         const botVoiceChannel = message.guild.members.me?.voice?.channel;
@@ -437,7 +437,7 @@ module.exports = {
                     ? `🎵 Spotify ${collectionLabel} **${spotifyRequest.name}** ditambahkan ke queue.\n✅ **${addedCount}** lagu berhasil ditambahkan.\n📍 Lagu pertama mulai di posisi: **#${position}**${partialWarning}`
                     : `🎵 Added **${result.track.info.title}** to the queue.\n📍 Position: **#${position}**`;
                 try {
-                    const reply = await message.reply(confirmation);
+                    const reply = await message.reply({ content: confirmation, allowedMentions: { repliedUser: false } });
                     setTimeout(() => reply.delete().catch(() => {}), 6000);
                 } catch (replyError) {
                     // A Discord reply failure must not be reported as a

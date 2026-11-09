@@ -1,7 +1,7 @@
 const { setVoiceChannelStatus } = require('../../utils/voiceChannelStatus');
 
 function temporaryReply(message, content, timeout = 5000) {
-    return message.reply(content).then(reply => {
+    return message.reply({ content, allowedMentions: { repliedUser: false } }).then(reply => {
         setTimeout(() => reply.delete().catch(() => {}), timeout);
         return reply;
     });
@@ -11,7 +11,7 @@ module.exports = {
     async execute(message, args, client) {
         const voiceChannel = message.member?.voice?.channel;
         if (!voiceChannel) {
-            return temporaryReply(message, '❌ Join a voice channel first, then use `.stop`.');
+            return temporaryReply(message, '❌ Join a voice channel first, then use `s!stop`.');
         }
 
         const botVoiceChannel = message.guild.members.me?.voice?.channel;
