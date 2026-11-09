@@ -17,7 +17,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SectionBuilder, ThumbnailBuilder } = require('discord.js');
 const musicIcons = require('../../UI/icons/musicicons');
 const cmdIcons = require('../../UI/icons/commandicons');
-const { autoplayCollection } = require('../../mongodb');
+const { setUserAutoplay } = require('../../utils/userAutoplay');
 const { setRiffyAutoplayEnabled } = require('../../utils/riffyAutoplay');
 const { playlistCollection } = require('../../mongodb');
 const { getSpotifyTrackQueries, parseSpotifyUrl } = require('../../utils/spotifyTracks');
@@ -1587,11 +1587,7 @@ module.exports = {
                     
                     try {
                         const enable = interaction.options.getBoolean('enabled');
-                        await autoplayCollection.updateOne(
-                            { guildId },
-                            { $set: { autoplay: enable, updatedAt: new Date() } },
-                            { upsert: true }
-                        );
+                        await setUserAutoplay(interaction.user.id, enable);
                     
                         const autoplayContainer = new ContainerBuilder()
                             .setAccentColor(enable ? 0x2ecc71 : 0xff4757)
