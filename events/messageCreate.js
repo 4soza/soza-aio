@@ -265,7 +265,7 @@ module.exports = {
                 return;
             }
 
-            if (MUSIC_PREFIX_ONLY.has(commandName)) return; // join/leave/247 only via s!
+            if (MUSIC_PREFIX_ONLY.has(commandName)) return; // music commands only via s!
 
             const command = client.commands.get(commandName);
             if (command) {

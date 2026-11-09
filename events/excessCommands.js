@@ -38,7 +38,7 @@ module.exports = {
             commandName = args.shift().toLowerCase();
         }
 
-        if (!music && MUSIC_PREFIX_ONLY.has(commandName)) return; // join/leave/247 only via s!
+        if (!music && MUSIC_PREFIX_ONLY.has(commandName)) return; // music commands only via s!
 
         const excessCommandsPath = path.join(__dirname, '..', 'excesscommands');
         let command;
