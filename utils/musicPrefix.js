@@ -1,5 +1,5 @@
 // Extra prefix that only works for music commands, e.g. "s!play royalty" or "s!p royalty".
-// The normal prefix (".play", ".stop") keeps working exactly as before.
+// Music commands only work with this prefix; the normal prefix (".play", ".stop", ...) does not run them.
 const MUSIC_PREFIX = 's!';
 
 // typed name -> command file in excesscommands/other
@@ -14,8 +14,8 @@ const MUSIC_COMMANDS = {
     247: '247',
 };
 
-// Only work as "s!join" / "s!leave" / "s!247"; the normal "." prefix no longer runs them.
-const MUSIC_PREFIX_ONLY = new Set(['join', 'leave', '247']);
+// Every music command name (play, p, stop, autoplay, ap, join, leave, 247) only works as "s!..."; the normal "." prefix ignores them.
+const MUSIC_PREFIX_ONLY = new Set(Object.keys(MUSIC_COMMANDS));
 
 /**
  * Returns { prefix, typed, commandName, args } when `content` is a music
