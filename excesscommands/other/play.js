@@ -195,7 +195,7 @@ function getPlaybackFailureMessage(error) {
     }
 
     if (message.includes('player connection is not initiated')) {
-        return 'Koneksi player musik ke voice belum siap. `.join` hanya menghubungkan bot; gunakan `.play <lagu>` untuk memulai musik, lalu coba lagi setelah beberapa detik.';
+        return 'The music player voice connection is not ready yet. `s!join` only connects me; use `s!play <song>` to start music, then try again in a few seconds.';
     }
 
     if (message.includes('lavalink playback')) {
