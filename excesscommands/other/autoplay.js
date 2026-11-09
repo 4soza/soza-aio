@@ -1,6 +1,9 @@
 const { toggleUserAutoplay } = require('../../utils/userAutoplay');
 const { setRiffyAutoplayEnabled } = require('../../utils/riffyAutoplay');
 
+// Balas tanpa mention (tidak menyorot/ping pengirim).
+const reply = (message, content) => message.reply({ content, allowedMentions: { repliedUser: false } });
+
 // s!autoplay / s!ap : command pertama mengaktifkan autoplay, command berikutnya menonaktifkannya.
 // Pengaturan tersimpan per orang, jadi tidak perlu diaktifkan lagi setiap kali.
 module.exports = {
@@ -9,12 +12,12 @@ module.exports = {
     async execute(message, args, client) {
         // Hanya berlaku di voice channel: pengguna harus di voice channel, dan bot harus ada di voice channel yang sama.
         const userChannelId = message.member?.voice?.channelId;
-        if (!userChannelId) return message.reply('You are not in a voice channel');
+        if (!userChannelId) return reply(message, 'You are not in a voice channel');
 
         const player = client.riffy?.players?.get(message.guild.id);
         const botChannelId = message.guild.members.me?.voice?.channelId || player?.voiceChannel;
         if (!botChannelId || botChannelId !== userChannelId) {
-            return message.reply('There are no bots in your voice channel');
+            return reply(message, 'There are no bots in your voice channel');
         }
 
         let enabled;
@@ -22,13 +25,13 @@ module.exports = {
             enabled = await toggleUserAutoplay(message.author.id);
         } catch (error) {
             console.error('Prefix autoplay error:', error);
-            return message.reply('Failed to change autoplay. Please try again later.');
+            return reply(message, 'Failed to change autoplay. Please try again later.');
         }
 
         // Kalau lagu orang ini sedang diputar, sinkronkan flag player supaya langsung berlaku.
         const requesterId = player?.current?.requester?.id ?? player?.current?.info?.requester?.id;
         if (player && requesterId === message.author.id) setRiffyAutoplayEnabled(player, enabled);
 
-        return message.reply(`Autoplay has been ${enabled ? 'enabled' : 'disabled'}`);
+        return reply(message, `Autoplay has been ${enabled ? 'enabled' : 'disabled'}`);
     },
 };
