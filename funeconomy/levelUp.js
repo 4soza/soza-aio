@@ -1,5 +1,6 @@
 const cfg = require('./config');
 const Level = require('../models/funeconomy/level');
+const ChannelSettings = require('../models/funeconomy/channelSettings');
 const LevelCardPreference = require('../models/funeconomy/levelCardPreference');
 const Registration = require('../models/funeconomy/registration');
 const { AttachmentBuilder, PermissionsBitField } = require('discord.js');
@@ -41,7 +42,8 @@ async function buildCard({ channel, name, userId, avatarURL, result }) {
 
 async function announceLevelUp({ channel, name, userId, guildId, result, avatarURL = null }) {
     if (!result || result.levelAfter <= result.levelBefore) return false;
-    if (guildId && !(await Level.isAnnounceEnabled(guildId))) return false;
+    // Channel yang mematikan "levelup" (atau semua command) tidak menerima pengumuman level up.
+    if (channel?.id && await ChannelSettings.isDisabled(channel.id, 'levelup').catch(() => false)) return false;
 
     // Format OwO: "🎉 | nama leveled up!" + kartu gambar berisi level dan hadiah.
     const card = await buildCard({ channel, name, userId, avatarURL, result });

@@ -4,6 +4,8 @@ const { PermissionsBitField } = require('discord.js');
 const cfg = require('./config');
 const { touchGuild } = require('../models/funeconomy/ranking');
 const { ensureRegistered } = require('./register');
+const ChannelSettings = require('../models/funeconomy/channelSettings');
+const { sendTemporaryError } = require('./utils');
 
 // Muat semua command di funeconomy/commands (nama + alias)
 const commands = new Map();
@@ -54,6 +56,19 @@ async function handleFunEconomy(message, client) {
 
     // Command yang sengaja diabaikan (mis. "ss" tanpa angka = "screenshot") tidak menampilkan Register.
     if (command.ignore?.(args)) return false;
+
+    // enable/disable (alwaysOn) tidak pernah diblokir dan tidak butuh akun.
+    if (command.alwaysOn) {
+        await command.execute(message, args, client);
+        return true;
+    }
+
+    // Command yang dimatikan di channel ini (senable/sdisable): beri tahu 2 detik lalu hapus.
+    const blocked = await ChannelSettings.isDisabled(message.channel.id, command.name).catch(() => false);
+    if (blocked) {
+        await sendTemporaryError(message, '🚫 | that command is disabled on this channel!', 2000).catch(() => {});
+        return true;
+    }
 
     // Semua command economy membutuhkan akun aktif.
     if (!(await ensureRegistered(message, client))) return true;
