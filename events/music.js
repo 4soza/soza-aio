@@ -5,7 +5,7 @@ const path = require("path");
 const axios = require('axios');
 const musicIcons = require('../UI/icons/musicicons');
 const { Riffy } = require('riffy');
-const { autoplayCollection } = require('../mongodb');
+const { isAutoplayEnabledFor } = require('../utils/userAutoplay');
 const { runSafeAutoplay } = require('../utils/safeAutoplay');
 const VoicePresence = require('../models/voicePresence/VoicePresence');
 const { start247Monitoring } = require('../utils/voiceStay');
@@ -868,8 +868,8 @@ module.exports = (client) => {
 
                 if (!channel) return;
 
-                const result = await autoplayCollection.findOne({ guildId }).catch(() => null);
-                const autoplay = result ? result.autoplay : false;
+                // Autoplay disimpan per orang: ikuti pengaturan peminta lagu terakhir.
+                const autoplay = await isAutoplayEnabledFor(player, guildId).catch(() => false);
 
                 if (autoplay) {
                     // Keep the player/session alive while Riffy resolves the next
