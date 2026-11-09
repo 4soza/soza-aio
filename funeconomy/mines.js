@@ -130,19 +130,23 @@ async function retireOldMessage(client, game) {
     if (!edited) await expiry.editMessage(client, game.channelId, game.messageId, { components: [] });
 }
 
-/** Setelah 10 menit tanpa aksi, papan berubah abu-abu dan tombolnya mati (game tetap bisa dilanjutkan). */
-function armExpiry(client, game) {
-    expiry.schedule(`mines:${game.userId}`, async () => {
-        if (!acquireGambleLock(game.userId)) return; // pemain sedang beraksi; jadwal baru dibuat setelahnya
+/** Game yang sudah 10 menit tidak disentuh: papannya dibuat abu-abu dan tombolnya mati (game tetap bisa dilanjutkan). */
+async function expireStaleGames(client) {
+    const games = await Mines.find(expiry.staleFilter()).limit(50).lean();
+    for (const game of games) {
+        if (!acquireGambleLock(game.userId)) continue; // pemain sedang beraksi; dicek lagi di putaran berikutnya
         try {
-            const latest = await Mines.findOne({ userId: game.userId }).lean();
-            if (!latest || latest.status !== 'playing'
-                || latest.messageId !== game.messageId || latest.version !== game.version) return;
+            const latest = await Mines.findOneAndUpdate(
+                { _id: game._id, status: 'playing', version: game.version, messageId: game.messageId },
+                { $set: { expiredMessageId: game.messageId } },
+                { new: true, timestamps: false }
+            ).lean();
+            if (!latest) continue;
             await expiry.editMessage(client, latest.channelId, latest.messageId, boardMessageOptions(latest, { expired: true }));
         } finally {
             releaseGambleLock(game.userId);
         }
-    });
+    }
 }
 
 async function postBoard(message, game, client, opts = {}) {
@@ -161,7 +165,6 @@ async function postBoard(message, game, client, opts = {}) {
         return false;
     }
     await retireOldMessage(client, game);
-    armExpiry(client, attached);
     return true;
 }
 
@@ -204,15 +207,23 @@ async function completeGame(game) {
         userId: finalGame.userId,
         status: finalGame.status
     });
-    expiry.cancel(`mines:${finalGame.userId}`);
     return finalGame;
+}
+
+/** Balas dengan papan terbaru; kalau game sudah selesai, pesannya kadaluarsa (abu-abu) 10 menit lagi. */
+async function reply(interaction, game) {
+    const result = await interaction.editReply(boardMessageOptions(game));
+    if (TERMINAL_STATES.has(game.status)) {
+        expiry.scheduleFinished(interaction.client, game, (g) => boardMessageOptions(g, { expired: true }));
+    }
+    return result;
 }
 
 async function sendCurrentBoard(interaction, game) {
     if (!game) return interaction.editReply({ components: [] });
     if (TERMINAL_STATES.has(game.status)) game = await completeGame(game);
     if (!game) return interaction.editReply({ components: [] });
-    return interaction.editReply(boardMessageOptions(game));
+    return reply(interaction, game);
 }
 
 async function handleButton(interaction) {
@@ -248,11 +259,22 @@ async function handleButton(interaction) {
             });
         }
 
+        // Cadangan (mis. bot sempat mati sebelum sweeper jalan): game yang sudah 10 menit diam dikunci saat tombol ditekan.
+        if (game.status === 'playing' && expiry.isIdle(game)) {
+            await interaction.deferUpdate();
+            await Mines.updateOne({ _id: game._id, version: game.version }, { $set: { expiredMessageId: game.messageId } }, { timestamps: false });
+            await interaction.editReply(boardMessageOptions(game, { expired: true }));
+            return interaction.followUp({
+                content: `This game expired. Type \`${cfg.PREFIX}mines\` to resume it.`,
+                flags: MessageFlags.Ephemeral
+            });
+        }
+
         await interaction.deferUpdate();
         let active = game.status === 'pending' ? await prepareGame(ownerId, game) : game;
         if (!active) {
             const failedGame = { ...game, status: 'lost', payout: 0 };
-            return interaction.editReply(boardMessageOptions(failedGame));
+            return reply(interaction, failedGame);
         }
         if (TERMINAL_STATES.has(active.status)) return sendCurrentBoard(interaction, active);
 
@@ -280,7 +302,7 @@ async function handleButton(interaction) {
                 return sendCurrentBoard(interaction, await Mines.findOne({ userId: ownerId }).lean());
             }
             const completed = await completeGame(finished);
-            return interaction.editReply(boardMessageOptions(completed));
+            return reply(interaction, completed);
         }
 
         const index = Number(rawIndex);
@@ -299,7 +321,7 @@ async function handleButton(interaction) {
                 return sendCurrentBoard(interaction, await Mines.findOne({ userId: ownerId }).lean());
             }
             const completed = await completeGame(finished);
-            return interaction.editReply(boardMessageOptions(completed));
+            return reply(interaction, completed);
         }
 
         const revealed = [...active.revealed, index];
@@ -320,9 +342,8 @@ async function handleButton(interaction) {
         }
         if (clearedBoard) {
             const completed = await completeGame(updated);
-            return interaction.editReply(boardMessageOptions(completed));
+            return reply(interaction, completed);
         }
-        armExpiry(interaction.client, updated);
         return interaction.editReply(boardMessageOptions(updated));
     } catch (error) {
         console.error('[FUNECONOMY] Mines button error:', error);
@@ -417,4 +438,4 @@ async function startCommand(message, args, client) {
     }
 }
 
-module.exports = { BUTTON_PREFIX, render, buildComponents, handleButton, startCommand };
+module.exports = { BUTTON_PREFIX, render, buildComponents, handleButton, startCommand, expireStaleGames };

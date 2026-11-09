@@ -138,19 +138,23 @@ async function retireOldMessage(client, game) {
     if (!edited) await expiry.editMessage(client, game.channelId, game.messageId, { components: [] });
 }
 
-/** Setelah 10 menit tanpa aksi, pesan game berubah abu-abu dan tombolnya mati (game tetap bisa dilanjutkan). */
-function armExpiry(client, game) {
-    expiry.schedule(`hl:${game.userId}`, async () => {
-        if (!acquireGambleLock(game.userId)) return; // pemain sedang beraksi; jadwal baru dibuat setelahnya
+/** Game yang sudah 10 menit tidak disentuh: pesannya dibuat abu-abu dan tombolnya mati (game tetap bisa dilanjutkan). */
+async function expireStaleGames(client) {
+    const games = await HighLow.find(expiry.staleFilter()).limit(50).lean();
+    for (const game of games) {
+        if (!acquireGambleLock(game.userId)) continue; // pemain sedang beraksi; dicek lagi di putaran berikutnya
         try {
-            const latest = await HighLow.findOne({ userId: game.userId }).lean();
-            if (!latest || latest.status !== 'playing'
-                || latest.messageId !== game.messageId || latest.version !== game.version) return;
+            const latest = await HighLow.findOneAndUpdate(
+                { _id: game._id, status: 'playing', version: game.version, messageId: game.messageId },
+                { $set: { expiredMessageId: game.messageId } },
+                { new: true, timestamps: false }
+            ).lean();
+            if (!latest) continue;
             await expiry.editMessage(client, latest.channelId, latest.messageId, messageOptions(latest, { expired: true }));
         } finally {
             releaseGambleLock(game.userId);
         }
-    });
+    }
 }
 
 async function postGame(message, game, client, opts = {}) {
@@ -166,7 +170,6 @@ async function postGame(message, game, client, opts = {}) {
         return false;
     }
     await retireOldMessage(client, game);
-    armExpiry(client, attached);
     return true;
 }
 
@@ -206,14 +209,22 @@ async function completeGame(game) {
     }
 
     await HighLow.deleteOne({ _id: finalGame._id, userId: finalGame.userId, status: finalGame.status });
-    expiry.cancel(`hl:${finalGame.userId}`);
     return finalGame;
+}
+
+/** Balas dengan state terbaru; kalau game sudah selesai, pesannya kadaluarsa (abu-abu) 10 menit lagi. */
+async function reply(interaction, game) {
+    const result = await interaction.editReply(messageOptions(game));
+    if (TERMINAL_STATES.has(game.status)) {
+        expiry.scheduleFinished(interaction.client, game, (g) => messageOptions(g, { expired: true }));
+    }
+    return result;
 }
 
 async function sendCurrent(interaction, game) {
     if (game && TERMINAL_STATES.has(game.status)) game = await completeGame(game);
     if (!game) return interaction.editReply({ components: [] });
-    return interaction.editReply(messageOptions(game));
+    return reply(interaction, game);
 }
 
 async function handleButton(interaction) {
@@ -241,6 +252,17 @@ async function handleButton(interaction) {
             });
         }
 
+        // Cadangan (mis. bot sempat mati sebelum sweeper jalan): game yang sudah 10 menit diam dikunci saat tombol ditekan.
+        if (game.status === 'playing' && expiry.isIdle(game)) {
+            await interaction.deferUpdate();
+            await HighLow.updateOne({ _id: game._id, version: game.version }, { $set: { expiredMessageId: game.messageId } }, { timestamps: false });
+            await interaction.editReply(messageOptions(game, { expired: true }));
+            return interaction.followUp({
+                content: `This game expired. Type \`${cfg.PREFIX}hl\` to resume it.`,
+                flags: MessageFlags.Ephemeral
+            });
+        }
+
         await interaction.deferUpdate();
         const active = game.status === 'pending' ? await prepareGame(ownerId, game) : game;
         if (!active) return interaction.editReply({ components: [] });
@@ -258,7 +280,7 @@ async function handleButton(interaction) {
                 { new: true }
             ).lean();
             if (!finished) return sendCurrent(interaction, await HighLow.findOne({ userId: ownerId }).lean());
-            return interaction.editReply(messageOptions(await completeGame(finished)));
+            return reply(interaction, await completeGame(finished));
         }
 
         const current = active.cards[active.cards.length - 1];
@@ -275,8 +297,7 @@ async function handleButton(interaction) {
 
         const updated = await HighLow.findOneAndUpdate(versionFilter, update, { new: true }).lean();
         if (!updated) return sendCurrent(interaction, await HighLow.findOne({ userId: ownerId }).lean());
-        if (updated.status === 'lost') return interaction.editReply(messageOptions(await completeGame(updated)));
-        armExpiry(interaction.client, updated);
+        if (updated.status === 'lost') return reply(interaction, await completeGame(updated));
         return interaction.editReply(messageOptions(updated));
     } catch (error) {
         console.error('[FUNECONOMY] HighLow button error:', error);
@@ -347,4 +368,4 @@ async function startCommand(message, args, client) {
     }
 }
 
-module.exports = { BUTTON_PREFIX, render, cardRow, handleButton, startCommand };
+module.exports = { BUTTON_PREFIX, render, cardRow, handleButton, startCommand, expireStaleGames };
