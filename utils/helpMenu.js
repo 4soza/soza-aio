@@ -17,6 +17,7 @@ const {
     MessageFlags,
 } = require('discord.js');
 const config = require('../config.json');
+const { MUSIC_PREFIX, MUSIC_COMMANDS } = require('./musicPrefix');
 
 const CODE_EMOJI = '<:code:1555825017080647760>';
 const EMBED_COLOR = 0xFFFFFF;
@@ -53,6 +54,9 @@ const FUN_ECONOMY_INFO = {
     pickup:  { usage: '',                           desc: 'Pick up cash dropped in this channel' },
     lb:      { usage: '[category] [global] [1-25]', desc: 'Show the leaderboard' },
     my:      { usage: '[category] [global]',        desc: 'Show your leaderboard rank' },
+    enable:  { usage: '<all|command>',               desc: 'Enable commands in this channel' },
+    disable: { usage: '<all|command>',               desc: 'Disable commands in this channel' },
+    levelup: { usage: '',                           desc: 'How to turn level up messages on/off' },
 };
 
 const FUN_ECONOMY_FILE_NAMES = {
@@ -113,6 +117,16 @@ async function getPrefixInfo(guildId) {
     return { default: def, server, effective: server || def };
 }
 
+// Music prefix commands only work as "s!..." (not with the normal prefix), so help lists them that way.
+const MUSIC_HELP = {
+    play: { usage: '<song>', description: 'Play a song or add it to the queue.' },
+    stop: { usage: '', description: 'Stop the music and clear the queue.' },
+    autoplay: { usage: '', description: 'Toggle autoplay for yourself (use again to turn it off).' },
+    join: { usage: '', description: 'Join your voice channel without playing music.' },
+    leave: { usage: '', description: 'Leave your voice channel.' },
+    247: { usage: '', description: 'Toggle 24/7 mode (stay in voice).' },
+};
+
 let catalogCache = { key: null, time: 0, data: null };
 
 function loadPrefixEntries(prefix) {
@@ -125,29 +139,24 @@ function loadPrefixEntries(prefix) {
         for (const file of fs.readdirSync(dir).filter((f) => f.endsWith('.js'))) {
             const name = path.basename(file, '.js');
             if (name === 'help') continue;
+            const music = folder === 'other' && MUSIC_COMMANDS[name] === name ? MUSIC_HELP[name] : null;
+            let cmd = {};
             try {
-                const cmd = require(path.join(dir, file));
-                entries.push({
-                    category: folder,
-                    name,
-                    prefix,
-                    usage: '',
-                    description: clip(cmd.description || 'No description', 70),
-                    aliases: cmd.aliases || [],
-                    subs: [],
-                });
+                cmd = require(path.join(dir, file));
             } catch (err) {
                 console.error(`[HELP] Could not load ${file}:`, err.message);
-                entries.push({
-                    category: folder,
-                    name,
-                    prefix,
-                    usage: '',
-                    description: 'No description',
-                    aliases: [],
-                    subs: [],
-                });
             }
+            entries.push({
+                category: folder,
+                name,
+                prefix: music ? MUSIC_PREFIX : prefix,
+                usage: music ? music.usage : '',
+                description: clip(music ? music.description : (cmd.description || 'No description'), 70),
+                aliases: music
+                    ? Object.keys(MUSIC_COMMANDS).filter((k) => MUSIC_COMMANDS[k] === name && k !== name)
+                    : (cmd.aliases || []),
+                subs: [],
+            });
         }
     }
     return entries;
@@ -573,4 +582,4 @@ function listCommandNames(client) {
     return [...new Set(catalog.entries.map((e) => e.name))];
 }
 
-module.exports = { runHelp, listCommandNames, CODE_EMOJI };
+module.exports = { runHelp, listCommandNames, CODE_EMOJI, __catalogForTest: (client) => buildCatalog(client, config.prefix || '.') };
