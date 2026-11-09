@@ -9,7 +9,13 @@ const MUSIC_COMMANDS = {
     stop: 'stop',
     autoplay: 'autoplay',
     ap: 'autoplay',
+    join: 'join',
+    leave: 'leave',
+    247: '247',
 };
+
+// Only work as "s!join" / "s!leave" / "s!247"; the normal "." prefix no longer runs them.
+const MUSIC_PREFIX_ONLY = new Set(['join', 'leave', '247']);
 
 /**
  * Returns { prefix, typed, commandName, args } when `content` is a music
@@ -28,4 +34,4 @@ function matchMusicPrefix(content) {
     return { prefix: MUSIC_PREFIX, typed, commandName, args };
 }
 
-module.exports = { MUSIC_PREFIX, MUSIC_COMMANDS, matchMusicPrefix };
+module.exports = { MUSIC_PREFIX, MUSIC_COMMANDS, MUSIC_PREFIX_ONLY, matchMusicPrefix };
