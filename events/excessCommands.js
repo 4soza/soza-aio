@@ -5,7 +5,7 @@ const path = require('path');
 const config = require('../config.json');
 const DisabledCommand = require('../models/commands/DisabledCommands');
 const { getMatchedPrefix } = require('../utils/prefix');
-const { matchMusicPrefix } = require('../utils/musicPrefix');
+const { matchMusicPrefix, MUSIC_PREFIX_ONLY } = require('../utils/musicPrefix');
 
 module.exports = {
     name: 'messageCreate',
@@ -37,6 +37,8 @@ module.exports = {
             args = message.content.slice(prefix.length).trim().split(/ +/);
             commandName = args.shift().toLowerCase();
         }
+
+        if (!music && MUSIC_PREFIX_ONLY.has(commandName)) return; // join/leave/247 only via s!
 
         const excessCommandsPath = path.join(__dirname, '..', 'excesscommands');
         let command;

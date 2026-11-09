@@ -12,6 +12,7 @@ const AutoResponderModel = require('../models/autoresponses/schema');
 const ServerConfig = require('../models/serverConfig/schema');
 const { handleFaqMessage } = require('../handlers/faqHandler');
 const { getMatchedPrefix } = require('../utils/prefix');
+const { MUSIC_PREFIX_ONLY } = require('../utils/musicPrefix');
 
 
 const MILESTONES = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
@@ -263,6 +264,8 @@ module.exports = {
                 await message.reply(customCommand.response);
                 return;
             }
+
+            if (MUSIC_PREFIX_ONLY.has(commandName)) return; // join/leave/247 only via s!
 
             const command = client.commands.get(commandName);
             if (command) {
