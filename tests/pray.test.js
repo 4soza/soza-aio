@@ -106,6 +106,8 @@ test('spray follows registration gate before points can change, then grants luck
         'discord.js': { PermissionsBitField: { Flags: { ViewChannel: 1, SendMessages: 2 } } },
         './config': cfg,
         '../models/funeconomy/ranking': { touchGuild: async () => {} },
+        '../models/funeconomy/channelSettings': { isDisabled: async () => false },
+        './utils': { sendTemporaryError: async () => {} },
         './register': { ensureRegistered: async () => { if (!registered) prompts++; return registered; } },
         [path.resolve(__dirname, '../funeconomy/commands/pray.js')]: command
     });
