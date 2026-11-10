@@ -68,7 +68,7 @@ module.exports = {
                 return send(message, errorLine(name, `you can only bet up to **${fmt(MAX)}** per lottery!`));
             }
 
-            const balance = await Economy.getCash(userId);
+            const balance = await Economy.getBetBalance(userId);
             const bet = parseAmount(args[0], balance, remaining);
             if (!Number.isSafeInteger(bet) || bet < cfg.MIN_BET) {
                 if (args[0].toLowerCase() === 'all') return sendTemporaryError(message, errorLine(name, `you don't have any ${cfg.CASH_NAME} to bet!`));
@@ -81,19 +81,19 @@ module.exports = {
             }
             if (balance < bet) return sendTemporaryError(message, errorLine(name, `you don't have enough ${cfg.CASH_NAME}!`));
 
-            const debited = await Economy.deduct(userId, bet);
+            const debited = await Economy.deductBet(userId, bet);
             if (!debited) return sendTemporaryError(message, errorLine(name, `you don't have enough ${cfg.CASH_NAME}!`));
 
             let entry;
             try {
                 entry = await lottery.addEntry(day, userId, bet);
             } catch (error) {
-                await Economy.add(userId, bet).catch((e) => console.error('[FUNECONOMY] Lottery refund failed:', e));
+                await Economy.addGamePayout(userId, bet).catch((e) => console.error('[FUNECONOMY] Lottery refund failed:', e));
                 throw error;
             }
             if (!entry) {
                 // Batas per lottery terlewati (balapan antar command): kembalikan taruhan
-                await Economy.add(userId, bet);
+                await Economy.addGamePayout(userId, bet);
                 return send(message, errorLine(name, `you can only bet up to **${fmt(MAX)}** per lottery!`));
             }
 

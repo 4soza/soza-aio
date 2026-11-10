@@ -76,7 +76,7 @@ module.exports = {
                 return send(message, errorLine(name, 'I need the **Embed Links** permission in this channel to play roulette!'));
             }
 
-            const balance = await Economy.getCash(userId);
+            const balance = await Economy.getBetBalance(userId);
             const { bet, error, insufficientBalance } = resolveBet(amountToken ?? undefined, balance);
             if (error) {
                 const line = errorLine(name, error);

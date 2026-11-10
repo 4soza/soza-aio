@@ -32,7 +32,7 @@ module.exports = {
             }
             side = side || 'heads';
 
-            const balance = await Economy.getCash(userId);
+            const balance = await Economy.getBetBalance(userId);
             const bet = amountToken === null ? cfg.MIN_BET : parseAmount(amountToken, balance, cfg.MAX_BET);
 
             if (bet < cfg.MIN_BET) {

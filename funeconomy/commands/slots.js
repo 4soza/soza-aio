@@ -87,7 +87,7 @@ module.exports = {
 
         if (!acquireGambleLock(userId)) return;
         try {
-            const balance = await Economy.getCash(userId);
+            const balance = await Economy.getBetBalance(userId);
             const bet = args.length === 0 ? cfg.MIN_BET : parseAmount(args[0], balance, cfg.MAX_BET);
 
             if (bet < cfg.MIN_BET) {

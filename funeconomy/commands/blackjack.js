@@ -54,7 +54,7 @@ module.exports = {
                 return sendGame(message, existing, client, true);
             }
 
-            const balance = await Economy.getCash(userId);
+            const balance = await Economy.getBetBalance(userId);
             const { bet, error, insufficientBalance } = resolveBet(args[0], balance);
             if (error) {
                 const reply = errorLine(name, error);
@@ -81,7 +81,7 @@ module.exports = {
                 throw error;
             }
 
-            const debited = await Economy.deduct(userId, bet);
+            const debited = await Economy.deductBet(userId, bet);
             if (!debited) {
                 await Blackjack.deleteOne({ userId });
                 return sendTemporaryError(message, errorLine(name, `you don't have enough ${cfg.CASH_NAME}!`));
