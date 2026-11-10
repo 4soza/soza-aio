@@ -95,7 +95,51 @@ async function assertVoiceConnectPermission(guild, voiceChannel) {
     return botMember;
 }
 
-async function connectVoiceOnly(client, guild, voiceChannel) {
+function withTimeout(promise, ms, label) {
+    let timer;
+    const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+    });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+/**
+ * Join lewat player Lavalink (Riffy), seperti bot musik lain. Dengan begitu `s!p` berikutnya langsung memakai
+ * player yang sama: bot tidak perlu keluar lalu masuk voice lagi. Mengembalikan null kalau tidak ada node
+ * yang terhubung atau gagal; pemanggil lalu memakai koneksi voice biasa (voice-only) seperti sebelumnya.
+ */
+async function connectWithPlayer(client, guild, voiceChannel, textChannelId) {
+    const riffy = client.riffy;
+    const node = (riffy?.leastUsedNodes || []).find((candidate) => candidate?.connected);
+    if (!node || typeof riffy.createPlayer !== 'function') return null;
+
+    let player;
+    try {
+        player = await withTimeout(riffy.createPlayer(node, {
+            guildId: guild.id,
+            voiceChannel: voiceChannel.id,
+            textChannel: textChannelId || voiceChannel.id,
+            deaf: true
+        }), 15000, 'Lavalink voice connection');
+
+        // Tunggu sampai Discord benar-benar menaruh bot di channel itu.
+        const deadline = Date.now() + 10000;
+        while (guild.members.me?.voice?.channelId !== voiceChannel.id) {
+            if (Date.now() > deadline) throw new Error('Discord did not move the bot into the voice channel');
+            await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+        return player;
+    } catch (error) {
+        console.warn(`[VoiceStay] Player join failed in guild ${guild.id}, using a voice-only connection:`, error.message);
+        if (player) {
+            player.__voiceStayRecoveryDestroy = true;
+            try { await player.destroy(); } catch { /* sudah hilang */ } finally { player.__voiceStayRecoveryDestroy = false; }
+        }
+        return null;
+    }
+}
+
+async function connectVoiceOnly(client, guild, voiceChannel, textChannelId = null) {
     const botMember = await assertVoiceConnectPermission(guild, voiceChannel);
     const existing = client.riffy?.players.get(guild.id);
     const currentBotChannelId = botMember.voice.channelId;
@@ -136,6 +180,12 @@ async function connectVoiceOnly(client, guild, voiceChannel) {
         } finally {
             existing.__voiceStayRecoveryDestroy = false;
         }
+    }
+
+    const joinedPlayer = await connectWithPlayer(client, guild, voiceChannel, textChannelId);
+    if (joinedPlayer) {
+        await setVoiceChannelStatus(client, guild.id, IDLE_VOICE_STATUS, voiceChannel.id);
+        return { player: joinedPlayer, alreadyConnected: false };
     }
 
     let connection;
@@ -266,7 +316,7 @@ async function joinFromContext(context, client) {
         throw new Error(`24/7 mode is locked to <#${pinnedPresence.channelId}>.`);
     }
 
-    const result = await connectVoiceOnly(client, guild, voiceChannel);
+    const result = await connectVoiceOnly(client, guild, voiceChannel, context.channel?.id);
     return result.alreadyConnected
         ? `I am already in <#${voiceChannel.id}>. Nothing is playing.`
         : `Joined <#${voiceChannel.id}> without playing music.`;
@@ -432,7 +482,7 @@ async function restore247Guild(client, guildId) {
         if (!stillEnabledBeforeJoin) return false;
 
         try {
-            await connectVoiceOnly(client, guild, voiceChannel);
+            await connectVoiceOnly(client, guild, voiceChannel, presence.textChannelId);
             console.log(`[VoiceStay] Restored 24/7 voice connection for guild ${guildId}.`);
             return true;
         } catch (error) {
