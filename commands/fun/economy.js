@@ -154,7 +154,7 @@ module.exports = {
             if (subcommand === 'slots' || subcommand === 'coinflip') {
                 const bet = interaction.options.getInteger('bet') ?? cfg.MIN_BET;
                 await Economy.ensureAccount(userId);
-                const balance = await Economy.getCash(userId);
+                const balance = await Economy.getBetBalance(userId);
                 if (balance < bet) {
                     return showTemporary(
                         interaction,
