@@ -974,17 +974,12 @@ module.exports = (client) => {
                             player.voiceChannel
                         );
                         await advancedMessageManager.cleanupGuildMessages(client, guildId);
-                        const keepAliveContainer = advancedMessageManager.createV2Container('session_end')
-                            .addTextDisplayComponents(
-                                textDisplay => textDisplay.setContent(
-                                    '**🎵 MUSIC SESSION COMPLETED**\nThe queue has ended. I will stay in voice because 24/7 mode is enabled.'
-                                )
-                            );
-                        const keepAliveMsg = await channel.send({
-                            components: [keepAliveContainer],
-                            flags: MessageFlags.IsComponentsV2
+                        // 24/7 aktif dan autoplay mati: bot tetap di voice, cukup beri tahu antrean sudah habis.
+                        // Pesan ini sengaja tidak dihapus otomatis.
+                        await channel.send({
+                            content: 'There are no more tracks, 247 mode continued',
+                            allowedMentions: { parse: [] }
                         });
-                        advancedMessageManager.addQuickDeleteMessage(client, keepAliveMsg, 'session_end');
                     } else {
                         await handlePlayerCleanup(client, guildId, player, 'Queue ended');
                         player.destroy();
