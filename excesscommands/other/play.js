@@ -6,6 +6,7 @@ const {
     startRiffyPlayerAndWaitForStart
 } = require('../../utils/riffyPlayback');
 const { releaseVoiceOnlyConnection } = require('../../utils/voiceStay');
+const { waitForBotToLeaveVoice, isPlayerStateError } = require('../../utils/voiceHandoff');
 
 function temporaryReply(message, content, timeout = 6000) {
     return message.reply({ content, allowedMentions: { repliedUser: false } }).then(reply => {
@@ -261,10 +262,14 @@ module.exports = {
             }
         }
 
-            const createPlayer = (node) => {
+            const createPlayer = async (node) => {
                 // Hand off a voice-only /join connection before Riffy
                 // establishes its own player connection for playback.
-                releaseVoiceOnlyConnection(client, guildId);
+                // Wait until Discord has really seen the bot leave, otherwise that late
+                // "left voice" update destroys the brand new player.
+                if (releaseVoiceOnlyConnection(client, guildId)) {
+                    await waitForBotToLeaveVoice(message.guild);
+                }
                 return withTimeout(
                     client.riffy.createPlayer(node, {
                         guildId,
@@ -401,7 +406,15 @@ module.exports = {
                     } catch (attemptError) {
                         lastError = attemptError;
 
-                        if (lastAttemptNode) {
+                        if (lastAttemptNode && isPlayerStateError(attemptError)) {
+                            // The bot-side player was destroyed or not ready: the node itself is fine,
+                            // so keep it eligible for the retry instead of reporting "no healthy nodes".
+                            console.warn(
+                                `[RIFFY] Playback attempt ${attempt + 1} failed on ${lastAttemptNode.name} (player state, node kept healthy):`,
+                                attemptError.message
+                            );
+                            await new Promise((resolve) => setTimeout(resolve, 700));
+                        } else if (lastAttemptNode) {
                             failedNodes.add(lastAttemptNode);
                             markNodeUnhealthy(lastAttemptNode, attemptError);
                             console.warn(
