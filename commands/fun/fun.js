@@ -58,12 +58,12 @@ async function takeGameBet(interaction, amount, description, extraSet = {}) {
     }
 
     await FunEconomy.ensureAccount(interaction.user.id);
-    const balance = await FunEconomy.getCash(interaction.user.id);
+    const balance = await FunEconomy.getBetBalance(interaction.user.id);
     if (balance < amount) {
         return { error: `You have ${formatCoins(balance)}, which is not enough for that bet.`, insufficientBalance: true };
     }
 
-    const updated = await FunEconomy.deduct(interaction.user.id, amount);
+    const updated = await FunEconomy.deductBet(interaction.user.id, amount);
     if (!updated) {
         return { error: 'Your balance changed before the bet could be placed. Please try again.', insufficientBalance: true };
     }
@@ -72,7 +72,7 @@ async function takeGameBet(interaction, amount, description, extraSet = {}) {
 
 async function creditGamePayout(interaction, amount, description, extraSet = {}, blackjackSessionId) {
     if (amount <= 0) return null;
-    return FunEconomy.add(interaction.user.id, amount);
+    return FunEconomy.addGamePayout(interaction.user.id, amount);
 }
 
 const blackjackRanks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -1103,7 +1103,7 @@ iq >= 120 ? '• Analytical puzzles and brain games\n• Learning new languages\
             return sendReply(economyPanel('🎰 Slots unavailable', `Bet must be between ${funEconomyConfig.MIN_BET} and ${MAX_BET.toLocaleString()} ${funEconomyConfig.CASH_NAME}.`, 0xe74c3c));
         }
         await FunEconomy.ensureAccount(interaction.user.id);
-        const balance = await FunEconomy.getCash(interaction.user.id);
+        const balance = await FunEconomy.getBetBalance(interaction.user.id);
         if (balance < bet) {
             return sendReply(economyPanel('🎰 Slots unavailable', `You have ${formatCoins(balance)}, which is not enough for that bet.`, 0xe74c3c), [], 3000);
         }
@@ -1188,7 +1188,7 @@ iq >= 120 ? '• Analytical puzzles and brain games\n• Learning new languages\
             return sendReply(economyPanel('🪙 Coinflip unavailable', `Bet must be between ${funEconomyConfig.MIN_BET} and ${MAX_BET.toLocaleString()} ${funEconomyConfig.CASH_NAME}.`, 0xe74c3c));
         }
         await FunEconomy.ensureAccount(interaction.user.id);
-        const balance = await FunEconomy.getCash(interaction.user.id);
+        const balance = await FunEconomy.getBetBalance(interaction.user.id);
         if (balance < bet) {
             return sendReply(economyPanel('🪙 Coinflip unavailable', `You have ${formatCoins(balance)}, which is not enough for that bet.`, 0xe74c3c), [], 3000);
         }
