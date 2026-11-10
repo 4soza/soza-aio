@@ -337,7 +337,7 @@ async function startCommand(message, args, client) {
         if (args.length > 1) {
             return send(message, errorLine(name, `use \`${cfg.PREFIX}hl <bet|all>\`.`));
         }
-        const balance = await Economy.getCash(userId);
+        const balance = await Economy.getBetBalance(userId);
         const { bet, error, insufficientBalance } = resolveBet(args[0], balance);
         if (error) {
             const reply = errorLine(name, error);

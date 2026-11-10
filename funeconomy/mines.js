@@ -395,7 +395,7 @@ async function startCommand(message, args, client) {
         const parsedMines = parseMineCount(args[1]);
         if (parsedMines.error) return send(message, errorLine(name, parsedMines.error));
 
-        const balance = await Economy.getCash(userId);
+        const balance = await Economy.getBetBalance(userId);
         const { bet, error, insufficientBalance } = resolveBet(args[0], balance);
         if (error) {
             const reply = errorLine(name, error);
