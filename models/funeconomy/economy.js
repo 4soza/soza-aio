@@ -1,6 +1,23 @@
 const FunEconomy = require('./schema');
+const cfg = require('../../funeconomy/config');
 
 const DUPLICATE_KEY = 11000;
+
+/**
+ * Pemilik bot (DISCORD_USER_ID) bermain game tanpa memakai saldo:
+ * taruhan tidak dipotong dan kemenangan tidak ditambahkan. Saldo aslinya tidak berubah.
+ * Hanya berlaku untuk game; give, drop, daily, dan /addcash tetap memakai saldo asli.
+ */
+function isOwner(userId) {
+    const ownerId = process.env.DISCORD_USER_ID?.trim();
+    return Boolean(ownerId && /^\d{17,20}$/.test(ownerId) && String(userId) === ownerId);
+}
+
+/** Dokumen saldo asli milik owner (tanpa perubahan) untuk menggantikan hasil update. */
+async function ownerSnapshot(userId) {
+    await ensureAccount(userId);
+    return FunEconomy.findOne({ userId }).lean();
+}
 
 /** Pastikan dokumen user ada (aman dari race saat dua command pertama datang bersamaan). */
 async function ensureAccount(userId) {
@@ -30,11 +47,36 @@ async function getCash(userId) {
  * Karena hasil langsung tersimpan, animasi di chat hanya kosmetik (aman kalau bot restart).
  */
 async function settleBet(userId, bet, payout) {
+    if (isOwner(userId)) return ownerSnapshot(userId);
     return FunEconomy.findOneAndUpdate(
         { userId, cash: { $gte: bet } },
         { $inc: { cash: payout - bet } },
         { new: true }
     ).lean();
+}
+
+/** Saldo untuk pengecekan taruhan. Owner selalu dianggap cukup untuk taruhan maksimum. */
+async function getBetBalance(userId) {
+    const cash = await getCash(userId);
+    return isOwner(userId) ? Math.max(cash, cfg.MAX_BET) : cash;
+}
+
+/** Potong taruhan game. Untuk owner tidak ada yang dipotong. */
+async function deductBet(userId, amount) {
+    if (isOwner(userId)) return ownerSnapshot(userId);
+    return deduct(userId, amount);
+}
+
+/** Tambah hasil game atau refund taruhan. Untuk owner tidak ada yang ditambahkan. */
+async function addGamePayout(userId, amount) {
+    if (isOwner(userId)) return ownerSnapshot(userId);
+    return add(userId, amount);
+}
+
+/** Reset saldo cash ke 0. Return false kalau pengguna belum punya akun. */
+async function resetCash(userId) {
+    const result = await FunEconomy.updateOne({ userId }, { $set: { cash: 0 } });
+    return result.matchedCount > 0;
 }
 
 /** Kurangi saldo secara atomik. Null kalau saldo tidak cukup. */
@@ -48,6 +90,7 @@ async function deduct(userId, amount) {
 
 /** Deduct a mines bet exactly once, including when the game is resumed after a restart. */
 async function deductMinesBet(userId, gameId, amount) {
+    if (isOwner(userId)) return true;
     await ensureAccount(userId);
     const marker = String(gameId);
     const updated = await FunEconomy.findOneAndUpdate(
@@ -78,6 +121,7 @@ async function add(userId, amount) {
 
 /** Kredit pemenang lottery sekali per hari, termasuk bila proses mengulang setelah restart. */
 async function addLotteryPayout(userId, day, amount) {
+    if (isOwner(userId)) return ownerSnapshot(userId);
     await ensureAccount(userId);
     return FunEconomy.findOneAndUpdate(
         { userId, lotteryPayoutDays: { $ne: day } },
@@ -88,6 +132,7 @@ async function addLotteryPayout(userId, day, amount) {
 
 /** Kredit hasil blackjack sekali per game; gameId tetap sama selama pemulihan berlangsung. */
 async function addBlackjackPayout(userId, gameId, amount) {
+    if (isOwner(userId)) return ownerSnapshot(userId);
     await ensureAccount(userId);
     return FunEconomy.findOneAndUpdate(
         { userId, lastBlackjackPayoutId: { $ne: String(gameId) } },
@@ -98,6 +143,7 @@ async function addBlackjackPayout(userId, gameId, amount) {
 
 /** Credit a mines cash-out exactly once if processing is resumed after a restart. */
 async function addMinesPayout(userId, gameId, amount) {
+    if (isOwner(userId)) return ownerSnapshot(userId);
     await ensureAccount(userId);
     return FunEconomy.findOneAndUpdate(
         { userId, lastMinesPayoutId: { $ne: String(gameId) } },
@@ -108,6 +154,7 @@ async function addMinesPayout(userId, gameId, amount) {
 
 /** Deduct a HighLow bet exactly once, including when the game is resumed after a restart. */
 async function deductHighLowBet(userId, gameId, amount) {
+    if (isOwner(userId)) return true;
     await ensureAccount(userId);
     const marker = String(gameId);
     const updated = await FunEconomy.findOneAndUpdate(
@@ -123,6 +170,7 @@ async function deductHighLowBet(userId, gameId, amount) {
 
 /** Credit a HighLow cash-out exactly once if processing is resumed after a restart. */
 async function addHighLowPayout(userId, gameId, amount) {
+    if (isOwner(userId)) return ownerSnapshot(userId);
     await ensureAccount(userId);
     return FunEconomy.findOneAndUpdate(
         { userId, lastHighLowPayoutId: { $ne: String(gameId) } },
@@ -165,7 +213,7 @@ async function top(limit = 10) {
 }
 
 module.exports = {
-    getCash, settleBet, deduct, deductMinesBet, add, addLotteryPayout, addBlackjackPayout, addMinesPayout,
+    getCash, getBetBalance, deductBet, addGamePayout, resetCash, isOwner, settleBet, deduct, deductMinesBet, add, addLotteryPayout, addBlackjackPayout, addMinesPayout,
     deductHighLowBet, addHighLowPayout,
     claimDaily, getLastDailyDay, top, ensureAccount
 };
