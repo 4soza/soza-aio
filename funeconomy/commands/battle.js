@@ -45,7 +45,7 @@ module.exports = {
             cooldown.start('battle', userId);
             const { crate } = await event.distributeRewards({ userId });
 
-            await displayBattle(event, setting, (embed) => message.channel.send({ embeds: [embed], allowedMentions: { parse: [] } }),
+            await displayBattle(event, setting, (embed, files) => message.channel.send({ embeds: [embed], files, allowedMentions: { parse: [] } }),
                 { title: `${userName(message.guild, message.author)} goes into battle!` });
 
             if (crate?.found) {
