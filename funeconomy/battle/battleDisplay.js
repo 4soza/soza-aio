@@ -8,6 +8,7 @@ const animalUtil = require('./animalUtil.js');
 const WeaponInterface = require('./WeaponInterface.js');
 const battleUtil = require('./util/battleUtil.js');
 const { sleep } = require('../utils');
+const { renderBattleImage } = require('./battleImage.js');
 
 const EMBED_COLOR = 0x3498db;
 
@@ -122,7 +123,9 @@ function finalText(event) {
 
 /*
  * Tampilkan battle sesuai speed: instant = hasil akhir saja, short = awal/tengah/akhir (edit pesan),
- * lengthy = setiap turn. `send(embed)` mengirim pesan baru dan mengembalikan pesan (punya edit()).
+ * lengthy = setiap turn. `send(embed, files)` mengirim pesan baru dan mengembalikan pesan (punya edit()).
+ * Mode display "image" menggambar tim dan bar HP/WP sebagai gambar (lihat battleImage.js);
+ * kalau gambar gagal dibuat, dipakai embed teks.
  */
 async function displayBattle(event, setting, send, { title, delayMs = 2000 } = {}) {
 	if (!event.simulated || !event.initialized) return null;
@@ -136,8 +139,25 @@ async function displayBattle(event, setting, send, { title, delayMs = 2000 } = {
 	let msg;
 	for (let i = 0; i < turns.length; i++) {
 		const embed = renderTurn(event, turns[i], opts);
-		if (!msg) msg = await send(embed);
-		else await msg.edit({ embeds: [embed], allowedMentions: { parse: [] } }).catch(() => {});
+		let files = [];
+		if (setting.display === 'image') {
+			try {
+				const name = `battle-${turns[i]}.png`;
+				const png = await renderBattleImage(event.player.team, event.enemy.team, {
+					playerName: event.player.name || `${event.playerName}'s team`,
+					enemyName: event.enemy.name || `${event.enemyName}'s team`,
+					turn: turns[i],
+					length
+				});
+				files = [{ attachment: png, name }];
+				delete embed.fields;
+				embed.image = { url: `attachment://${name}` };
+			} catch (error) {
+				console.error('[BATTLE] Could not render battle image, using text:', error.message);
+			}
+		}
+		if (!msg) msg = await send(embed, files);
+		else await msg.edit({ embeds: [embed], files, attachments: [], allowedMentions: { parse: [] } }).catch(() => {});
 		if (i < turns.length - 1) await sleep(setting.speed === 'lengthy' ? 2500 : delayMs);
 	}
 	return msg;

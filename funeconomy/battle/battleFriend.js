@@ -114,7 +114,7 @@ async function runFriendBattle({ guild, channel, acceptor, sender, flags }) {
 	};
 	return displayBattle(
 		event, setting,
-		(embed) => channel.send({ embeds: [embed], allowedMentions: { parse: [] } }),
+		(embed, files) => channel.send({ embeds: [embed], files, allowedMentions: { parse: [] } }),
 		{ title: `${senderName} vs ${acceptorName}` }
 	);
 }
