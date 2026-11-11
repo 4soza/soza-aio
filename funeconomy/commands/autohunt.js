@@ -2,7 +2,7 @@
 const cfg = require('../config');
 const Economy = require('../../models/funeconomy/economy');
 const cooldown = require('../cooldown');
-const { fmt, displayName, send, sendTemporaryError, onCooldown } = require('../utils');
+const { fmt, displayName, send, sendEmbed, canEmbed, sendTemporaryError, onCooldown } = require('../utils');
 const { RANKS, RANK_ORDER } = require('../zoo/data');
 const { addAnimals } = require('../zoo/zooDb');
 const { huntMany } = require('../zoo/hunting');
@@ -12,6 +12,7 @@ const teamUtil = require('../battle/teamUtil');
 
 const BOT = '🤖';
 const ESSENCE = '✨';
+const ROBOT_IMAGE = 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/72x72/1f916.png';
 const err = (message, name, text) => sendTemporaryError(message, `**🚫 | ${name}**, ${text}`);
 
 /** "10h" / "30m" / "1.5h" -> jam. Angka polos dianggap cash (return null). */
@@ -65,8 +66,7 @@ async function display(message, name) {
     const doc = await HuntBot.get(message.author.id);
     const t = HuntBot.readTraits(doc);
     const maxhunt = Math.floor(t.duration.stat * t.efficiency.stat);
-    const lines = [
-        `**${BOT} ${name}'s HuntBot**`,
+    const body = [
         '`BEEP. BOOP. I AM HUNTBOT. I WILL HUNT FOR YOU MASTER.`',
         `Use \`${cfg.PREFIX}autohunt {cash}\` to get started (or a duration like \`${cfg.PREFIX}autohunt 10h\`).`,
         `Use \`${cfg.PREFIX}upgrade {trait} {count}\` to upgrade the traits below.`,
@@ -82,8 +82,17 @@ async function display(message, name) {
         `${ESSENCE} Animal Essence - \`${fmt(doc?.essence || 0)}\``,
         `\`Current Max Autohunt: ${fmt(maxhunt)} animals, ${fmt(Math.floor(t.gain.stat * t.duration.stat))} essence, and ${fmt(Math.floor(t.exp.stat * t.duration.stat))} xp for ${fmt(maxhunt * t.cost.stat)} cash\``
     ];
-    if (progress) lines.push('', `${BOT} **HUNTBOT is currently hunting!**`, progressText(progress));
-    return send(message, lines.join('\n'));
+    if (progress) body.push('', `${BOT} **HUNTBOT is currently hunting!**`, progressText(progress));
+
+    // Tampilan embed seperti OwO; kalau bot tidak boleh kirim embed, pakai teks biasa.
+    if (!canEmbed(message)) return send(message, [`**${BOT} ${name}'s HuntBot**`, ...body].join('\n'));
+    return sendEmbed(message, {
+        color: 0x3498db,
+        author: { name: `${name}'s HuntBot`, icon_url: message.author.displayAvatarURL?.() },
+        thumbnail: { url: ROBOT_IMAGE },
+        description: body.join('\n').slice(0, 4096),
+        footer: { text: `@${message.author.username}` }
+    });
 }
 
 /** Hitung dan mulai hunt bot. Return { error } atau ringkasan. Dipisah supaya bisa diuji. */
