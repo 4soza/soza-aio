@@ -42,7 +42,9 @@ Chat memberi XP untuk akun terdaftar; kenaikan level memberi cash.
 | Command | Alias | Fungsi |
 |---|---|---|
 | `slevel [@user]` | lvl, xp | Kartu level ala OwO: avatar, nama, server, LVL, Rank global, XP, dan progress bar |
-| `slevelup [on\|off]` | lvlup | Atur pesan level up di server (izin Manage Server diperlukan) |
+| `senable <all\|command>` | - | Aktifkan command di channel ini (izin Manage Channel) |
+| `sdisable <all\|command>` | - | Matikan command di channel ini; `sdisable all` mematikan semuanya. Pesan "that command is disabled on this channel!" hilang setelah 2 detik |
+| `slevelup` | lvlup | Info pesan level up; matikan per channel dengan `sdisable levelup` |
 
 - `/levelcard upload` menyimpan gambar yang Anda pilih dari galeri perangkat melalui lampiran Discord untuk kartu level `slevel` dan notifikasi saat Anda naik level.
 - `/levelcard reset` mengembalikan gambar kartu level dan notifikasi level-up ke bawaan.
@@ -100,5 +102,24 @@ command tersedia. Command hanya didaftarkan di server itu, dibatasi ke admin ole
 memeriksa ID pemilik sebelum menambah saldo. Untuk menyembunyikannya dari admin lain juga, batasi
 `/addcash` ke pengguna pembuat bot di **Server Settings → Integrations → bot → Commands**.
 
+`/resetcash user_id` mengembalikan cash pengguna (berdasarkan Discord user ID) menjadi 0. Aturan akses
+dan server-nya sama seperti `/addcash` (hanya `DISCORD_USER_ID`, hanya di `DISCORD_GUILD_ID`).
+
+Pemilik bot (`DISCORD_USER_ID`) bermain game tanpa memakai saldo: taruhan tidak dipotong dan
+kemenangan tidak ditambahkan, jadi saldo aslinya tidak berubah. Berlaku untuk coinflip, slots,
+roulette, blackjack, highlow, mines, dan lottery. `sgive`, `sdrop`, `sdaily`, dan `/addcash`
+tetap memakai saldo asli.
+
 Command slash lainnya tetap didaftarkan secara global. Pemisahan ini menjaga jumlah global di bawah
 batas 100 command Discord.
+
+
+## Hunt, zoo, dan battle (gaya OwO)
+
+Berdasarkan OwO Bot oleh Christopher Thai (CC BY-NC-SA 4.0). Semua hewan memakai emoji Unicode.
+
+- Hunt: `shunt` (`sh`) memakai 5 cash. `szoo`, `ssell`, `ssacrifice` (`ssac`), `slootbox`, `sgem`, `sautohunt`, `supgrade`, `sdex`.
+- Battle: `sbattle` (`sb`) melawan tim acak, atau `sbattle @user` untuk teman. `steam`, `steams`, `spets`, `srename`, `sbattlesetting`.
+- Senjata: `scrate` (crate dari battle), `sweapon` (`sw`), `sweaponshard` (`sws`).
+- Hewan di tim aktif ikut mendapat XP saat hunt.
+- Tidak dibuat: sistem patreon, event, guild boss, gambar battle (diganti teks/embed).

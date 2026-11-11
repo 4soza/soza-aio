@@ -1,0 +1,68 @@
+/*
+ * Based on OwO Bot by Christopher Thai, CC BY-NC-SA 4.0
+ * (https://github.com/ChristopherBThai/Discord-OwO-Bot), adapted for this bot.
+ */
+
+const WeaponInterface = require('../WeaponInterface.js');
+const Logs = require('../util/logUtil.js');
+
+module.exports = class EnergyStaff extends WeaponInterface {
+	init() {
+		this.id = 11;
+		this.name = 'Energy Staff';
+		this.basicDesc = '';
+		this.emojis = Array(7).fill('⚡');
+		this.pristineEmojis = Array(7).fill('⚡');
+		this.defaultEmoji = '⚡';
+		this.statDesc =
+			'Sends a wave of energy and deals **?%** of your ' +
+			WeaponInterface.magEmoji +
+			'MAG to all opponents';
+		this.availablePassives = 'all';
+		this.passiveCount = 1;
+		this.qualityList = [[35, 65]];
+		this.manaRange = [200, 100];
+	}
+
+	attackWeapon(me, team, enemy) {
+		if (me.stats.hp[0] <= 0) return;
+
+		/* No mana */
+		if (me.stats.wp[0] < this.manaCost) return this.attackPhysical(me, team, enemy);
+
+		let logs = new Logs();
+
+		/* deplete weapon points*/
+		let mana = WeaponInterface.useMana(me, this.manaCost, me, {
+			me,
+			allies: team,
+			enemies: enemy,
+		});
+		let manaLogs = new Logs();
+		manaLogs.push(`[ESTAFF] ${me.nickname} used ${mana.amount} WP`, mana.logs);
+
+		/* Calculate damage */
+		let damage = WeaponInterface.getDamage(me.stats.mag, this.stats[0] / 100);
+
+		/* Deal damage to all opponents*/
+		let logText = `[ESTAFF] ${me.nickname} damaged `;
+		let subLogs = new Logs();
+		for (let i = 0; i < enemy.length; i++) {
+			if (enemy[i].stats.hp[0] > 0) {
+				let dmg = WeaponInterface.inflictDamage(me, enemy[i], damage, WeaponInterface.MAGICAL, {
+					me,
+					allies: team,
+					enemies: enemy,
+				});
+				logText += `${enemy[i].nickname} -${dmg.amount} | `;
+				subLogs.push(dmg.logs);
+			}
+		}
+		logText = logText.slice(0, -2) + 'HP';
+
+		logs.push(logText, subLogs);
+		logs.addSubLogs(manaLogs);
+
+		return logs;
+	}
+};
