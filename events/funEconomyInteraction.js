@@ -3,7 +3,6 @@ const register = require('../funeconomy/register');
 const mines = require('../funeconomy/mines');
 const highlow = require('../funeconomy/highlow');
 const leaderboard = require('../funeconomy/leaderboardView');
-const battleSettings = require('../funeconomy/battle/settingsView');
 const battleButtons = require('../funeconomy/battle/battleButtons');
 const shopView = require('../funeconomy/shop/shopView');
 const marriageView = require('../funeconomy/shop/marriageView');
@@ -13,7 +12,8 @@ const { track } = require('../funeconomy/inactivity');
 module.exports = {
     name: 'interactionCreate',
     async execute(interaction, client) {
-        if (!interaction.isButton()) return;
+        // Tombol, plus select menu untuk daftar senjata (fbattle:wps).
+        if (!interaction.isButton() && !(interaction.isStringSelectMenu?.() && interaction.customId.startsWith(`${battleButtons.BUTTON_PREFIX}:`))) return;
 
         if (interaction.customId.startsWith(`${register.BUTTON_PREFIX}:`)) {
             return register.handleButton(interaction);
@@ -35,11 +35,6 @@ module.exports = {
         }
         if (interaction.customId.startsWith(`${marriageView.BUTTON_PREFIX}:`)) {
             try { return await marriageView.handleButton(interaction); } finally { track(interaction.message); }
-        }
-        if (interaction.customId.startsWith(`${battleSettings.BUTTON_PREFIX}:`)) {
-            return battleSettings.handleButton(interaction).catch((error) => {
-                console.error('[FUNECONOMY] Battle settings button failed:', error);
-            });
         }
         if (interaction.customId.startsWith(`${leaderboard.BUTTON_PREFIX}:`)) {
             return leaderboard.handleButton(interaction).catch((error) => {
