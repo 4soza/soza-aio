@@ -155,12 +155,12 @@ async function sendTicketEmbed(channel) {
         .setCustomId('select_ticket_type')
         .setPlaceholder('Choose ticket type')
         .addOptions([
-            { label: '<:CodeXSupport:1570440948322795586> Support', value: 'support' },
+            { label: '🆘 Support', value: 'support' },
             { label: '📂 Suggestion', value: 'suggestion' },
             { label: '💜 Feedback', value: 'feedback' },
             { label: '⚠️ Report', value: 'report' },
-            { label: '<:PartnerServer:1570440742080356553> Partnership', value: 'partnership' },
-            { label: '<:CodeXAdmin:1570440596819284030> Request become a Admin', value: 'requestadmin' }
+            { label: '🤝 Partnership', value: 'partnership' },
+            { label: '🛡️ Request become a Admin', value: 'requestadmin' }
         ]);
 
     const row = new ActionRowBuilder().addComponents(menu);
