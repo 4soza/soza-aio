@@ -6,6 +6,7 @@ const leaderboard = require('../funeconomy/leaderboardView');
 const battleButtons = require('../funeconomy/battle/battleButtons');
 const shopView = require('../funeconomy/shop/shopView');
 const marriageView = require('../funeconomy/shop/marriageView');
+const { track } = require('../funeconomy/inactivity');
 
 // Tombol blackjack (Hit/Stand), Register, Mines, HighLow, dan Leaderboard. Dimuat otomatis oleh handlers/events.js.
 module.exports = {
@@ -26,13 +27,13 @@ module.exports = {
             return highlow.handleButton(interaction);
         }
         if (interaction.customId.startsWith(`${battleButtons.BUTTON_PREFIX}:`)) {
-            return battleButtons.handleButton(interaction);
+            try { return await battleButtons.handleButton(interaction); } finally { track(interaction.message); }
         }
         if (interaction.customId.startsWith(`${shopView.BUTTON_PREFIX}:`)) {
-            return shopView.handleButton(interaction);
+            try { return await shopView.handleButton(interaction); } finally { track(interaction.message); }
         }
         if (interaction.customId.startsWith(`${marriageView.BUTTON_PREFIX}:`)) {
-            return marriageView.handleButton(interaction);
+            try { return await marriageView.handleButton(interaction); } finally { track(interaction.message); }
         }
         if (interaction.customId.startsWith(`${leaderboard.BUTTON_PREFIX}:`)) {
             return leaderboard.handleButton(interaction).catch((error) => {
