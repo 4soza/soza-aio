@@ -119,7 +119,7 @@ batas 100 command Discord.
 Berdasarkan OwO Bot oleh Christopher Thai (CC BY-NC-SA 4.0). Semua hewan memakai emoji Unicode.
 
 - Hunt: `shunt` (`sh`) memakai 5 cash. `szoo`, `ssell`, `ssacrifice` (`ssac`), `slootbox`, `sgem`, `sautohunt`, `supgrade`, `sdex`.
-- Battle: `sbattle` (`sb`) melawan tim acak, atau `sbattle @user` untuk teman. `steam`, `steams`, `spets`, `srename`, `sbattlesetting`.
+- Battle: `sbattle` (`sb`) melawan tim acak, atau `sbattle @user` untuk teman. `steam`, `steams`, `spets`, `srename`, `sbattlesetting` (`sbs`: tampilan ala OwO, klik tombol untuk ganti setting, sesi habis 10 menit).
 - Senjata: `scrate` (crate dari battle), `sweapon` (`sw`), `sweaponshard` (`sws`).
 - Hewan di tim aktif ikut mendapat XP saat hunt.
 - Tidak dibuat: sistem patreon, event, guild boss, gambar battle (diganti teks/embed).

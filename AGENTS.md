@@ -9,6 +9,7 @@
 - Keep probability math in funeconomy/luckMath.js and use it in both coinflip and slots, so bonuses stay bounded and payout amounts remain unchanged.
 - Keep HighLow payout math in funeconomy/highlowMath.js and reuse the blackjack card labels, so displayed cards and payouts stay consistent with the other card games.
 - Keep roulette wheel colors and payouts in funeconomy/rouletteMath.js and settle the bet atomically before the spin animation, so a restart mid-animation cannot change the result or balance.
+- The battle settings view (`sbs`) lives in funeconomy/battle/settingsView.js with the same 10-minute expiry pattern as the leaderboard, and saves through settingsDb, so buttons and `sbs key=value` write identical values.
 - Load pray through the existing fun economy dispatcher and registration gate; never auto-register players through pray.
 
 # Ticket staff roles

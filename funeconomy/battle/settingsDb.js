@@ -18,10 +18,19 @@ async function getBattleSetting(userId) {
 	return bs;
 }
 
+/* Nilai mentah yang tersimpan (tanpa efek logs=true -> instant), untuk tampilan sbs */
+async function getRawSettings(userId) {
+	const doc = await Settings.findOne({ userId }).lean();
+	const display = doc?.display === 'text' || doc?.display === 'compact' ? doc.display : 'image';
+	const speed = SPEEDS[doc?.speed] || 'short';
+	const logs = ['false', 'true', 'link'][doc?.logs] || 'false';
+	return { display, speed, logs };
+}
+
 /* field: display | speed | logs. value sudah divalidasi. */
 async function setBattleSetting(userId, field, value) {
 	await Settings.updateOne({ userId }, { $set: { [field]: value } }, { upsert: true })
 		.catch((error) => { if (error?.code !== 11000) throw error; });
 }
 
-module.exports = { getBattleSetting, setBattleSetting, SPEEDS };
+module.exports = { getBattleSetting, getRawSettings, setBattleSetting, SPEEDS };
