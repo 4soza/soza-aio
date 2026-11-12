@@ -1,12 +1,13 @@
 // Based on OwO Bot by Christopher Thai, CC BY-NC-SA 4.0 (https://github.com/ChristopherBThai/Discord-OwO-Bot)
 // Shop pages (rings, weapon list) and the detailed daily weapon viewer, paged with buttons.
 // customId: fshop:<mode>:<ownerId>:<page>:<prev|next> (suffix wajib: Discord menolak customId kembar, mis. saat total halaman = 2)   mode m = main shop (rings / weapons), w = weapon viewer.
+const emojis = require('../customEmoji');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const cfg = require('../config');
 const crateDb = require('../battle/crateDb');
 const WeaponInterface = require('../battle/WeaponInterface');
 const { EMBED_COLOR } = require('../battle/battleDisplay');
-const { SHARD_EMOJI, CRATE_EMOJI } = require('../battle/commandUtil');
+
 const { hms } = require('../zoo/format');
 const ringShop = require('./ringShop');
 const weaponShop = require('./weaponShop');
@@ -54,13 +55,13 @@ function ringPage() {
 function weaponListPage(offers) {
     const p = cfg.PREFIX;
     let result = toItem({
-        id: weaponShop.CRATE_ID, name: 'Weapon Crate', emoji: CRATE_EMOJI,
-        price: weaponShop.CRATE_PRICE, priceEmoji: SHARD_EMOJI
+        id: weaponShop.CRATE_ID, name: 'Weapon Crate', emoji: emojis.crate(),
+        price: weaponShop.CRATE_PRICE, priceEmoji: emojis.shard()
     });
     for (const offer of offers) {
         result += toItem({
             id: offer.shopId, name: weaponName(offer.weapon), emoji: weaponIcons(offer.weapon),
-            price: offer.price, priceEmoji: SHARD_EMOJI, lineThrough: offer.purchased,
+            price: offer.price, priceEmoji: emojis.shard(), lineThrough: offer.purchased,
             offset: offer.weapon.passives.length * -3
         });
     }
@@ -76,7 +77,7 @@ function weaponListPage(offers) {
 function weaponDetailPage(offer) {
     const { weapon } = offer;
     let desc = `**Name:** ${weapon.name}\n**Shop ID:** ${offer.shopId}\n`;
-    desc += offer.purchased ? '**Price:** PURCHASED\n\n' : `**Price:** ${offer.price} ${SHARD_EMOJI}\n\n`;
+    desc += offer.purchased ? '**Price:** PURCHASED\n\n' : `**Price:** ${offer.price} ${emojis.shard()}\n\n`;
     desc += `**Quality:** ${weapon.rank.emoji} ${weapon.avgQuality}%\n**Wear:** \`${String(weapon.wearName).toUpperCase()}\`\n`;
     if (weapon.hasTakedownTracker) desc += '**Takedown Tracker:** `TRUE`\n';
     desc += `**WP Cost:** ${Math.ceil(weapon.manaCost)} ${WeaponInterface.wpEmoji}`;
