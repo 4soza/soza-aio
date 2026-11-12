@@ -10,7 +10,7 @@ const battleUtil = require('./util/battleUtil.js');
 const { sleep } = require('../utils');
 const { renderBattleImage } = require('./battleImage.js');
 
-const EMBED_COLOR = 0x3498db;
+const EMBED_COLOR = 0x7ab8f5; // biru yang sama dengan HighLow
 
 function updateTeamStats(team, stats) {
 	const percent = Number.isFinite(stats) ? stats / 100 : undefined;

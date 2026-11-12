@@ -5,6 +5,7 @@
  * Battle teman: sbattle @user -> tombol Accept/Decline (atau sab / sdb).
  */
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
+const { track } = require('../inactivity.js');
 const cfg = require('../config');
 const teamUtil = require('./teamUtil.js');
 const challengeDb = require('./challengeDb.js');
@@ -79,6 +80,7 @@ async function challenge(message, opponent, flagTokens) {
 		content: `<@${opponent.id}>`, embeds: [embed], components: buttons(senderId, opponent.id),
 		allowedMentions: { users: [opponent.id] }
 	});
+	track(sent);
 	await challengeDb.setMessage(created.doc.user1, created.doc.user2, sent.id).catch(() => {});
 	return null;
 }
