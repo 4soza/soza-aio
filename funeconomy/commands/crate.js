@@ -37,12 +37,12 @@ module.exports = {
         let text2;
         if (count === 1) {
             const w = weapons[0];
-            text1 = `${BLANK} | **${name}** opens a weapon crate\n${emojis.crate()} | and finds a ...`;
-            text2 = `${w.emoji} | **${name}** opens a weapon crate\n${emojis.crate()} | and finds a \`${w.uwid}\` ${weaponIcons(w)} ${w.avgQuality}%`;
+            text1 = `${BLANK} | **${name}** opens a weapon crate\n${emojis.crateShake()} | and finds a ...`;
+            text2 = `${w.emoji} | **${name}** opens a weapon crate\n${emojis.crateOpen()} | and finds a \`${w.uwid}\` ${weaponIcons(w)} ${w.avgQuality}%`;
         } else {
             weapons.sort((a, b) => b.avgQuality - a.avgQuality);
-            text1 = `${BLANK} | **${name}** opens ${count} weapon crates\n${emojis.crate()} | and finds...`;
-            text2 = `${BLANK} | **${name}** opens ${count} weapon crates\n${emojis.crate()} | and finds: ${weapons.map((w) => w.emoji).join('')}`;
+            text1 = `${BLANK} | **${name}** opens ${count} weapon crates\n${emojis.crateShake()} | and finds...`;
+            text2 = `${BLANK} | **${name}** opens ${count} weapon crates\n${emojis.crateOpen()} | and finds: ${weapons.map((w) => w.emoji).join('')}`;
         }
         const sent = await send(message, text1);
         await sleep(3000);
