@@ -28,6 +28,10 @@ module.exports = class PassiveInterface {
 		for (let i = 0; i < stats.length; i++) {
 			desc = desc.replace('?', stats[i]);
 		}
+		/* Emoji kustom (assets/emoji/p_<nama>.png) menggantikan emoji bawaan kalau sudah diunggah */
+		const customEmoji = require('../customEmoji.js').gear('p', this.constructor.name);
+		if (customEmoji) this.emojis = Array(7).fill(customEmoji);
+
 		/* Check if it has enough emojis */
 		if (this.emojis.length != 7) throw new Error(`[${this.id}] does not have 7 emojis`);
 

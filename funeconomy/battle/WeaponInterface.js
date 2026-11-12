@@ -110,6 +110,14 @@ module.exports = class WeaponInterface {
 		/* Construct stats */
 		let stats = this.toStats(qualities);
 
+		/* Emoji kustom (assets/emoji/w_<nama>.png) menggantikan emoji bawaan kalau sudah diunggah */
+		const customEmoji = require('../customEmoji.js').gear('w', this.constructor.name);
+		if (customEmoji) {
+			this.emojis = Array(7).fill(customEmoji);
+			this.pristineEmojis = Array(7).fill(customEmoji);
+			this.defaultEmoji = customEmoji;
+		}
+
 		/* Check if it has enough emojis */
 		if (this.emojis.length != 7) throw `[${this.id}] does not have 7 emojis`;
 		if (this.pristineEmojis.length != 7) throw `[${this.id}] does not have 7 pristine emojis`;
