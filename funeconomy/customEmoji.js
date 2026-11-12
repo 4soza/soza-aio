@@ -40,10 +40,14 @@ const DEFS = {
 // Tanpa fallback di sini: emoji Unicode bawaan tiap senjata/passive tetap dipakai kalau emoji kustom belum ada.
 const WEAPON_NAMES = ['AbsorbWand', 'ArcaneScepter', 'Bow', 'CelebrationRune', 'CullingScythe', 'EnergyStaff', 'FlameStaff',
     'FoulFish', 'GlacialAxe', 'Greatsword', 'HealStaff', 'LeechScythe', 'LuckRune', 'Orb', 'PoisonDagger', 'PurityStaff',
-    'ResurrectionStaff', 'Rune', 'Shield', 'SpiritStaff', 'VampiricStaff', 'VanguardsBanner'];
+    'ResurrectionStaff', 'Rune', 'Shield', 'SpiritStaff', 'VampiricStaff', 'VanguardsBanner',
+    // senjata baru (khusus bot ini)
+    'ConduitClaw', 'Crossbow', 'DruidStaff', 'EyeStaff', 'FrostStaff'];
 const PASSIVE_NAMES = ['Absolve', 'Critical', 'Discharge', 'Energize', 'Enrage', 'HealthPoint', 'Kamikaze', 'Knowledge',
     'Lifesteal', 'Magic', 'MagicResist', 'Manatap', 'PhysicalResist', 'Regeneration', 'Sacrifice', 'Safeguard', 'Snail',
-    'Sprout', 'Strength', 'Thorns', 'WeaponPoint'];
+    'Sprout', 'Strength', 'Thorns', 'WeaponPoint',
+    // passive baru (khusus bot ini)
+    'Rend', 'Execute', 'Photosynthesis', 'Tide', 'Ferocity', 'Sharpness', 'Wildfire', 'Frostbite', 'Lifebloom'];
 for (const name of WEAPON_NAMES) DEFS[`w_${name.toLowerCase()}`] = { fallback: '' };
 for (const name of PASSIVE_NAMES) DEFS[`p_${name.toLowerCase()}`] = { fallback: '' };
 
