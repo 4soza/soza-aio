@@ -36,9 +36,22 @@ const DEFS = {
     cr3: { animated: true, fallback: '📦' }
 };
 
+// Ikon senjata (w_<nama>) dan passive (p_<nama>), nama = nama class di funeconomy/battle/weapons|passives.
+// Tanpa fallback di sini: emoji Unicode bawaan tiap senjata/passive tetap dipakai kalau emoji kustom belum ada.
+const WEAPON_NAMES = ['AbsorbWand', 'ArcaneScepter', 'Bow', 'CelebrationRune', 'CullingScythe', 'EnergyStaff', 'FlameStaff',
+    'FoulFish', 'GlacialAxe', 'Greatsword', 'HealStaff', 'LeechScythe', 'LuckRune', 'Orb', 'PoisonDagger', 'PurityStaff',
+    'ResurrectionStaff', 'Rune', 'Shield', 'SpiritStaff', 'VampiricStaff', 'VanguardsBanner'];
+const PASSIVE_NAMES = ['Absolve', 'Critical', 'Discharge', 'Energize', 'Enrage', 'HealthPoint', 'Kamikaze', 'Knowledge',
+    'Lifesteal', 'Magic', 'MagicResist', 'Manatap', 'PhysicalResist', 'Regeneration', 'Sacrifice', 'Safeguard', 'Snail',
+    'Sprout', 'Strength', 'Thorns', 'WeaponPoint'];
+for (const name of WEAPON_NAMES) DEFS[`w_${name.toLowerCase()}`] = { fallback: '' };
+for (const name of PASSIVE_NAMES) DEFS[`p_${name.toLowerCase()}`] = { fallback: '' };
+
 const live = new Map(); // key -> '<:nama:id>'
 
 const get = (key) => live.get(key) ?? DEFS[key]?.fallback ?? '';
+/** Emoji kustom senjata ('w') atau passive ('p') untuk class tertentu; null kalau belum tersedia. */
+const gear = (kind, className) => live.get(`${kind}_${String(className).toLowerCase()}`) || null;
 const shard = () => get('shard');
 const crate = () => get('cr1');
 const crateShake = () => get('cr2');
@@ -106,4 +119,4 @@ function reset() { live.clear(); apply(); }
 /** id emoji kustom dari teks `<:nama:id>` (atau null untuk emoji Unicode). */
 const customId = (text) => /^<a?:\w+:(\d+)>$/.exec(String(text || ''))?.[1] || null;
 
-module.exports = { DEFS, get, shard, crate, crateShake, crateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId };
+module.exports = { DEFS, get, gear, shard, crate, crateShake, crateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId };
