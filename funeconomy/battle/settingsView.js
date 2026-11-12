@@ -52,7 +52,7 @@ function build(state) {
 
     for (const s of SETTINGS) {
         const value = state.settings[s.key] ?? s.def;
-        const text = `**\`${s.name}\`**\nType: \`enum\` | Default: \`${s.def}\`\n*${s.desc}*`;
+        const text = `**\`${s.name}\`**\n-# Type: \`enum\` | Default: \`${s.def}\`\n-# *${s.desc}*`;
         const button = new ButtonBuilder()
             .setCustomId(`${BUTTON_PREFIX}:${s.key}:${state.ownerId}`)
             .setStyle(ButtonStyle.Secondary)
