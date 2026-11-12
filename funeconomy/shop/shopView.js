@@ -45,7 +45,7 @@ function ringPage() {
         });
     }
     return {
-        title: 'OwO Shop: Rings',
+        title: 'Shop: Rings',
         description: 'Purchase a ring to propose to someone!\nAll rings are the same. Different tiers are available to show off your love!\n'
             + `- **\`${p}buy {id}\`** to buy an item\n- **\`${p}sell {id}\`** to sell an item for 75% of its original price\n`
             + `- **\`${p}marry @user {id}\`** to use the ring\n${'═'.repeat(CHAR_LEN + 2)}\n${result}`
@@ -66,7 +66,7 @@ function weaponListPage(offers) {
         });
     }
     return {
-        title: 'OwO Shop: Weapons',
+        title: 'Shop: Weapons',
         description: 'Use your Weapon Shards to purchase weapons and crates!\nWeapons are randomly generated every day!\n'
             + `- **\`${p}buy {id}\`** to buy a weapon\n- **\`${p}shop weapon\`** to view the weapons\n${'═'.repeat(CHAR_LEN + 2)}\n${result}`,
         resets: true
