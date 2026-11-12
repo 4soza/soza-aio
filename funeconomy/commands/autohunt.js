@@ -9,6 +9,7 @@ const { huntMany } = require('../zoo/hunting');
 const HuntBot = require('../zoo/huntbot');
 const { bar, toSmallNum, BLANK } = require('../zoo/format');
 const teamUtil = require('../battle/teamUtil');
+const { EMBED_COLOR } = require('../battle/battleDisplay');
 
 const BOT = '🤖';
 const ESSENCE = '✨';
@@ -87,7 +88,7 @@ async function display(message, name) {
     // Tampilan embed seperti OwO; kalau bot tidak boleh kirim embed, pakai teks biasa.
     if (!canEmbed(message)) return send(message, [`**${BOT} ${name}'s HuntBot**`, ...body].join('\n'));
     return sendEmbed(message, {
-        color: 0x3498db,
+        color: EMBED_COLOR,
         author: { name: `${name}'s HuntBot`, icon_url: message.author.displayAvatarURL?.() },
         thumbnail: { url: ROBOT_IMAGE },
         description: body.join('\n').slice(0, 4096),

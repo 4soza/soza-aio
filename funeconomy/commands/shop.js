@@ -1,5 +1,6 @@
 // Based on OwO Bot by Christopher Thai, CC BY-NC-SA 4.0 (https://github.com/ChristopherBThai/Discord-OwO-Bot)
 const cooldown = require('../cooldown');
+const { track } = require('../inactivity');
 const { canEmbed, send, onCooldown } = require('../utils');
 const { fail } = require('../battle/commandUtil');
 const shopView = require('../shop/shopView');
@@ -19,6 +20,6 @@ module.exports = {
         const mode = WEAPON_ARGS.includes(first) ? 'w' : 'm';
         const built = await shopView.buildPage(message.author.id, mode, 1, { avatarUrl: message.author.displayAvatarURL?.() });
         if (!canEmbed(message)) return send(message, built.plain);
-        return message.channel.send({ embeds: built.embeds, components: built.components, allowedMentions: { parse: [] } });
+        return track(await message.channel.send({ embeds: built.embeds, components: built.components, allowedMentions: { parse: [] } }));
     }
 };

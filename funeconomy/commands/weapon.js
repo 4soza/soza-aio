@@ -1,5 +1,6 @@
 // Based on OwO Bot by Christopher Thai, CC BY-NC-SA 4.0 (https://github.com/ChristopherBThai/Discord-OwO-Bot)
 const cfg = require('../config');
+const { track } = require('../inactivity');
 const weaponDb = require('../battle/weaponDb');
 const teamUtil = require('../battle/teamUtil');
 const challengeDb = require('../battle/challengeDb');
@@ -19,7 +20,7 @@ const SORT_ALIASES = {
 async function list(message, { sort = 'id', wid } = {}) {
     const msg = await weaponView.listMessage(message.author.id, userName(message.guild, message.author), { sort, wid });
     if (!msg) return fail(message, 'you do not have any weapons, or the page is out of bounds', 3000);
-    return message.channel.send({ ...msg, allowedMentions: { parse: [] } });
+    return track(await message.channel.send({ ...msg, allowedMentions: { parse: [] } }));
 }
 
 async function describe(message, token, client) {
@@ -89,10 +90,10 @@ async function reroll(message, args) {
     if (result.error === 'missing') return fail(message, `I could not find a weapon with that unique weapon id! Please use \`${cfg.PREFIX}weapon\` for the weapon ID!`, 4000);
     if (result.error === 'disabled') return fail(message, "I can't reroll this weapon!", 4000);
     if (result.error === 'shards') return fail(message, `you need ${weaponDb.REROLL_PRICE} ${SHARD_EMOJI} Weapon Shards to reroll a weapon!`, 4000);
-    return message.channel.send({
+    return track(await message.channel.send({
         ...weaponView.rerollMessage(message.author.id, userName(message.guild, message.author), result.weapon, result.next),
         allowedMentions: { parse: [] }
-    });
+    }));
 }
 
 // sweapon [sort] [101+ filter] | <id> | <id> <animal|pos> | unequip <id> | rr <id> passive|stat | fav <id>
