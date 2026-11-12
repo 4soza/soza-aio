@@ -4,7 +4,7 @@
  *
  * Satu pintu untuk semua tombol battle/weapon (customId diawali "fbattle:"):
  *   fbattle:accept|decline:<senderId>:<receiverId>   battle teman
- *   fbattle:wp:<ownerId>:<sort>:<wid>:<page>          paging daftar senjata
+ *   fbattle:wp|wpf|wps|wph:...                         daftar senjata (halaman, filter, sort, bantuan)
  *   fbattle:rr:<confirm|cancel|again>:<ownerId>:<uwid> reroll senjata
  */
 const { MessageFlags } = require('discord.js');
@@ -16,14 +16,43 @@ const { userName } = require('./commandUtil.js');
 const BUTTON_PREFIX = friend.BUTTON_PREFIX;
 const ephemeral = (interaction, content) => interaction.reply({ content, flags: MessageFlags.Ephemeral });
 
-async function handleWeaponPage(interaction, parts) {
-	const [, , ownerId, sort, wid, page] = parts;
-	if (interaction.user.id !== ownerId) return ephemeral(interaction, "This isn't your weapon list!");
-	const message = await weaponView.listMessage(ownerId, userName(interaction.guild, interaction.user), {
-		page: parseInt(page, 10) || 0, sort, wid: parseInt(wid, 10) || undefined
-	});
+const parseRank = (text) => (text === 'x' || text === undefined ? undefined : parseInt(text, 10));
+const parseWid = (text) => parseInt(text, 10) || undefined;
+
+async function refreshWeaponList(interaction, ownerId, options) {
+	const message = await weaponView.listMessage(ownerId, userName(interaction.guild, interaction.user), options);
 	if (!message) return interaction.update({ components: [] });
-	return interaction.update(message);
+	return interaction.update({ components: message.components, flags: message.flags });
+}
+
+/* fbattle:wp:<owner>:<sort>:<wid>:<rank>:<page>:<act> */
+async function handleWeaponPage(interaction, parts) {
+	const [, , ownerId, sort, wid, rank, pageText, act] = parts;
+	if (interaction.user.id !== ownerId) return ephemeral(interaction, "This isn't your weapon list!");
+	const current = parseInt(pageText, 10) || 0;
+	const page = { first: 0, prev: current - 1, next: current + 1, last: -1 }[act] ?? current;
+	return refreshWeaponList(interaction, ownerId, { page, sort, wid: parseWid(wid), rank: parseRank(rank) });
+}
+
+/* fbattle:wpf:<owner>:<sort>:<wid>:<rank>  - filter rarity berganti: None > Common > ... > Fabled > None */
+async function handleWeaponFilter(interaction, parts) {
+	const [, , ownerId, sort, wid, rank] = parts;
+	if (interaction.user.id !== ownerId) return ephemeral(interaction, "This isn't your weapon list!");
+	const current = parseRank(rank);
+	const next = current === undefined ? 0 : (current + 1 >= weaponView.RANK_NAMES.length ? undefined : current + 1);
+	return refreshWeaponList(interaction, ownerId, { page: 0, sort, wid: parseWid(wid), rank: next });
+}
+
+/* fbattle:wps:<owner>:<wid>:<rank>  - select menu urutan */
+async function handleWeaponSort(interaction, parts) {
+	const [, , ownerId, wid, rank] = parts;
+	if (interaction.user.id !== ownerId) return ephemeral(interaction, "This isn't your weapon list!");
+	return refreshWeaponList(interaction, ownerId, { page: 0, sort: interaction.values?.[0], wid: parseWid(wid), rank: parseRank(rank) });
+}
+
+async function handleWeaponHelp(interaction, parts) {
+	if (interaction.user.id !== parts[2]) return ephemeral(interaction, "This isn't your weapon list!");
+	return ephemeral(interaction, weaponView.helpText());
 }
 
 async function handleReroll(interaction, parts) {
@@ -64,6 +93,9 @@ async function handleButton(interaction) {
 	try {
 		if (parts[1] === 'accept' || parts[1] === 'decline') return await friend.handleButton(interaction);
 		if (parts[1] === 'wp') return await handleWeaponPage(interaction, parts);
+		if (parts[1] === 'wpf') return await handleWeaponFilter(interaction, parts);
+		if (parts[1] === 'wps') return await handleWeaponSort(interaction, parts);
+		if (parts[1] === 'wph') return await handleWeaponHelp(interaction, parts);
 		if (parts[1] === 'rr') return await handleReroll(interaction, parts);
 	} catch (error) {
 		console.error('[BATTLE] button failed:', error);

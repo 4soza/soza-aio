@@ -9,6 +9,7 @@ const WeaponInterface = require('./WeaponInterface.js');
 const battleUtil = require('./util/battleUtil.js');
 const { sleep } = require('../utils');
 const { renderBattleImage } = require('./battleImage.js');
+const { track } = require('../inactivity');
 
 const EMBED_COLOR = 0x7ab8f5; // biru yang sama dengan HighLow
 
@@ -160,6 +161,8 @@ async function displayBattle(event, setting, send, { title, delayMs = 2000 } = {
 		else await msg.edit({ embeds: [embed], files, attachments: [], allowedMentions: { parse: [] } }).catch(() => {});
 		if (i < turns.length - 1) await sleep(setting.speed === 'lengthy' ? 2500 : delayMs);
 	}
+	// Setelah 10 menit tanpa aktivitas, embed hasil battle jadi abu-abu (seperti HighLow).
+	if (msg) track(msg);
 	return msg;
 }
 

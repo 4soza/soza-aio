@@ -135,9 +135,14 @@ const SORTS = {
 };
 
 /* Satu halaman senjata. Return { docs, total } */
-async function listWeapons(userId, { page = 0, perPage = 15, sort = 'id', wid } = {}) {
+async function listWeapons(userId, { page = 0, perPage = 15, sort = 'id', wid, rank } = {}) {
 	const filter = { userId };
 	if (wid) filter.wid = wid;
+	if (Number.isInteger(rank) && rank >= 0 && rank < WeaponInterface.ranks.length) {
+		const { min, max, last } = rankBounds(rank);
+		filter.avg = min === 0 ? { $gte: 0 } : { $gt: min };
+		if (!last) filter.avg.$lte = max;
+	}
 	const total = await Weapon.countDocuments(filter);
 	const docs = await Weapon.find(filter).sort(SORTS[sort] || SORTS.id).skip(page * perPage).limit(perPage).lean();
 	return { docs, total };
