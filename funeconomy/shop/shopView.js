@@ -1,6 +1,6 @@
 // Based on OwO Bot by Christopher Thai, CC BY-NC-SA 4.0 (https://github.com/ChristopherBThai/Discord-OwO-Bot)
 // Shop pages (rings, weapon list) and the detailed daily weapon viewer, paged with buttons.
-// customId: fshop:<mode>:<ownerId>:<page>   mode m = main shop (rings / weapons), w = weapon viewer.
+// customId: fshop:<mode>:<ownerId>:<page>:<prev|next> (suffix wajib: Discord menolak customId kembar, mis. saat total halaman = 2)   mode m = main shop (rings / weapons), w = weapon viewer.
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const cfg = require('../config');
 const crateDb = require('../battle/crateDb');
@@ -91,8 +91,8 @@ function weaponDetailPage(offer) {
 }
 
 const buttonsFor = (mode, ownerId, page, total) => [new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId(`${BUTTON_PREFIX}:${mode}:${ownerId}:${page <= 1 ? total : page - 1}`).setEmoji('⬅️').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId(`${BUTTON_PREFIX}:${mode}:${ownerId}:${page >= total ? 1 : page + 1}`).setEmoji('➡️').setStyle(ButtonStyle.Primary)
+    new ButtonBuilder().setCustomId(`${BUTTON_PREFIX}:${mode}:${ownerId}:${page <= 1 ? total : page - 1}:prev`).setEmoji('⬅️').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId(`${BUTTON_PREFIX}:${mode}:${ownerId}:${page >= total ? 1 : page + 1}:next`).setEmoji('➡️').setStyle(ButtonStyle.Primary)
 )];
 
 /*
