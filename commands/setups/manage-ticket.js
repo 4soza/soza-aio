@@ -340,7 +340,7 @@ async function sendTicketEmbed(channel) {
             { label: '📂 Suggestion', value: 'suggestion' },
             { label: '💜 Feedback', value: 'feedback' },
             { label: '⚠️ Report', value: 'report' },
-            { label: '🤝> Partnership', value: 'partnership' },
+            { label: '🤝 Partnership', value: 'partnership' },
             { label: '🛡️ Request become a Admin', value: 'requestadmin' }
         ]);
 
