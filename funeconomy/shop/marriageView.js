@@ -5,6 +5,7 @@
 //   fmarry:up:yes|no:<userId>:<ringId>
 //   fmarry:div:yes|no:<userId>
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
+const { track } = require('../inactivity');
 const cfg = require('../config');
 const { canEmbed, send, displayName } = require('../utils');
 const { EMBED_COLOR } = require('../battle/battleDisplay');
@@ -60,8 +61,10 @@ function proposalEmbed({ senderName, receiverName, ring, color = EMBED_COLOR, no
 
 /* Send an embed card with buttons, falling back to plain text when embeds are not allowed. */
 function sendCard(message, embed, components, fallback) {
-    if (canEmbed(message)) return message.channel.send({ embeds: [embed], components, allowedMentions: { parse: [] } });
-    return message.channel.send({ content: fallback, components, allowedMentions: { parse: [] } });
+    const payload = canEmbed(message)
+        ? { embeds: [embed], components, allowedMentions: { parse: [] } }
+        : { content: fallback, components, allowedMentions: { parse: [] } };
+    return message.channel.send(payload).then(track);
 }
 
 /* ---------- smarry @user {ring} ---------- */
