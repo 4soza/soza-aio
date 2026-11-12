@@ -6,7 +6,7 @@ const Economy = require('../../models/funeconomy/economy');
 const DUPLICATE_KEY = 11000;
 const SELL_RATE = 0.75;
 
-// Unicode only: rank colour + ring (OwO uses custom emoji).
+// Emoji Unicode bawaan; diganti emoji kustom (cring, uring, ...) oleh funeconomy/customEmoji.js saat bot siap.
 const RINGS = {
     1: { id: 1, name: 'Common Ring', emoji: '⚪💍', rarity: 'common', price: 10 },
     2: { id: 2, name: 'Uncommon Ring', emoji: '🟢💍', rarity: 'uncommon', price: 100 },
