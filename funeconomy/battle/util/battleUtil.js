@@ -308,7 +308,7 @@ exports.updateTT = function (battleTeam) {
 	for (let key in battleTeam.team) {
 		const animal = battleTeam.team[key];
 		if (animal?.weapon?.hasTakedownTracker && animal.weapon.ruwid && animal.weapon.battleKills) {
-			promises.push(require('./weaponDb.js').addKills(animal.weapon.ruwid, animal.weapon.battleKills));
+			promises.push(require('../weaponDb.js').addKills(animal.weapon.ruwid, animal.weapon.battleKills));
 		}
 	}
 	return Promise.all(promises);
