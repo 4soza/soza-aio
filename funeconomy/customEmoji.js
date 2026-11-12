@@ -27,16 +27,25 @@ const DEFS = {
     lring: { animated: true, fallback: '🟠💍' },
     fring: { animated: true, fallback: '🟡💍' },
     shard: { fallback: '🧩' },
-    crate: { fallback: '📦' },
-    lootbox: { fallback: '📦' }
+    // lootbox: lb1 diam, lb2 bergerak, lb3 terbuka. crate senjata: cr1 diam, cr2 bergerak, cr3 terbuka.
+    lb1: { fallback: '📦' },
+    lb2: { animated: true, fallback: '📦' },
+    lb3: { animated: true, fallback: '🎁' },
+    cr1: { fallback: '📦' },
+    cr2: { animated: true, fallback: '📦' },
+    cr3: { animated: true, fallback: '📦' }
 };
 
 const live = new Map(); // key -> '<:nama:id>'
 
 const get = (key) => live.get(key) ?? DEFS[key]?.fallback ?? '';
 const shard = () => get('shard');
-const crate = () => get('crate');
-const lootbox = () => get('lootbox');
+const crate = () => get('cr1');
+const crateShake = () => get('cr2');
+const crateOpen = () => get('cr3');
+const lootbox = () => get('lb1');
+const lootboxShake = () => get('lb2');
+const lootboxOpen = () => get('lb3');
 
 // Rank hewan (zoo/data.js RANKS) dan rank senjata (WeaponInterface.ranks) -> key emoji.
 const ZOO_RANKS = {
@@ -97,4 +106,4 @@ function reset() { live.clear(); apply(); }
 /** id emoji kustom dari teks `<:nama:id>` (atau null untuk emoji Unicode). */
 const customId = (text) => /^<a?:\w+:(\d+)>$/.exec(String(text || ''))?.[1] || null;
 
-module.exports = { DEFS, get, shard, crate, lootbox, apply, sync, reset, customId };
+module.exports = { DEFS, get, shard, crate, crateShake, crateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId };
