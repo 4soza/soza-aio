@@ -1,4 +1,5 @@
 // Based on OwO Bot by Christopher Thai, CC BY-NC-SA 4.0
+const emojis = require('../customEmoji');
 const cfg = require('../config');
 const Economy = require('../../models/funeconomy/economy');
 const cooldown = require('../cooldown');
@@ -57,7 +58,7 @@ function buildText(name, result, now = Date.now()) {
         text += `\n${BLANK} **|** ${teamPets.map((p) => p.uni).join(' ')} gained **${hunt.xp}xp**!`;
     }
     if (lootbox.claimed) {
-        text += `\n**📦 |** You found a **lootbox**! \`[${lootbox.count}/${LootboxDb.DAILY_LIMIT}] RESETS IN: ${hms(msUntilReset(now))}\``;
+        text += `\n**${emojis.lootbox()} |** You found a **lootbox**! \`[${lootbox.count}/${LootboxDb.DAILY_LIMIT}] RESETS IN: ${hms(msUntilReset(now))}\``;
     }
     return text;
 }

@@ -1,4 +1,5 @@
 // Based on OwO Bot by Christopher Thai, CC BY-NC-SA 4.0
+const emojis = require('../customEmoji');
 const cooldown = require('../cooldown');
 const { displayName, send, sendTemporaryError, onCooldown } = require('../utils');
 const Gems = require('../zoo/gems');
@@ -12,7 +13,7 @@ async function showInventory(message, name) {
     const inv = await Gems.getInventory(userId);
     const boxes = await LootboxDb.getBoxCount(userId);
     const items = [];
-    if (boxes > 0) items.push(`\`50\`📦${toSmallNum(boxes)}`);
+    if (boxes > 0) items.push(`\`50\`${emojis.lootbox()}${toSmallNum(boxes)}`);
     const owned = Object.values(Gems.GEMS).filter((g) => inv.gems[g.key] > 0).sort((a, b) => a.id - b.id);
     for (const g of owned) items.push(`\`${g.id}\`${g.emoji}${toSmallNum(inv.gems[g.key])}`);
     const active = Gems.activeOf(inv);

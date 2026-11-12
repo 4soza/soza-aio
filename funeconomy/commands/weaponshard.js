@@ -1,10 +1,11 @@
 // Based on OwO Bot by Christopher Thai, CC BY-NC-SA 4.0 (https://github.com/ChristopherBThai/Discord-OwO-Bot)
+const emojis = require('../customEmoji');
 const cfg = require('../config');
 const weaponDb = require('../battle/weaponDb');
 const crateDb = require('../battle/crateDb');
 const { fmt, onCooldown } = require('../utils');
 const cooldown = require('../cooldown');
-const { fail, reply, SHARD_EMOJI, DISMANTLE_EMOJI } = require('../battle/commandUtil');
+const { fail, reply, DISMANTLE_EMOJI } = require('../battle/commandUtil');
 
 async function dismantleRank(message, rankIndex) {
     const userId = message.author.id;
@@ -14,7 +15,7 @@ async function dismantleRank(message, rankIndex) {
     await crateDb.addShards(userId, price);
     const rankEmoji = result.weapons[0].rank.emoji;
     return reply(message, DISMANTLE_EMOJI,
-        `You dismantled all of your ${rankEmoji} **${result.rank}** weapons for **${fmt(price)}** ${SHARD_EMOJI} WeaponShards!\n▫️ **| Dismantled:** ${result.weapons.map((w) => w.emoji).join('')}`);
+        `You dismantled all of your ${rankEmoji} **${result.rank}** weapons for **${fmt(price)}** ${emojis.shard()} WeaponShards!\n▫️ **| Dismantled:** ${result.weapons.map((w) => w.emoji).join('')}`);
 }
 
 async function dismantleId(message, token) {
@@ -30,7 +31,7 @@ async function dismantleId(message, token) {
     const price = weaponDb.SHARD_PRICES[weapon.rank.name];
     await crateDb.addShards(userId, price);
     return reply(message, DISMANTLE_EMOJI,
-        `You dismantled a(n) **${weapon.rank.name} ${weapon.name}** ${weapon.rank.emoji}${weapon.emoji} for **${fmt(price)}** ${SHARD_EMOJI} Weapon Shard${price === 1 ? '' : 's'}!`);
+        `You dismantled a(n) **${weapon.rank.name} ${weapon.name}** ${weapon.rank.emoji}${weapon.emoji} for **${fmt(price)}** ${emojis.shard()} Weapon Shard${price === 1 ? '' : 's'}!`);
 }
 
 // sws = lihat shard | sws <id|cw|uw|rw|ew|mw|lw|fw> = bongkar senjata jadi shard
@@ -43,7 +44,7 @@ module.exports = {
         if (!args.length) {
             cooldown.start('weapon', userId);
             const shards = await crateDb.getShards(userId);
-            return reply(message, SHARD_EMOJI, `you currently have **${fmt(shards)}** Weapon Shards! Reroll weapons with \`${cfg.PREFIX}w rr {weaponID} [passive|stat]\`.`);
+            return reply(message, emojis.shard(), `you currently have **${fmt(shards)}** Weapon Shards! Reroll weapons with \`${cfg.PREFIX}w rr {weaponID} [passive|stat]\`.`);
         }
         const token = args[0].toLowerCase();
         cooldown.start('weapon', userId);

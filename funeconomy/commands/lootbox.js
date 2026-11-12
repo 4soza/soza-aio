@@ -1,4 +1,5 @@
 // Based on OwO Bot by Christopher Thai, CC BY-NC-SA 4.0
+const emojis = require('../customEmoji');
 const cooldown = require('../cooldown');
 const { displayName, send, sendTemporaryError, onCooldown } = require('../utils');
 const { openBoxes, getBoxCount, MAX_OPEN } = require('../zoo/lootboxDb');
@@ -45,7 +46,7 @@ module.exports = {
         if (count === 1) {
             const gem = entries[0].gem;
             const gemName = `${gem.rankName} ${gem.type} Gem`;
-            first = `**📦 | ${name}** opens a lootbox\n**🎁 |** and finds a ...`;
+            first = `**${emojis.lootbox()} | ${name}** opens a lootbox\n**🎁 |** and finds a ...`;
             last = `**${gem.emoji} | ${name}** opens a lootbox\n**🎁 |** and finds a${/^[EU]/.test(gemName) ? 'n' : ''} **${gemName}**!`;
         } else {
             const gemText = entries.map((e) => `${e.gem.emoji}${toSmallNum(e.count)}`).join(' ');

@@ -1,4 +1,5 @@
 // Based on OwO Bot by Christopher Thai, CC BY-NC-SA 4.0 (https://github.com/ChristopherBThai/Discord-OwO-Bot)
+const emojis = require('../customEmoji');
 const cooldown = require('../cooldown');
 const { displayName, send, onCooldown } = require('../utils');
 const Gems = require('../zoo/gems');
@@ -7,7 +8,7 @@ const crateDb = require('../battle/crateDb');
 const weaponDb = require('../battle/weaponDb');
 const WeaponInterface = require('../battle/WeaponInterface');
 const ringShop = require('../shop/ringShop');
-const { CRATE_EMOJI } = require('../battle/commandUtil');
+
 const { toSmallNum } = require('../zoo/format');
 
 const LOOTBOX_ID = 50;
@@ -20,11 +21,11 @@ async function collectItems(userId) {
         crateDb.getCrate(userId), weaponDb.countByType(userId)
     ]);
     const items = [...rings];
-    if (boxes > 0) items.push({ id: LOOTBOX_ID, emoji: '📦', count: boxes });
+    if (boxes > 0) items.push({ id: LOOTBOX_ID, emoji: emojis.lootbox(), count: boxes });
     for (const gem of Object.values(Gems.GEMS)) {
         if (gemInv.gems[gem.key] > 0) items.push({ id: gem.id, emoji: gem.emoji, count: gemInv.gems[gem.key] });
     }
-    if (crate.boxcount > 0) items.push({ id: CRATE_ID, emoji: CRATE_EMOJI, count: crate.boxcount });
+    if (crate.boxcount > 0) items.push({ id: CRATE_ID, emoji: emojis.crate(), count: crate.boxcount });
     for (const { wid, count } of byType) {
         const WeaponClass = WeaponInterface.weapons[wid];
         if (WeaponClass && count > 0) items.push({ id: wid + 100, emoji: WeaponClass.getEmoji, count });

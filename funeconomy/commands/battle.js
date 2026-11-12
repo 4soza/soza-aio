@@ -1,4 +1,5 @@
 // Based on OwO Bot by Christopher Thai, CC BY-NC-SA 4.0 (https://github.com/ChristopherBThai/Discord-OwO-Bot)
+const emojis = require('../customEmoji');
 const cfg = require('../config');
 const cooldown = require('../cooldown');
 const teamUtil = require('../battle/teamUtil');
@@ -7,7 +8,7 @@ const BattleEvent = require('../battle/battleEvent');
 const friend = require('../battle/battleFriend');
 const { displayBattle } = require('../battle/battleDisplay');
 const { displayName, send, onCooldown } = require('../utils');
-const { fail, userName, resolveUser, isUserToken, CRATE_EMOJI } = require('../battle/commandUtil');
+const { fail, userName, resolveUser, isUserToken } = require('../battle/commandUtil');
 
 // Satu battle per user pada satu waktu
 const running = new Set();
@@ -52,7 +53,7 @@ module.exports = {
                 const h = Math.floor(crate.resetsIn / 3600000);
                 const m = Math.floor((crate.resetsIn % 3600000) / 60000);
                 const s = Math.floor((crate.resetsIn % 60000) / 1000);
-                await send(message, `${CRATE_EMOJI} | **${name}**, You found a **weapon crate**! \`[${crate.count}/3] RESETS IN: ${h}H ${m}M ${s}S\``);
+                await send(message, `${emojis.crate()} | **${name}**, You found a **weapon crate**! \`[${crate.count}/3] RESETS IN: ${h}H ${m}M ${s}S\``);
             }
         } finally {
             running.delete(userId);
