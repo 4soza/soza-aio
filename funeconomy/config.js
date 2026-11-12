@@ -35,6 +35,12 @@ module.exports = {
         weapon: 5000,
         crate: 5000,
         owodex: 5000,
+        // Shop, inventory, dan marriage (gaya OwO)
+        shop: 5000,
+        buy: 5000,
+        inventory: 5000,
+        marry: 5000,
+        divorce: 5000,
         slots: 15000,
         cf: 15000,
         bj: 15000,

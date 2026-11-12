@@ -81,7 +81,16 @@ async function addShards(userId, amount) {
 	return Crate.findOneAndUpdate({ userId }, { $inc: { shards: amount } }, { new: true }).lean();
 }
 
+/* Bayar dengan weapon shard secara atomik (shop). Return dokumen baru atau null kalau shard kurang. */
+async function useShards(userId, amount) {
+	if (!(amount > 0)) return null;
+	return Crate.findOneAndUpdate(
+		{ userId, shards: { $gte: amount } }, { $inc: { shards: -amount } }, { new: true }
+	).lean();
+}
+
 module.exports = {
+	useShards,
 	CRATE_CHANCE, MAX_PER_DAY, MAX_OPEN, dayNumber, msUntilReset,
 	getCrate, crateFromBattle, openCrates, addCrates, getShards, addShards
 };

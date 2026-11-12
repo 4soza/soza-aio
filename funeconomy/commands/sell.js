@@ -6,6 +6,7 @@ const { fmt, displayName, send, sendTemporaryError, onCooldown } = require('../u
 const { RANKS } = require('../zoo/data');
 const { takeForExchange, takeRanks } = require('../zoo/zooDb');
 const { parseExchangeArgs, rankSummary } = require('../zoo/args');
+const ringShop = require('../shop/ringShop');
 
 const err = (message, name, text) => sendTemporaryError(message, `**🚫 | ${name}**, ${text}`);
 
@@ -33,6 +34,16 @@ module.exports = {
     async execute(message, args) {
         const userId = message.author.id;
         const name = displayName(message);
+
+        // `ssell 1` sampai `ssell 7` menjual ring (75% dari harga), seperti OwO.
+        if (args.length === 1 && /^[1-7]$/.test(args[0])) {
+            if (onCooldown(message, 'sell')) return;
+            cooldown.start('sell', userId);
+            const sold = await ringShop.sellRing(userId, args[0]);
+            if (sold.error) return err(message, name, "You don't have that ring!");
+            return send(message, `**💰 | ${name}** sold ${ringShop.article(sold.ring.name)} **${sold.ring.name}** ${sold.ring.emoji} for **${cfg.CASH_EMOJI} ${fmt(sold.price)}**`);
+        }
+
         const parsed = parseExchangeArgs(args);
 
         if (parsed.error === 'none') return err(message, name, 'Please specify what rank/animal to sell!');

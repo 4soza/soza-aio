@@ -123,3 +123,10 @@ Berdasarkan OwO Bot oleh Christopher Thai (CC BY-NC-SA 4.0). Semua hewan memakai
 - Senjata: `scrate` (crate dari battle), `sweapon` (`sw`), `sweaponshard` (`sws`).
 - Hewan di tim aktif ikut mendapat XP saat hunt.
 - Tidak dibuat: sistem patreon, event, guild boss, gambar battle (diganti teks/embed).
+
+### Shop, inventory, dan marriage
+
+- `sshop` (ring dan toko senjata), `sshop weapon`, `sbuy <id>` (ring 1-7 pakai cash, crate/senjata pakai weapon shard), `sinv`, `sequip <id>`.
+- `ssell 1` sampai `ssell 7` menjual ring (75% dari harga).
+- `smarry @user <ring id>`, `sam` (`sacceptmarriage`), `sdm` (`sdeclinemarriage`), `sdivorce`.
+- Wallpaper tidak dibuat.

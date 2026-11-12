@@ -143,6 +143,12 @@ async function listWeapons(userId, { page = 0, perPage = 15, sort = 'id', wid } 
 	return { docs, total };
 }
 
+/* Jumlah senjata per jenis (inventory): [{ wid, count }] */
+async function countByType(userId) {
+	const rows = await Weapon.aggregate([{ $match: { userId } }, { $group: { _id: '$wid', count: { $sum: 1 } } }]);
+	return rows.map((r) => ({ wid: r._id, count: r.count }));
+}
+
 /* Pasang senjata ke hewan (hewan hanya boleh punya satu senjata). Return true bila berhasil. */
 async function equip(userId, uwid, animalKey) {
 	const updated = await Weapon.findOneAndUpdate(
@@ -272,6 +278,6 @@ async function weaponsForAnimals(userId, names) {
 module.exports = {
 	SELL_PRICES, SHARD_PRICES, RANK_NAMES, REROLL_PRICE, SORTS,
 	rankFromAlias, shortenUWID, expandUWID, parseWeapon, toDoc, nextUwid, randomWeapon, saveWeapon,
-	getWeaponDoc, getWeapon, listWeapons, equip, unequip, setFavorite, addKills, rankBounds,
+	getWeaponDoc, getWeapon, listWeapons, countByType, equip, unequip, setFavorite, addKills, rankBounds,
 	removeWeapon, removeRank, startReroll, pendingWeapon, confirmReroll, cancelReroll, weaponsForAnimals
 };
