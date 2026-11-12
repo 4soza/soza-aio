@@ -4,6 +4,7 @@
  *
  * Tampilan senjata: daftar (paging tombol), detail, dan perbandingan reroll.
  */
+const emojis = require('../customEmoji');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const cfg = require('../config');
 const weaponDb = require('./weaponDb.js');
@@ -11,7 +12,7 @@ const WeaponInterface = require('./WeaponInterface.js');
 const { ANIMALS } = require('../zoo/data');
 const { EMBED_COLOR } = require('./battleDisplay.js');
 const { EXPIRED_COLOR } = require('../gameExpiry');
-const { SHARD_EMOJI } = require('./commandUtil.js');
+
 
 const PREFIX = 'fbattle';
 const PER_PAGE = 15;
@@ -163,4 +164,4 @@ function rerollMessage(ownerId, ownerName, oldWeapon, newWeapon, { disabled = fa
 	return { content: note || '', embeds: [embed], components: [row] };
 }
 
-module.exports = { PREFIX, PER_PAGE, listMessage, helpText, RANK_NAMES, SORT_LABELS, detailEmbed, describeWeapon, rerollMessage, weaponIcons, SHARD_EMOJI };
+module.exports = { PREFIX, PER_PAGE, listMessage, helpText, RANK_NAMES, SORT_LABELS, detailEmbed, describeWeapon, rerollMessage, weaponIcons };

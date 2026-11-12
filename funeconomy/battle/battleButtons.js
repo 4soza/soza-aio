@@ -7,6 +7,7 @@
  *   fbattle:wp|wpf|wps|wph:...                         daftar senjata (halaman, filter, sort, bantuan)
  *   fbattle:rr:<confirm|cancel|again>:<ownerId>:<uwid> reroll senjata
  */
+const emojis = require('../customEmoji');
 const { MessageFlags } = require('discord.js');
 const friend = require('./battleFriend.js');
 const weaponDb = require('./weaponDb.js');
@@ -81,7 +82,7 @@ async function handleReroll(interaction, parts) {
 		const type = doc.pending.type;
 		const result = await weaponDb.startReroll(ownerId, uwid, type);
 		if (result.error === 'shards') {
-			return interaction.update(weaponView.rerollMessage(ownerId, name, current, next, { note: `You don't have enough ${weaponView.SHARD_EMOJI} Weapon Shards!`, color: 0xff0000 }));
+			return interaction.update(weaponView.rerollMessage(ownerId, name, current, next, { note: `You don't have enough ${emojis.shard()} Weapon Shards!`, color: 0xff0000 }));
 		}
 		if (result.error) return interaction.update({ content: 'This reroll is no longer active.', components: [] });
 		return interaction.update(weaponView.rerollMessage(ownerId, name, result.weapon, result.next));

@@ -35,11 +35,12 @@ function twemojiCode(emoji) {
 }
 
 function loadEmoji(emoji) {
-    const code = twemojiCode(emoji);
+    const customId = require('../customEmoji').customId(emoji);
+    const code = customId ? `custom-${customId}` : twemojiCode(emoji);
     if (!code) return Promise.resolve(null);
     if (!emojiCache.has(code)) {
         const attempt = Promise.race([
-            emojiLoader(`${TWEMOJI_URL}${code}.png`),
+            emojiLoader(customId ? `https://cdn.discordapp.com/emojis/${customId}.png?size=64` : `${TWEMOJI_URL}${code}.png`),
             new Promise((resolve) => setTimeout(() => resolve(null), FETCH_TIMEOUT_MS))
         ]).catch(() => null);
         // Gagal tidak disimpan supaya bisa dicoba lagi di battle berikutnya.
