@@ -45,7 +45,8 @@ module.exports = {
                             { name: 'Suggestion', value: 'suggestion' },
                             { name: 'Feedback', value: 'feedback' },
                             { name: 'Report', value: 'report' },
-                            { name: 'Partnership', value: 'partnership' }
+                            { name: 'Partnership', value: 'partnership' },
+                            { name: 'Request become a Admin', value: 'requestadmin' }
                         ))
                 .addUserOption(option =>
                     option.setName('user')
@@ -335,11 +336,12 @@ async function sendTicketEmbed(channel) {
         .setCustomId('select_ticket_type')
         .setPlaceholder('Choose ticket type')
         .addOptions([
-            { label: '🆘 Support', value: 'support' },
+            { label: '<:CodeXSupport:1570440948322795586> Support', value: 'support' },
             { label: '📂 Suggestion', value: 'suggestion' },
             { label: '💜 Feedback', value: 'feedback' },
             { label: '⚠️ Report', value: 'report' },
-            { label: '🤝 Partnership', value: 'partnership' }
+            { label: '<:PartnerServer:1570440742080356553> Partnership', value: 'partnership' },
+            { label: '<:CodeXAdmin:1570440596819284030> Request become a Admin', value: 'requestadmin' }
         ]);
 
     const row = new ActionRowBuilder().addComponents(menu);
