@@ -34,6 +34,20 @@ async function nameOf(client, guild, id) {
     return user ? (user.globalName || user.username) : 'someone';
 }
 
+/* Username (bukan display name) untuk user id. */
+async function usernameOf(client, guild, id) {
+    const cached = guild?.members?.cache?.get(id);
+    if (cached?.user?.username) return cached.user.username;
+    const user = await client?.users?.fetch?.(id).catch(() => null);
+    return user?.username || 'someone';
+}
+
+/* URL gambar dari emoji kustom <:nama:id> / <a:nama:id>; null kalau emoji Unicode. */
+function emojiImageUrl(emoji) {
+    const m = /^<(a?):\w+:(\d+)>$/.exec(String(emoji || ''));
+    return m ? `https://cdn.discordapp.com/emojis/${m[2]}.${m[1] ? 'gif' : 'png'}?size=128` : null;
+}
+
 const yesNo = (action, a, b, disabled = false) => [new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId(`${BUTTON_PREFIX}:${action}:yes:${a}${b !== undefined ? `:${b}` : ''}`).setLabel('Yes').setEmoji('✅').setStyle(ButtonStyle.Success).setDisabled(disabled),
     new ButtonBuilder().setCustomId(`${BUTTON_PREFIX}:${action}:no:${a}${b !== undefined ? `:${b}` : ''}`).setLabel('No').setEmoji('❎').setStyle(ButtonStyle.Danger).setDisabled(disabled)
@@ -143,11 +157,16 @@ async function display(message, client) {
         return fail(message, `you are not married! Please purchase and include the ring id in the command! ex. \`${cfg.PREFIX}marry @user {ringID}\``, 3000);
     }
     const ring = ringShop.getRing(marriage.ring);
-    const partner = await nameOf(client, message.guild, db.partnerOf(marriage, message.author.id));
-    const description = `${ring.emoji} Married since **${formatDate(marriage.marriedAt)}** (**${db.marriedDays(marriage)} days**)\n`
+    const partnerId = db.partnerOf(marriage, message.author.id);
+    const partner = await usernameOf(client, message.guild, partnerId);
+    const ringUrl = emojiImageUrl(ring.emoji);
+    // Cincin di kanan (thumbnail) seperti OwO; kalau emoji Unicode, tetap di awal teks
+    const body = `Married since **${formatDate(marriage.marriedAt)}** (**${db.marriedDays(marriage)} days**)\n`
         + `You have claimed **${marriage.dailies || 0} dailies** together!\n${pick(QUOTES)} ${pick(QUOTES2)}`;
+    const description = ringUrl ? body : `${ring.emoji} ${body}`;
     const embed = { author: { name: `${name}, you are happily married to ${partner}!` }, description, color: EMBED_COLOR };
-    if (!canEmbed(message)) return send(message, `${ring.emoji} | **${name}**, you are happily married to **${partner}**!\n${description}`);
+    if (ringUrl) embed.thumbnail = { url: ringUrl };
+    if (!canEmbed(message)) return send(message, `${ring.emoji} | **${name}**, you are happily married to **${partner}**!\n${ringUrl ? `${ring.emoji} ` : ''}${description}`);
     return message.channel.send({ embeds: [embed], allowedMentions: { parse: [] } });
 }
 
