@@ -27,6 +27,7 @@ const DEFS = {
     lring: { animated: true, fallback: '🟠💍' },
     fring: { animated: true, fallback: '🟡💍' },
     shard: { fallback: '🧩' },
+    unknown: { fallback: '❓' }, // tanda tanya hitam untuk hewan yang belum didapat di zoo
     // lootbox: lb1 diam, lb2 bergerak, lb3 terbuka. crate senjata: cr1 diam, cr2 bergerak, cr3 terbuka.
     lb1: { fallback: '📦' },
     lb2: { animated: true, fallback: '📦' },
@@ -87,6 +88,7 @@ const gear = (kind, className, id) => {
     return live.get(`${kind}_${byId || String(className).toLowerCase()}`) || null;
 };
 const shard = () => get('shard');
+const unknown = () => get('unknown');
 const crate = () => get('cr1');
 const crateShake = () => get('cr2');
 const crateOpen = () => get('cr3');
@@ -158,4 +160,4 @@ function reset() { live.clear(); apply(); }
 /** id emoji kustom dari teks `<:nama:id>` (atau null untuk emoji Unicode). */
 const customId = (text) => /^<a?:\w+:(\d+)>$/.exec(String(text || ''))?.[1] || null;
 
-module.exports = { DEFS, get, gear, shard, crate, crateShake, crateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId };
+module.exports = { DEFS, get, gear, shard, unknown, crate, crateShake, crateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId };
