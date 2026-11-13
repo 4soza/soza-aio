@@ -51,6 +51,10 @@ const PASSIVE_NAMES = ['Absolve', 'Critical', 'Discharge', 'Energize', 'Enrage',
     'Rend', 'Execute', 'Photosynthesis', 'Tide', 'Ferocity', 'Sharpness', 'Wildfire', 'Frostbite', 'Lifebloom'];
 for (const name of WEAPON_NAMES) DEFS[`w_${name.toLowerCase()}`] = { fallback: '' };
 for (const name of PASSIVE_NAMES) DEFS[`p_${name.toLowerCase()}`] = { fallback: '' };
+// Ikon buff/debuff di samping nama hewan (b_<nama>), key = id buff di funeconomy/battle/buffs.
+const BUFF_KEYS = { 1: 'b_taunt', 2: 'b_poison', 3: 'b_flame', 4: 'b_defenseup', 5: 'b_freeze', 6: 'b_attackup',
+    7: 'b_attackupplus', 8: 'b_attackupplusplus', 9: 'b_mortality', 10: 'b_celebration', 11: 'b_leech', 12: 'b_stinky' };
+for (const key of Object.values(BUFF_KEYS)) DEFS[key] = { fallback: '' };
 // Gem buff (cgem1..fgem4): huruf = rarity (c u r e m l f), angka = bentuk (1 permata, 2 lingkaran, 3 hati, 4 bintang).
 const GEM_LETTERS = ['c', 'u', 'r', 'e', 'm', 'l', 'f'];
 for (const letter of GEM_LETTERS) {
@@ -87,6 +91,8 @@ const gear = (kind, className, id) => {
     const byId = id != null ? GEAR_BY_ID[kind === 'wi' ? 'w' : kind]?.get(Number(id)) : null; // wi_ = ikon inventory, id sama dengan weapon
     return live.get(`${kind}_${byId || String(className).toLowerCase()}`) || null;
 };
+/** Emoji kustom buff menurut id buff; null kalau belum tersedia. */
+const buff = (id) => live.get(BUFF_KEYS[id]) || null;
 const shard = () => get('shard');
 const unknown = () => get('unknown');
 const crate = () => get('cr1');
@@ -160,4 +166,4 @@ function reset() { live.clear(); apply(); }
 /** id emoji kustom dari teks `<:nama:id>` (atau null untuk emoji Unicode). */
 const customId = (text) => /^<a?:\w+:(\d+)>$/.exec(String(text || ''))?.[1] || null;
 
-module.exports = { DEFS, get, gear, shard, unknown, crate, crateShake, crateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId };
+module.exports = { DEFS, get, gear, buff, shard, unknown, crate, crateShake, crateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId };
