@@ -27,7 +27,7 @@ for (const [type, def] of Object.entries(TYPES)) {
             key, type, id: def.firstId + i, chance: CHANCE[i], length: def.lengths[i],
             amount: def.amounts?.[i], rank: rankId,
             rankName: rankId[0].toUpperCase() + rankId.slice(1),
-            emoji: `${def.icon}${RANKS[rankId].emoji}`
+            icon: def.icon, emoji: `${def.icon}${RANKS[rankId].emoji}`
         };
         GEMS[key] = gem;
         GEMS_BY_TYPE[type].push(gem);
