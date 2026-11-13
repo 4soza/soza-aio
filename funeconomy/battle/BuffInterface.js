@@ -11,6 +11,7 @@ module.exports = class BuffInterface {
 	/* Constructor */
 	constructor(from, qualities, duration, noCreate, opt = {}) {
 		this.init();
+		this.emoji = require('../customEmoji.js').buff(this.id) || this.emoji;
 		if (noCreate) return;
 
 		this.wear = WeaponInterface.getWear(opt.wear);
