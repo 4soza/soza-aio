@@ -4,6 +4,7 @@ const ChannelSettings = require('../models/funeconomy/channelSettings');
 const LevelCardPreference = require('../models/funeconomy/levelCardPreference');
 const Registration = require('../models/funeconomy/registration');
 const { AttachmentBuilder, PermissionsBitField } = require('discord.js');
+const emojis = require('./customEmoji');
 const { fmt, displayName } = require('./utils');
 
 let mainPrefix = null;
@@ -13,7 +14,12 @@ try { mainPrefix = require('../config.json').prefix || null; } catch { /* config
 function levelUpText(name, result, { withRewards = true } = {}) {
     const head = `${cfg.EMOJI.LEVELUP} | **${name}** leveled up!`;
     if (!withRewards) return head;
-    return `${head}\n${cfg.CASH_EMOJI} | **${fmt(result.reward)}** ${cfg.CASH_NAME}`;
+    const lines = [`${cfg.CASH_EMOJI} | **${fmt(result.reward)}** ${cfg.CASH_NAME}`];
+    if (result.boxes > 0) {
+        lines.push(`${emojis.lootbox()} | **${fmt(result.boxes)}** lootbox`);
+        lines.push(`${emojis.crate()} | **${fmt(result.boxes)}** weapon crate`);
+    }
+    return `${head}\n${lines.join('\n')}`;
 }
 
 function canAttach(channel) {
@@ -31,7 +37,7 @@ async function buildCard({ channel, name, userId, avatarURL, result }) {
             ? await LevelCardPreference.getBackgroundBuffer(userId)
             : null;
         const buffer = await generateLevelUpCard({
-            name, avatarURL, level: result.levelAfter, reward: result.reward, backgroundBuffer
+            name, avatarURL, level: result.levelAfter, reward: result.reward, boxes: result.boxes || 0, backgroundBuffer
         });
         return new AttachmentBuilder(buffer, { name: 'levelup.png' });
     } catch (error) {

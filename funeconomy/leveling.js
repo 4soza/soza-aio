@@ -42,6 +42,12 @@ function rewardForLevels(from, to) {
     return cfg.LEVELING.REWARD_PER_LEVEL * ((to * (to + 1)) / 2 - (from * (from + 1)) / 2);
 }
 
+/** Lootbox dan crate hadiah level up: naik ke level N memberi N lootbox + N crate. */
+function boxesForLevels(from, to) {
+    if (to <= from) return 0;
+    return (to * (to + 1)) / 2 - (from * (from + 1)) / 2;
+}
+
 const rollChatXp = () => crypto.randomInt(cfg.LEVELING.CHAT_XP_MIN, cfg.LEVELING.CHAT_XP_MAX + 1);
 
 function planGain(state, { source, day, roll = rollChatXp }) {
@@ -57,4 +63,4 @@ function planGain(state, { source, day, roll = rollChatXp }) {
     return { gain: chatGain + bonus, chatGain, bonus, setDay: true, newToday: today + chatGain };
 }
 
-module.exports = { MAX_LEVEL, xpNeeded, totalXpForLevel, levelFromXp, progress, rewardForLevels, planGain };
+module.exports = { MAX_LEVEL, xpNeeded, totalXpForLevel, levelFromXp, progress, rewardForLevels, boxesForLevels, planGain };

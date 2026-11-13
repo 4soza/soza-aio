@@ -1,5 +1,7 @@
 const path = require('path');
 const { createCanvas, loadImage, GlobalFonts } = require('@napi-rs/canvas');
+const cfg = require('./config');
+const emojis = require('./customEmoji');
 const { fmt } = require('./utils');
 
 const FONT = 'SozaLevelFont';
@@ -155,6 +157,26 @@ function iconCash(ctx, x, y, s) {
     ctx.fillRect(x + s * 0.78, y + s * 0.64, s * 0.12, s * 0.06);
 }
 
+// Gambar ikon hadiah: lootbox/crate dari file lokal, cash dari emoji cash fun economy (CDN). Hasilnya disimpan di memori.
+const iconCache = new Map();
+const ASSET_DIR = path.join(__dirname, '../assets/emoji');
+const withTimeout = (promise, ms) => Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))]);
+
+async function loadIcon(key) {
+    if (iconCache.has(key)) return iconCache.get(key);
+    let image = null;
+    try {
+        if (key === 'cash') {
+            const id = emojis.customId(cfg.CASH_EMOJI);
+            if (id) image = await withTimeout(loadImage(`https://cdn.discordapp.com/emojis/${id}.png?size=128`), 4000);
+        } else {
+            image = await loadImage(path.join(ASSET_DIR, `${key}.png`));
+        }
+    } catch { /* pakai ikon gambar sendiri di bawah */ }
+    if (image) iconCache.set(key, image);
+    return image;
+}
+
 /** Kecilkan font sampai teks muat dalam maxWidth. */
 function fitFont(ctx, text, startSize, maxWidth) {
     let size = startSize;
@@ -170,7 +192,7 @@ function fitFont(ctx, text, startSize, maxWidth) {
  * Buat kartu level up (PNG Buffer).
  * @param {{ name?: string, avatarURL?: string|null, level: number, reward: number, backgroundBuffer?: Buffer|null }} opts
  */
-async function generateLevelUpCard({ name, avatarURL, level, reward, backgroundBuffer }) {
+async function generateLevelUpCard({ name, avatarURL, level, reward, boxes = 0, backgroundBuffer }) {
     ensureFont();
     const canvas = createCanvas(W * SCALE, H * SCALE);
     const ctx = canvas.getContext('2d');
@@ -214,15 +236,26 @@ async function generateLevelUpCard({ name, avatarURL, level, reward, backgroundB
     ctx.fillStyle = 'rgba(255,255,255,0.9)';
     ctx.fillRect(dividerX, 36, 3, H - 72);
 
-    // Satu baris hadiah (cash), diletakkan di tengah panel kanan.
-    const cy = H / 2;
-    const iconSize = 64;
-    iconCash(ctx, dividerX + 30, cy - iconSize / 2, iconSize);
-    ctx.fillStyle = 'rgba(255,255,255,0.92)';
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    ctx.font = font(52, 'normal');
-    ctx.fillText(`+${fmt(reward)}`, W - 38, cy);
+    // Baris hadiah di panel kanan: cash, lootbox, dan crate (lootbox/crate hanya kalau ada).
+    const rows = [{ key: 'cash', amount: reward }];
+    if (boxes > 0) rows.push({ key: 'lb1', amount: boxes }, { key: 'cr1', amount: boxes });
+    const iconSize = rows.length > 1 ? 62 : 72;
+    const gap = rows.length > 1 ? 86 : 0;
+    for (let i = 0; i < rows.length; i += 1) {
+        const cy = H / 2 + (i - (rows.length - 1) / 2) * gap;
+        const icon = await loadIcon(rows[i].key);
+        if (icon) ctx.drawImage(icon, dividerX + 30, cy - iconSize / 2, iconSize, iconSize);
+        else if (rows[i].key === 'cash') iconCash(ctx, dividerX + 30, cy - iconSize / 2, iconSize);
+        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        const label = `+${fmt(rows[i].amount)}`;
+        let size = rows.length > 1 ? 46 : 52;
+        ctx.font = font(size, 'normal');
+        const room = W - 38 - (dividerX + 30 + iconSize + 14);
+        while (size > 20 && ctx.measureText(label).width > room) { size -= 2; ctx.font = font(size, 'normal'); }
+        ctx.fillText(label, W - 38, cy);
+    }
 
     ctx.restore();
     return canvas.toBuffer('image/png');
