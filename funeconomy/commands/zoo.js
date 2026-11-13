@@ -2,6 +2,7 @@
 const { displayName, send, onCooldown } = require('../utils');
 const { RANKS, RANK_ORDER, ANIMALS, ANIMALS_BY_RANK, zooPoints } = require('../zoo/data');
 const { getZoo } = require('../zoo/zooDb');
+const emojis = require('../customEmoji');
 const { toSmallNum, chunkLines, BLANK } = require('../zoo/format');
 
 // Rank yang menampilkan semua hewan (yang belum ditemukan jadi ❓)
@@ -29,7 +30,7 @@ function buildZoo(name, docs, useTotal) {
         const keys = ANIMALS_BY_RANK[rankId];
         let cells;
         if (PLACEHOLDER_RANKS.has(rankId)) {
-            cells = keys.map((k) => (shown[k] ? `${ANIMALS[k].uni}${toSmallNum(shown[k], digits)}` : `❓${toSmallNum(0, digits)}`));
+            cells = keys.map((k) => (shown[k] ? `${ANIMALS[k].uni}${toSmallNum(shown[k], digits)}` : `${emojis.unknown()}${toSmallNum(0, digits)}`));
         } else {
             cells = keys.filter((k) => shown[k]).map((k) => `${ANIMALS[k].uni}${toSmallNum(shown[k], digits)}`);
         }
