@@ -178,10 +178,12 @@ async function updateTeamStreak(userId, index, { addStreak, resetStreak }) {
 async function buildAnimals(userId, slots, teamIndex, level) {
 	const names = slots.filter(Boolean);
 	if (!names.length) return [];
-	const docs = await Animal.find({ userId, name: { $in: names } }).lean();
+	const [docs, weaponDocs] = await Promise.all([
+		Animal.find({ userId, name: { $in: names } }).lean(),
+		weaponDb.weaponsForAnimals(userId, names)
+	]);
 	const byName = {};
 	for (const d of docs) byName[d.name] = d;
-	const weaponDocs = await weaponDb.weaponsForAnimals(userId, names);
 
 	const team = [];
 	slots.forEach((key, i) => {
