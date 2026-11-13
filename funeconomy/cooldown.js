@@ -5,6 +5,10 @@ const until = new Map();
 // key -> true kalau pesan "slow down" sudah dikirim pada jendela cooldown ini (supaya bot tidak ikut spam).
 const warned = new Set();
 
+// Pendengar yang dipanggil setiap kali cooldown sebuah game dimulai (dipakai task/quest untuk menghitung gamble).
+const startListeners = [];
+const onStart = (fn) => { startListeners.push(fn); };
+
 function prune(now) {
     if (until.size < 5000) return;
     for (const [key, end] of until) {
@@ -25,6 +29,9 @@ function start(game, userId, now = Date.now()) {
     const key = `${game}:${userId}`;
     until.set(key, now + ms);
     warned.delete(key);
+    for (const fn of startListeners) {
+        try { fn(game, userId); } catch { /* pendengar tidak boleh mengganggu command */ }
+    }
 }
 
 /**
@@ -59,4 +66,4 @@ function formatTime(ms) {
     return parts.join(' ');
 }
 
-module.exports = { remaining, start, check, seconds, formatTime };
+module.exports = { onStart, remaining, start, check, seconds, formatTime };
