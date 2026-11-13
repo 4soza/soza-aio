@@ -14,12 +14,16 @@ const teamUtil = require('../battle/teamUtil');
 const { trackFor } = require('../quests/questTrack');
 
 /** Lakukan satu hunt (setelah biaya dibayar). Dipisah dari command supaya bisa diuji. */
-async function performHunt(userId, { rng = Math.random, now = Date.now() } = {}) {
-    // Ronde 1: baca gem aktif dan pet team bersamaan
-    const [active, pets] = await Promise.all([
+function readHuntData(userId) {
+    return Promise.all([
         Gems.getActiveGems(userId),
         Promise.resolve().then(() => teamUtil.getActiveTeamPets(userId)).catch(() => []) // tanpa team
     ]);
+}
+
+async function performHunt(userId, { rng = Math.random, now = Date.now(), preread } = {}) {
+    // Ronde 1: baca gem aktif dan pet team bersamaan (bisa sudah dibaca lebih awal, bersamaan dengan potong cash)
+    const [active, pets] = await (preread || readHuntData(userId));
     const teamPets = Array.isArray(pets) ? pets : [];
     const { count, opts } = Gems.huntEffects(active);
     const hunt = huntMany(count, opts, rng);
@@ -74,12 +78,15 @@ module.exports = {
         if (onCooldown(message, 'hunt')) return;
         cooldown.start('hunt', userId);
 
+        // Potong cash dan baca data hunt bersamaan (satu putaran database, bukan dua)
+        const preread = readHuntData(userId);
+        preread.catch(() => {});
         const paid = await Economy.deduct(userId, HUNT_COST);
         if (!paid) return sendTemporaryError(message, errorLine(name, `you don't have enough ${cfg.CASH_NAME}!`));
 
         let result;
         try {
-            result = await performHunt(userId);
+            result = await performHunt(userId, { preread });
         } catch (error) {
             console.error('[FUNECONOMY] hunt failed:', error.message);
             await Economy.add(userId, HUNT_COST).catch(() => {});
