@@ -75,7 +75,7 @@ function teamField(name, animals, display) {
  * Embed untuk turn ke-`turn` (0 = awal, getLength() = hasil akhir).
  * Mengubah state hewan di event agar sesuai turn tersebut.
  */
-function renderTurn(event, turn, { display = 'image', showLogs = false, title } = {}) {
+function renderTurn(event, turn, { display = 'image', showLogs = false, title, iconURL } = {}) {
 	const length = event.getLength();
 	if (turn === 0) {
 		updateTeamStats(event.player.team, 100);
@@ -88,7 +88,7 @@ function renderTurn(event, turn, { display = 'image', showLogs = false, title } 
 
 	const embed = {
 		color: EMBED_COLOR,
-		author: { name: title || `${event.playerName} goes into battle!` },
+		author: { name: title || `${event.playerName} goes into battle!`, ...(iconURL ? { icon_url: iconURL } : {}) },
 		fields: [
 			teamField(event.player.name || `${event.playerName}'s team`, event.player.team, display),
 			teamField(event.enemy.name || `${event.enemyName}'s team`, event.enemy.team, display)
@@ -128,9 +128,9 @@ function finalText(event) {
  * Mode display "image" menggambar tim dan bar HP/WP sebagai gambar (lihat battleImage.js);
  * kalau gambar gagal dibuat, dipakai embed teks.
  */
-async function displayBattle(event, setting, send, { title, delayMs = 2000 } = {}) {
+async function displayBattle(event, setting, send, { title, iconURL, delayMs = 2000 } = {}) {
 	if (!event.simulated || !event.initialized) return null;
-	const opts = { display: setting.display, showLogs: !!setting.showLogs, title };
+	const opts = { display: setting.display, showLogs: !!setting.showLogs, title, iconURL };
 	const length = event.getLength();
 
 	let turns = [length];
