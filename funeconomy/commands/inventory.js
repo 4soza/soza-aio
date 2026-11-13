@@ -28,7 +28,11 @@ async function collectItems(userId) {
     if (crate.boxcount > 0) items.push({ id: CRATE_ID, emoji: emojis.crate(), count: crate.boxcount });
     for (const { wid, count } of byType) {
         const WeaponClass = WeaponInterface.weapons[wid];
-        if (WeaponClass && count > 0) items.push({ id: wid + 100, emoji: WeaponClass.getEmoji, count });
+        if (WeaponClass && count > 0) {
+            // Ikon tanpa bingkai (wi_) kalau ada, lalu ikon biasa (w_), lalu emoji bawaan.
+            const emoji = emojis.gear('wi', WeaponClass.name, wid) || emojis.gear('w', WeaponClass.name, wid) || WeaponClass.getEmoji;
+            items.push({ id: wid + 100, emoji, count });
+        }
     }
     return items;
 }
