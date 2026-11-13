@@ -50,6 +50,14 @@ const PASSIVE_NAMES = ['Absolve', 'Critical', 'Discharge', 'Energize', 'Enrage',
     'Rend', 'Execute', 'Photosynthesis', 'Tide', 'Ferocity', 'Sharpness', 'Wildfire', 'Frostbite', 'Lifebloom'];
 for (const name of WEAPON_NAMES) DEFS[`w_${name.toLowerCase()}`] = { fallback: '' };
 for (const name of PASSIVE_NAMES) DEFS[`p_${name.toLowerCase()}`] = { fallback: '' };
+// Gem buff (cgem1..fgem4): huruf = rarity (c u r e m l f), angka = bentuk (1 permata, 2 lingkaran, 3 hati, 4 bintang).
+const GEM_LETTERS = ['c', 'u', 'r', 'e', 'm', 'l', 'f'];
+for (const letter of GEM_LETTERS) {
+    for (let shape = 1; shape <= 4; shape += 1) DEFS[`${letter}gem${shape}`] = { fallback: '', animated: letter === 'l' || letter === 'f' };
+}
+// Tipe gem di zoo/gems.js -> bentuk emoji.
+const GEM_SHAPES = { Hunting: 1, Empowering: 2, Lucky: 3 };
+
 // Ikon weapon tanpa bingkai untuk inventory (assets/emoji/wi_<nama>.png). Opsional: kalau tidak ada, inventory memakai ikon w_ yang berbingkai.
 try {
     for (const file of fs.readdirSync(DIR)) {
@@ -104,6 +112,11 @@ function apply() {
     for (const [rank, key] of Object.entries(ZOO_RANKS)) if (RANKS[rank]) RANKS[rank].emoji = get(key);
     const { ranks } = require('./battle/WeaponInterface');
     for (const entry of ranks) if (WEAPON_RANKS[entry[1]]) entry[2] = get(WEAPON_RANKS[entry[1]]);
+    const { GEMS } = require('./zoo/gems');
+    for (const gem of Object.values(GEMS)) {
+        const custom = live.get(`${gem.key.slice(0, 1)}gem${GEM_SHAPES[gem.type]}`);
+        gem.emoji = custom || `${gem.icon}${RANKS[gem.rank].emoji}`;
+    }
     const ringShop = require('./shop/ringShop');
     for (const [id, key] of Object.entries(RINGS)) if (ringShop.RINGS[id]) ringShop.RINGS[id].emoji = get(key);
 }
