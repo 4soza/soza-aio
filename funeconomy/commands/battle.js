@@ -9,6 +9,7 @@ const friend = require('../battle/battleFriend');
 const { displayBattle } = require('../battle/battleDisplay');
 const { displayName, send, onCooldown } = require('../utils');
 const { fail, userName, resolveUser, isUserToken } = require('../battle/commandUtil');
+const { trackFor } = require('../quests/questTrack');
 
 // Satu battle per user pada satu waktu
 const running = new Set();
@@ -45,6 +46,8 @@ module.exports = {
             event.simulateBattle();
             cooldown.start('battle', userId);
             const { crate } = await event.distributeRewards({ userId });
+            trackFor(message, 'battle');
+            if (crate?.found) trackFor(message, 'crate');
 
             await displayBattle(event, setting, (embed, files) => message.channel.send({ embeds: [embed], files, allowedMentions: { parse: [] } }),
                 { title: `${userName(message.guild, message.author)} goes into battle!` });

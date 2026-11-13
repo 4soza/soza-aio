@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const cfg = require('../config');
 const Luck = require('../../models/funeconomy/luck');
+const { trackFor } = require('../quests/questTrack');
 const { fmt, displayName, send, errorLine } = require('../utils');
 
 // Soza's self-prayer command, inspired by OwO's luck-point presentation.
@@ -29,6 +30,7 @@ module.exports = {
             }
             return sent;
         }
+        trackFor(message, 'pray');
         const line = PRAY_LINES[crypto.randomInt(PRAY_LINES.length)];
         return send(message, `**${cfg.PRAY.EMOJI} | ${name}** prays to Soza... ${line}\n**${cfg.EMOJI.BLANK} |** You have **${fmt(result.points)}** luck point(s)!`);
     }

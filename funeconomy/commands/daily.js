@@ -2,6 +2,7 @@ const cfg = require('../config');
 const Economy = require('../../models/funeconomy/economy');
 const cooldown = require('../cooldown');
 const { rewardDaily } = require('../levelUp');
+const { trackFor } = require('../quests/questTrack');
 const { fmt, displayName, send, errorLine, formatDuration, onCooldown } = require('../utils');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -37,6 +38,8 @@ module.exports = {
             `${cfg.EMOJI.DAILY} | You're on a **${fmt(result.streak)}** daily streak!`,
             `${cfg.EMOJI.TIMER} | Your next daily is in: ${formatDuration(msUntilReset(now))}`
         ].join('\n'));
+
+        trackFor(message, 'daily');
 
         // Bonus XP dari daily; level up diumumkan terpisah setelah pesan daily.
         await rewardDaily({

@@ -11,6 +11,7 @@ const Gems = require('../zoo/gems');
 const LootboxDb = require('../zoo/lootboxDb');
 const { msUntilReset, hms, article, BLANK } = require('../zoo/format');
 const teamUtil = require('../battle/teamUtil');
+const { trackFor } = require('../quests/questTrack');
 
 /** Lakukan satu hunt (setelah biaya dibayar). Dipisah dari command supaya bisa diuji. */
 async function performHunt(userId, { rng = Math.random, now = Date.now() } = {}) {
@@ -83,7 +84,11 @@ module.exports = {
             await Economy.add(userId, HUNT_COST).catch(() => {});
             return sendTemporaryError(message, errorLine(name, 'something went wrong while hunting, you were refunded!'));
         }
-        return send(message, buildText(name, result));
+        const sent = await send(message, buildText(name, result));
+        // Task & quest: hunt, lootbox yang ditemukan, dan rank hewan (quest "find")
+        trackFor(message, 'hunt', { ranks: (result.hunt.ordered || []).map((a) => ({ rank: a.rank, count: a.count })) });
+        if (result.lootbox?.claimed) trackFor(message, 'lootbox');
+        return sent;
     },
     _internals: { performHunt, buildText }
 };
