@@ -50,6 +50,13 @@ const PASSIVE_NAMES = ['Absolve', 'Critical', 'Discharge', 'Energize', 'Enrage',
     'Rend', 'Execute', 'Photosynthesis', 'Tide', 'Ferocity', 'Sharpness', 'Wildfire', 'Frostbite', 'Lifebloom'];
 for (const name of WEAPON_NAMES) DEFS[`w_${name.toLowerCase()}`] = { fallback: '' };
 for (const name of PASSIVE_NAMES) DEFS[`p_${name.toLowerCase()}`] = { fallback: '' };
+// Ikon weapon tanpa bingkai untuk inventory (assets/emoji/wi_<nama>.png). Opsional: kalau tidak ada, inventory memakai ikon w_ yang berbingkai.
+try {
+    for (const file of fs.readdirSync(DIR)) {
+        const match = /^(wi_[a-z0-9]+)\.png$/.exec(file);
+        if (match) DEFS[match[1]] = { fallback: '' };
+    }
+} catch { /* tanpa folder assets */ }
 
 const live = new Map(); // key -> '<:nama:id>'
 
@@ -68,7 +75,7 @@ for (const [kind, dir] of [['w', 'weapons'], ['p', 'passives']]) {
     } catch { /* tanpa folder: pakai nama class saja */ }
 }
 const gear = (kind, className, id) => {
-    const byId = id != null ? GEAR_BY_ID[kind]?.get(Number(id)) : null;
+    const byId = id != null ? GEAR_BY_ID[kind === 'wi' ? 'w' : kind]?.get(Number(id)) : null; // wi_ = ikon inventory, id sama dengan weapon
     return live.get(`${kind}_${byId || String(className).toLowerCase()}`) || null;
 };
 const shard = () => get('shard');
