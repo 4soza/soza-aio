@@ -1,7 +1,9 @@
 const cfg = require('../../funeconomy/config');
 const FunEconomy = require('./schema');
 const LevelGuild = require('./levelGuild');
-const { levelFromXp, planGain, rewardForLevels } = require('../../funeconomy/leveling');
+const Lootbox = require('./lootbox');
+const Crate = require('./crate');
+const { levelFromXp, planGain, rewardForLevels, boxesForLevels } = require('../../funeconomy/leveling');
 
 const DUPLICATE_KEY = 11000;
 const MAX_ATTEMPTS = 8;
@@ -26,6 +28,7 @@ async function grantXp(userId, { source, now = Date.now(), roll } = {}) {
         const newXp = xp + plan.gain;
         const levelAfter = Math.max(levelBefore, levelFromXp(newXp));
         const reward = rewardForLevels(levelBefore, levelAfter);
+        const boxes = boxesForLevels(levelBefore, levelAfter);
         const set = { level: levelAfter };
         if (plan.setDay) {
             set.xpDay = day;
@@ -44,9 +47,15 @@ async function grantXp(userId, { source, now = Date.now(), roll } = {}) {
         ).lean();
 
         if (updated) {
+            // Hadiah lootbox + crate (jumlah = level). Update di atas atomik, jadi hanya satu proses yang sampai sini.
+            if (boxes > 0) {
+                await Promise.all([Lootbox, Crate].map((Model) => Model.updateOne(
+                    { userId }, { $inc: { boxcount: boxes } }, { upsert: true, setDefaultsOnInsert: true }
+                ))).catch((error) => console.error('[FUNECONOMY] Level up box reward failed:', error.message));
+            }
             return {
                 gain: plan.gain, chatGain: plan.chatGain, bonus: plan.bonus, capped: false,
-                levelBefore, levelAfter, reward, xp: updated.xp, cash: updated.cash
+                levelBefore, levelAfter, reward, boxes, xp: updated.xp, cash: updated.cash
             };
         }
     }
