@@ -55,7 +55,22 @@ const live = new Map(); // key -> '<:nama:id>'
 
 const get = (key) => live.get(key) ?? DEFS[key]?.fallback ?? '';
 /** Emoji kustom senjata ('w') atau passive ('p') untuk class tertentu; null kalau belum tersedia. */
-const gear = (kind, className) => live.get(`${kind}_${String(className).toLowerCase()}`) || null;
+// Nama class di dalam file kadang beda dari nama file (PStaff, Snail untuk Knowledge, dst.), jadi dicari lewat id.
+const GEAR_BY_ID = { w: new Map(), p: new Map() };
+for (const [kind, dir] of [['w', 'weapons'], ['p', 'passives']]) {
+    const folder = path.join(__dirname, 'battle', dir);
+    try {
+        for (const file of fs.readdirSync(folder)) {
+            if (!file.endsWith('.js')) continue;
+            const id = /this\.id\s*=\s*(\d+)/.exec(fs.readFileSync(path.join(folder, file), 'utf8'))?.[1];
+            if (id) GEAR_BY_ID[kind].set(Number(id), file.slice(0, -3).toLowerCase());
+        }
+    } catch { /* tanpa folder: pakai nama class saja */ }
+}
+const gear = (kind, className, id) => {
+    const byId = id != null ? GEAR_BY_ID[kind]?.get(Number(id)) : null;
+    return live.get(`${kind}_${byId || String(className).toLowerCase()}`) || null;
+};
 const shard = () => get('shard');
 const crate = () => get('cr1');
 const crateShake = () => get('cr2');
