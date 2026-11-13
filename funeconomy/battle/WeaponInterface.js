@@ -111,7 +111,7 @@ module.exports = class WeaponInterface {
 		let stats = this.toStats(qualities);
 
 		/* Emoji kustom (assets/emoji/w_<nama>.png) menggantikan emoji bawaan kalau sudah diunggah */
-		const customEmoji = require('../customEmoji.js').gear('w', this.constructor.name);
+		const customEmoji = require('../customEmoji.js').gear('w', this.constructor.name, this.id);
 		if (customEmoji) {
 			this.emojis = Array(7).fill(customEmoji);
 			this.pristineEmojis = Array(7).fill(customEmoji);
