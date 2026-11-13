@@ -35,23 +35,29 @@ module.exports = {
         if (running.has(userId)) return;
         running.add(userId);
         try {
-            const player = await teamUtil.getBattleTeam(userId);
+            const [player, setting] = await Promise.all([
+                teamUtil.getBattleTeam(userId),
+                settingsDb.getBattleSetting(userId)
+            ]);
             if (!player) return fail(message, `Create a team with the command \`${cfg.PREFIX}team add {animal}\``, 5000);
             if (onCooldown(message, 'battle')) return;
 
-            const setting = await settingsDb.getBattleSetting(userId);
             const enemy = teamUtil.generateEnemyTeam(player);
             const event = new BattleEvent({ playerName: name, enemyName: 'Enemy' });
             event.init(player, enemy);
             event.simulateBattle();
             cooldown.start('battle', userId);
-            const { crate } = await event.distributeRewards({ userId });
+            // Hadiah (XP/streak/crate) ditulis ke database sambil pesan battle dikirim.
+            // pXP dihitung sinkron di awal distributeRewards, jadi tampilan sudah lengkap.
+            const rewards = event.distributeRewards({ userId });
+            rewards.catch(() => {});
             trackFor(message, 'battle');
-            if (crate?.found) trackFor(message, 'crate');
 
             await displayBattle(event, setting, (embed, files) => message.channel.send({ embeds: [embed], files, allowedMentions: { parse: [] } }),
                 { title: `${userName(message.guild, message.author)} goes into battle!`, iconURL: message.author.displayAvatarURL?.({ extension: 'png', size: 64 }) });
 
+            const { crate } = await rewards;
+            if (crate?.found) trackFor(message, 'crate');
             if (crate?.found) {
                 const h = Math.floor(crate.resetsIn / 3600000);
                 const m = Math.floor((crate.resetsIn % 3600000) / 60000);

@@ -15,31 +15,32 @@ const { trackFor } = require('../quests/questTrack');
 
 /** Lakukan satu hunt (setelah biaya dibayar). Dipisah dari command supaya bisa diuji. */
 async function performHunt(userId, { rng = Math.random, now = Date.now() } = {}) {
-    const active = await Gems.getActiveGems(userId);
+    // Ronde 1: baca gem aktif dan pet team bersamaan
+    const [active, pets] = await Promise.all([
+        Gems.getActiveGems(userId),
+        Promise.resolve().then(() => teamUtil.getActiveTeamPets(userId)).catch(() => []) // tanpa team
+    ]);
+    const teamPets = Array.isArray(pets) ? pets : [];
     const { count, opts } = Gems.huntEffects(active);
     const hunt = huntMany(count, opts, rng);
 
     const counts = {};
     for (const a of hunt.ordered) counts[a.key] = a.count;
-    await addAnimals(userId, counts);
 
-    const remaining = await Gems.consumeHunt(userId, active, count);
-
-    let teamPets = [];
-    try {
-        const pets = await teamUtil.getActiveTeamPets(userId);
-        if (Array.isArray(pets)) teamPets = pets;
-    } catch { /* tanpa team */ }
-    if (teamPets.length) {
-        try { await teamUtil.giveXpToUserTeams(userId, hunt.xp); } catch (error) {
-            console.error('[FUNECONOMY] hunt team xp failed:', error.message);
-        }
-    }
-
-    let lootbox = { claimed: false, count: 0 };
-    try { lootbox = await LootboxDb.claimFromHunt(userId, { now, rng }); } catch (error) {
-        console.error('[FUNECONOMY] hunt lootbox failed:', error.message);
-    }
+    // Ronde 2: semua tulis ke database bersamaan
+    const [, remaining, , lootbox] = await Promise.all([
+        addAnimals(userId, counts),
+        Gems.consumeHunt(userId, active, count),
+        teamPets.length
+            ? Promise.resolve().then(() => teamUtil.giveXpToUserTeams(userId, hunt.xp)).catch((error) => {
+                console.error('[FUNECONOMY] hunt team xp failed:', error.message);
+            })
+            : null,
+        Promise.resolve().then(() => LootboxDb.claimFromHunt(userId, { now, rng })).catch((error) => {
+            console.error('[FUNECONOMY] hunt lootbox failed:', error.message);
+            return { claimed: false, count: 0 };
+        })
+    ]);
     return { hunt, count, active, remaining, teamPets, lootbox };
 }
 
