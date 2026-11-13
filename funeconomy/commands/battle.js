@@ -50,7 +50,7 @@ module.exports = {
             if (crate?.found) trackFor(message, 'crate');
 
             await displayBattle(event, setting, (embed, files) => message.channel.send({ embeds: [embed], files, allowedMentions: { parse: [] } }),
-                { title: `${userName(message.guild, message.author)} goes into battle!` });
+                { title: `${userName(message.guild, message.author)} goes into battle!`, iconURL: message.author.displayAvatarURL?.({ extension: 'png', size: 64 }) });
 
             if (crate?.found) {
                 const h = Math.floor(crate.resetsIn / 3600000);
