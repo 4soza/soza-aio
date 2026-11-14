@@ -6,13 +6,13 @@
 
 // rarity = persen peluang tiap hunt. Rank "conditional" hanya muncul lewat gem atau hunt bot.
 const RANKS = {
-    common:    { order: 1,  emoji: '⚪', alias: ['c'],              rarity: 58.8489, price: 1,       points: 1,      essence: 1,      xp: 1 },
+    common:    { order: 1,  emoji: '⚪', alias: ['c'],              rarity: 58.4989, price: 1,       points: 1,      essence: 1,      xp: 1 },
     uncommon:  { order: 2,  emoji: '🟢', alias: ['u', 'uc'],        rarity: 30,      price: 3,       points: 5,      essence: 5,      xp: 10 },
     rare:      { order: 3,  emoji: '🔵', alias: ['r'],              rarity: 10,      price: 10,      points: 20,     essence: 20,     xp: 20 },
     epic:      { order: 4,  emoji: '🟣', alias: ['e'],              rarity: 1,       price: 250,     points: 250,    essence: 250,    xp: 400 },
     mythical:  { order: 7,  emoji: '🔴', alias: ['m', 'mythic'],    rarity: 0.1,     price: 5000,    points: 3000,   essence: 3000,   xp: 1000 },
-    gem:       { order: 8,  emoji: '💎', alias: ['g'],              rarity: 0.01,    price: 30000,   points: 20000,  essence: 20000,  xp: 5000, conditional: true },
-    legendary: { order: 9,  emoji: '🟠', alias: ['l', 'legend'],    rarity: 0.05,    price: 15000,   points: 10000,  essence: 10000,  xp: 2000 },
+    gem:       { order: 8,  emoji: '💎', alias: ['g'],              rarity: 0.1,     price: 30000,   points: 20000,  essence: 20000,  xp: 5000 },
+    legendary: { order: 9,  emoji: '🟠', alias: ['l', 'legend'],    rarity: 0.3,     price: 15000,   points: 10000,  essence: 10000,  xp: 2000 },
     bot:       { order: 10, emoji: '🤖', alias: ['b'],              rarity: 0,       price: 50000,   points: 30000,  essence: 10000,  xp: 100000, conditional: true },
     fabled:    { order: 13, emoji: '🟡', alias: ['f'],              rarity: 0.001,   price: 250000,  points: 100000, essence: 100000, xp: 100000 },
     hidden:    { order: 14, emoji: '⚫', alias: ['h'],              rarity: 0.0001,  price: 1000000, points: 500000, essence: 500000, xp: 300000 }
@@ -133,4 +133,4 @@ function zooPoints(counts) {
 }
 
 module.exports = { RANKS, RANK_ORDER, ANIMALS, ANIMALS_BY_RANK, findAnimal, findRank, zooPoints };
-     
+                                
