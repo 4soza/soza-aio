@@ -12,15 +12,17 @@ const ringShop = require('../shop/ringShop');
 const { toSmallNum } = require('../zoo/format');
 
 const LOOTBOX_ID = 50;
+const FLOOT_ID = 49;
 const CRATE_ID = 100;
 
 /* All inventory entries [{ id, emoji, count }] from every source, unsorted. */
 async function collectItems(userId) {
-    const [rings, boxes, gemInv, crate, byType] = await Promise.all([
-        ringShop.getItems(userId), LootboxDb.getBoxCount(userId), Gems.getInventory(userId),
+    const [rings, boxes, floots, gemInv, crate, byType] = await Promise.all([
+        ringShop.getItems(userId), LootboxDb.getBoxCount(userId), LootboxDb.getFabledCount(userId), Gems.getInventory(userId),
         crateDb.getCrate(userId), weaponDb.countByType(userId)
     ]);
     const items = [...rings];
+    if (floots > 0) items.push({ id: FLOOT_ID, emoji: emojis.floot(), count: floots });
     if (boxes > 0) items.push({ id: LOOTBOX_ID, emoji: emojis.lootbox(), count: boxes });
     for (const gem of Object.values(Gems.GEMS)) {
         if (gemInv.gems[gem.key] > 0) items.push({ id: gem.id, emoji: gem.emoji, count: gemInv.gems[gem.key] });
