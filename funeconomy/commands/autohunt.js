@@ -10,8 +10,15 @@ const HuntBot = require('../zoo/huntbot');
 const { bar, toSmallNum, BLANK } = require('../zoo/format');
 const teamUtil = require('../battle/teamUtil');
 const { EMBED_COLOR } = require('../battle/battleDisplay');
+const emojis = require('../customEmoji');
 
 const BOT = '🤖';
+/** Robot sesuai rarity (naik mengikuti progres upgrade); fallback 🤖. */
+const botIcon = (doc) => emojis.robot(HuntBot.robotRank(doc));
+function botImage(icon) {
+    const id = emojis.customId(icon);
+    return id ? `https://cdn.discordapp.com/emojis/${id}.${String(icon).startsWith('<a:') ? 'gif' : 'png'}?size=128` : ROBOT_IMAGE;
+}
 const ESSENCE = '✨';
 const ROBOT_IMAGE = 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/72x72/1f916.png';
 const err = (message, name, text) => sendTemporaryError(message, `**🚫 | ${name}**, ${text}`);
@@ -27,7 +34,7 @@ function parseHours(token) {
 const timeText = (mins) => `${mins >= 60 ? `${Math.trunc(mins / 60)}H ` : ''}${mins % 60}M`;
 
 /** Selesaikan hunt bot yang sudah jadi: tambah hewan + XP, kirim hasil. Return progress kalau belum selesai. */
-async function claimAndAnnounce(message, name) {
+async function claimAndAnnounce(message, name, icon = BOT) {
     const userId = message.author.id;
     const result = await HuntBot.claim(userId);
     if (!result) return null;
@@ -41,7 +48,7 @@ async function claimAndAnnounce(message, name) {
     try { await teamUtil.giveXpToUserTeams(userId, totalExp); } catch { /* tanpa team */ }
 
     const digits = Math.trunc(Math.log10(Math.max(1, ...hunt.ordered.map((a) => a.count))) + 1);
-    let text = `**${BOT} |** \`BEEP BOOP. I AM BACK WITH ${huntcount} ANIMALS,\`\n${BLANK} **|** \`${totalGain} ESSENCE, AND ${totalExp} EXPERIENCE\``;
+    let text = `**${icon} |** \`BEEP BOOP. I AM BACK WITH ${huntcount} ANIMALS,\`\n${BLANK} **|** \`${totalGain} ESSENCE, AND ${totalExp} EXPERIENCE\``;
     for (const rankId of RANK_ORDER) {
         const row = hunt.ordered.filter((a) => a.rank === rankId);
         if (row.length) text += `\n${RANKS[rankId].emoji} **|** ${row.map((a) => `${a.uni}${toSmallNum(a.count, digits)}`).join('  ')}`;
@@ -50,9 +57,9 @@ async function claimAndAnnounce(message, name) {
     return 'claimed';
 }
 
-function progressText(progress) {
+function progressText(progress, icon = BOT) {
     const pct = bar(progress.timer, progress.huntmin, 25);
-    return `**${BOT} |** \`BEEP BOOP. I AM STILL HUNTING. I WILL BE BACK IN ${timeText(progress.left)}\`\n`
+    return `**${icon} |** \`BEEP BOOP. I AM STILL HUNTING. I WILL BE BACK IN ${timeText(progress.left)}\`\n`
         + `${BLANK} **|** \`${pct.percent}% DONE | ${progress.count} ANIMALS CAPTURED\`\n${BLANK} **|** ${pct.bar}`;
 }
 
@@ -61,8 +68,8 @@ function traitLine(label, t) {
     return `${label} - \`${t.stat}${t.prefix}\`\n${lv} ${bar(t.max ? 1 : t.currentxp, t.max ? 1 : t.maxxp).bar}`;
 }
 
-async function display(message, name) {
-    const progress = await claimAndAnnounce(message, name);
+async function display(message, name, icon = BOT) {
+    const progress = await claimAndAnnounce(message, name, icon);
     if (progress === 'claimed') return null;
     const doc = await HuntBot.get(message.author.id);
     const t = HuntBot.readTraits(doc);
@@ -83,14 +90,14 @@ async function display(message, name) {
         `${ESSENCE} Animal Essence - \`${fmt(doc?.essence || 0)}\``,
         `\`Current Max Autohunt: ${fmt(maxhunt)} animals, ${fmt(Math.floor(t.gain.stat * t.duration.stat))} essence, and ${fmt(Math.floor(t.exp.stat * t.duration.stat))} xp for ${fmt(maxhunt * t.cost.stat)} cash\``
     ];
-    if (progress) body.push('', `${BOT} **HUNTBOT is currently hunting!**`, progressText(progress));
+    if (progress) body.push('', `${icon} **HUNTBOT is currently hunting!**`, progressText(progress, icon));
 
     // Tampilan embed seperti OwO; kalau bot tidak boleh kirim embed, pakai teks biasa.
-    if (!canEmbed(message)) return send(message, [`**${BOT} ${name}'s HuntBot**`, ...body].join('\n'));
+    if (!canEmbed(message)) return send(message, [`**${icon} ${name}'s HuntBot**`, ...body].join('\n'));
     return sendEmbed(message, {
         color: EMBED_COLOR,
         author: { name: `${name}'s HuntBot`, icon_url: message.author.displayAvatarURL?.() },
-        thumbnail: { url: ROBOT_IMAGE },
+        thumbnail: { url: botImage(icon) },
         description: body.join('\n').slice(0, 4096),
         footer: { text: `@${message.author.username}` }
     });
@@ -137,12 +144,13 @@ module.exports = {
         if (onCooldown(message, 'autohunt')) return;
         cooldown.start('autohunt', userId);
 
-        if (!args.length) return display(message, name);
+        const icon = botIcon(await HuntBot.get(userId));
+        if (!args.length) return display(message, name, icon);
 
         // Sedang berburu / sudah selesai: tampilkan progres atau hasil
-        const progress = await claimAndAnnounce(message, name);
+        const progress = await claimAndAnnounce(message, name, icon);
         if (progress === 'claimed') return null;
-        if (progress) return send(message, progressText(progress));
+        if (progress) return send(message, progressText(progress, icon));
 
         const result = await startHunt(userId, args[0].toLowerCase());
         if (result.error === 'syntax') return err(message, name, 'Wrong syntax!');
@@ -150,9 +158,10 @@ module.exports = {
         if (result.error === 'amount') return err(message, name, `Invalid ${cfg.CASH_NAME} amount!`);
         if (result.error === 'cash') return err(message, name, `You don't have enough ${cfg.CASH_NAME}!`);
         if (result.error) return err(message, name, 'HuntBot is already hunting!');
-        return send(message, `**${BOT} |** \`BEEP BOOP. \`**\`${name}\`**\`, YOU SPENT ${fmt(result.cash)} ${cfg.CASH_NAME}\`\n`
+        return send(message, `**${icon} |** \`BEEP BOOP. \`**\`${name}\`**\`, YOU SPENT ${fmt(result.cash)} ${cfg.CASH_NAME}\`\n`
             + `${BLANK} **|** \`I WILL BE BACK IN ${timeText(result.huntmin)} WITH ${result.huntcount} ANIMALS,\`\n`
             + `${BLANK} **|** \`${result.gain} ESSENCE, AND ${result.exp} EXPERIENCE\``);
     },
     _internals: { parseHours, startHunt, claimAndAnnounce }
 };
+    
