@@ -12,6 +12,8 @@ const WeaponInterface = require('./WeaponInterface.js');
 const { ANIMALS } = require('../zoo/data');
 const { EMBED_COLOR } = require('./battleDisplay.js');
 const { EXPIRED_COLOR } = require('../gameExpiry');
+const path = require('path');
+const fs = require('fs');
 
 
 const PREFIX = 'fbattle';
@@ -164,4 +166,38 @@ function rerollMessage(ownerId, ownerName, oldWeapon, newWeapon, { disabled = fa
 	return { content: note || '', embeds: [embed], components: [row] };
 }
 
-module.exports = { PREFIX, PER_PAGE, listMessage, helpText, RANK_NAMES, SORT_LABELS, detailEmbed, describeWeapon, rerollMessage, weaponIcons };
+/*
+ * Konfirmasi jual semua senjata satu rank (`ssell uw`). Gambar kanan atas = assets/sell.png (kalau ada).
+ * customId: fbattle:sw:<sell|cancel>:<owner>:<rankIndex>
+ */
+const SELL_IMAGE = path.join(__dirname, '..', '..', 'assets', 'sell.png');
+const SELL_IMAGE_NAME = 'sell.png';
+const hasSellImage = () => { try { return fs.existsSync(SELL_IMAGE); } catch { return false; } };
+
+function sellMessage(ownerId, rankIndex, weapons, { disabled = false, color = EMBED_COLOR, result, withFile = true } = {}) {
+	const rankName = RANK_NAMES[rankIndex];
+	const rankEmoji = weapons[0]?.rank?.emoji || WeaponInterface.ranks[rankIndex][2] || '';
+	const price = weapons.length * weaponDb.SELL_PRICES[rankName];
+	const shown = weapons.slice(0, 5).map((w) => `${w.emoji} \`${w.uwid}\` \`${w.avgQuality}%\` ${w.name}`);
+	let description;
+	if (result) description = result;
+	else {
+		description = `Are you sure you want to sell **${weapons.length}** ${rankEmoji} ${rankName} weapons for **${price.toLocaleString('en-US')}** ${cfg.CASH_EMOJI}?\n\n${shown.join('\n')}`;
+		if (weapons.length > shown.length) description += `\n...and **${weapons.length - shown.length}** more weapons`;
+	}
+	const embed = { color, description };
+	const files = [];
+	if (hasSellImage()) {
+		embed.thumbnail = { url: `attachment://${SELL_IMAGE_NAME}` };
+		if (withFile) files.push({ attachment: SELL_IMAGE, name: SELL_IMAGE_NAME });
+	}
+	const id = (action) => `${PREFIX}:sw:${action}:${ownerId}:${rankIndex}`;
+	const row = new ActionRowBuilder().addComponents(
+		new ButtonBuilder().setCustomId(id('sell')).setLabel('Sell').setEmoji('✅').setStyle(ButtonStyle.Success).setDisabled(disabled),
+		new ButtonBuilder().setCustomId(id('cancel')).setLabel('Cancel').setEmoji('❎').setStyle(ButtonStyle.Danger).setDisabled(disabled)
+	);
+	return { embeds: [embed], components: [row], ...(files.length ? { files } : {}) };
+}
+
+module.exports = { sellMessage, PREFIX, PER_PAGE, listMessage, helpText, RANK_NAMES, SORT_LABELS, detailEmbed, describeWeapon, rerollMessage, weaponIcons };
+		
