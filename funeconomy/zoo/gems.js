@@ -116,18 +116,26 @@ function huntUsage(active, count) {
     return usage;
 }
 
+/** Sisa gem aktif sesudah satu hunt (dihitung lokal, tanpa database). */
+function remainingAfterHunt(active, count) {
+    const remaining = {};
+    for (const [type, n] of Object.entries(huntUsage(active, count))) {
+        const { gem, left } = active[type];
+        remaining[type] = { gem, left: left - Math.min(n, left) };
+    }
+    return remaining;
+}
+
 /** Kurangi sisa gem aktif (tidak pernah di bawah sisa yang dibaca). Return sisa tiap tipe. */
 async function consumeHunt(userId, active, count) {
-    const usage = huntUsage(active, count);
-    const remaining = {};
-    for (const [type, n] of Object.entries(usage)) {
+    const remaining = remainingAfterHunt(active, count);
+    await Promise.all(Object.entries(huntUsage(active, count)).map(([type, n]) => {
         const { gem, left } = active[type];
         const take = Math.min(n, left);
-        remaining[type] = { gem, left: left - take };
-        if (take > 0) {
-            await Gem.updateOne({ userId, [`active.${type}.key`]: gem.key }, { $inc: { [`active.${type}.left`]: -take } });
-        }
-    }
+        return take > 0
+            ? Gem.updateOne({ userId, [`active.${type}.key`]: gem.key }, { $inc: { [`active.${type}.left`]: -take } })
+            : null;
+    }));
     return remaining;
 }
 
@@ -153,5 +161,6 @@ function describeUse(gem) {
 
 module.exports = {
     TYPES, TYPE_ORDER, GEMS, GEMS_BY_TYPE, getGemById, randomGem, randomGems, addGems, getInventory,
-    activeOf, getActiveGems, activate, huntUsage, consumeHunt, huntEffects, describeUse
+    activeOf, getActiveGems, activate, huntUsage, remainingAfterHunt, consumeHunt, huntEffects, describeUse
 };
+    
