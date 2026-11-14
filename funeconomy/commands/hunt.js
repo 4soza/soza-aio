@@ -40,9 +40,15 @@ async function performHunt(userId, { rng = Math.random, now = Date.now(), prerea
                 console.error('[FUNECONOMY] hunt team xp failed:', error.message);
             })
             : null,
-        Promise.resolve().then(() => LootboxDb.claimFromHunt(userId, { now, rng })).catch((error) => {
+        Promise.resolve().then(async () => {
+            const [box, floot] = await Promise.all([
+                LootboxDb.claimFromHunt(userId, { now, rng }),
+                LootboxDb.claimFabledFromHunt(userId, { now, rng }).catch(() => false)
+            ]);
+            return { ...box, floot };
+        }).catch((error) => {
             console.error('[FUNECONOMY] hunt lootbox failed:', error.message);
-            return { claimed: false, count: 0 };
+            return { claimed: false, count: 0, floot: false };
         })
     ]);
     const remaining = Gems.remainingAfterHunt(active, count);
@@ -69,6 +75,9 @@ function buildText(name, result, now = Date.now()) {
     }
     if (teamPets.length) {
         text += `\n${BLANK} **|** ${teamPets.map((p) => p.uni).join(' ')} gained **${hunt.xp}xp**!`;
+    }
+    if (lootbox.floot) {
+        text += `\n**${emojis.floot()} |** You found a **fabled lootbox**!`;
     }
     if (lootbox.claimed) {
         text += `\n**${emojis.lootbox()} |** You found a **lootbox**! \`[${lootbox.count}/${LootboxDb.DAILY_LIMIT}] RESETS IN: ${hms(msUntilReset(now))}\``;
@@ -104,9 +113,9 @@ module.exports = {
         writes.catch(() => {});
         const sent = await send(message, buildText(name, result));
         writes.then(async (lootbox) => {
-            if (!lootbox?.claimed) return;
+            if (!lootbox?.claimed && !lootbox?.floot) return;
             result.lootbox = lootbox;
-            trackFor(message, 'lootbox');
+            if (lootbox.claimed) trackFor(message, 'lootbox');
             await sent.edit({ content: buildText(name, result), allowedMentions: { parse: [] } }).catch(() => {});
         }, async (error) => {
             console.error('[FUNECONOMY] hunt save failed:', error.message);
@@ -119,4 +128,4 @@ module.exports = {
     },
     _internals: { performHunt, buildText }
 };
-            
+                
