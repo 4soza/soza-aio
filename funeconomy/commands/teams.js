@@ -2,7 +2,8 @@
 const cfg = require('../config');
 const teamUtil = require('../battle/teamUtil');
 const challengeDb = require('../battle/challengeDb');
-const { teamEmbeds } = require('../battle/teamView');
+const { teamPage } = require('../battle/teamView');
+const { track } = require('../inactivity');
 const { send, onCooldown } = require('../utils');
 const cooldown = require('../cooldown');
 const { fail, userName, isInt } = require('../battle/commandUtil');
@@ -24,9 +25,10 @@ module.exports = {
             await teamUtil.setActive(userId, number);
         }
         cooldown.start('team', userId);
-        const embeds = await teamEmbeds(userId, userName(message.guild, message.author),
-            message.author.displayAvatarURL?.({ extension: 'png', size: 128 }));
-        if (!embeds) return fail(message, `you don't have a team! Create one with \`${cfg.PREFIX}team add {animalName}\`!`, 5000);
-        return message.channel.send({ embeds, allowedMentions: { parse: [] } });
+        const doc = await teamUtil.getTeamDoc(userId);
+        const page = await teamPage(userId, userName(message.guild, message.author),
+            message.author.displayAvatarURL?.({ extension: 'png', size: 128 }), doc?.active || 0);
+        if (!page) return fail(message, `you don't have a team! Create one with \`${cfg.PREFIX}team add {animalName}\`!`, 5000);
+        return track(await message.channel.send({ ...page, allowedMentions: { parse: [] } }));
     }
 };
