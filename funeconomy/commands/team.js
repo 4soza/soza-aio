@@ -2,7 +2,8 @@
 const cfg = require('../config');
 const teamUtil = require('../battle/teamUtil');
 const challengeDb = require('../battle/challengeDb');
-const { teamEmbeds } = require('../battle/teamView');
+const { teamPage } = require('../battle/teamView');
+const { track } = require('../inactivity');
 const { ANIMALS } = require('../zoo/data');
 const { sendEmbed, canEmbed, send, onCooldown } = require('../utils');
 const cooldown = require('../cooldown');
@@ -11,11 +12,12 @@ const { fail, reply, userName, animalFromToken, isInt, TEAM_EMOJI } = require('.
 const BUSY = `You cannot change your team while you have a pending battle! Use \`${cfg.PREFIX}db\` to decline`;
 
 async function display(message) {
-    const embeds = await teamEmbeds(message.author.id, userName(message.guild, message.author),
-        message.author.displayAvatarURL?.({ extension: 'png', size: 128 }));
-    if (!embeds) return fail(message, `you don't have a team! Create one with \`${cfg.PREFIX}team add {animalName}\`!`, 5000);
+    const doc = await teamUtil.getTeamDoc(message.author.id);
+    const page = await teamPage(message.author.id, userName(message.guild, message.author),
+        message.author.displayAvatarURL?.({ extension: 'png', size: 128 }), doc?.active || 0);
+    if (!page) return fail(message, `you don't have a team! Create one with \`${cfg.PREFIX}team add {animalName}\`!`, 5000);
     if (!canEmbed(message)) return send(message, 'I need the Embed Links permission to show your team!');
-    return message.channel.send({ embeds, allowedMentions: { parse: [] } });
+    return track(await message.channel.send({ ...page, allowedMentions: { parse: [] } }));
 }
 
 const slotsText = (slots) => slots.map((key, i) => (key && ANIMALS[key] ? `[${i + 1}]${ANIMALS[key].uni} ` : '')).join('').trim();
