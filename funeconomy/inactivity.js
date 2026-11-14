@@ -33,13 +33,24 @@ function greyedPayload(message) {
         if (!components.length) return null;
         return { components, flags: IS_COMPONENTS_V2, allowedMentions: { parse: [] } };
     }
-    const embeds = (message.embeds || []).map((e) => ({ ...plain(e), color: EXPIRED_COLOR }));
+    // Gambar yang dilampirkan dan dipakai embed (attachment://) harus tetap dirujuk lewat attachment://;
+    // kalau tidak, Discord menampilkan lampiran itu lagi di luar embed (gambar jadi dobel).
+    const attachments = [...(message.attachments?.values?.() || [])];
+    const byUrl = (url) => attachments.find((a) => String(url || '').split('?')[0] === String(a.url || '').split('?')[0]);
+    const embeds = (message.embeds || []).map((e) => {
+        const json = { ...plain(e), color: EXPIRED_COLOR };
+        const att = json.image?.url && byUrl(json.image.url);
+        if (att) json.image = { url: `attachment://${att.name}` };
+        return json;
+    });
     const components = (message.components || []).map((row) => {
         const json = plain(row);
         return { ...json, components: (json.components || []).map((c) => ({ ...plain(c), disabled: true })) };
     });
     if (!embeds.length && !components.length) return null;
-    return { embeds, components, allowedMentions: { parse: [] } };
+    const payload = { embeds, components, allowedMentions: { parse: [] } };
+    if (attachments.length) payload.attachments = attachments;
+    return payload;
 }
 
 async function expire(message) {
