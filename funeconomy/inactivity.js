@@ -41,8 +41,10 @@ function greyedPayload(message) {
     const byUrl = (url) => attachments.find((a) => base(url) === a.name || base(url) === base(a.url));
     const embeds = (message.embeds || []).map((e) => {
         const json = { ...plain(e), color: EXPIRED_COLOR };
-        const att = json.image?.url && byUrl(json.image.url);
-        if (att) json.image = { url: `attachment://${att.name}` };
+        for (const key of ['image', 'thumbnail']) {
+            const att = json[key]?.url && byUrl(json[key].url);
+            if (att) json[key] = { url: `attachment://${att.name}` };
+        }
         return json;
     });
     const components = (message.components || []).map((row) => {
