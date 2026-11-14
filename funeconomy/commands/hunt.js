@@ -21,8 +21,8 @@ function readHuntData(userId) {
     ]);
 }
 
-async function performHunt(userId, { rng = Math.random, now = Date.now(), preread } = {}) {
-    // Ronde 1: baca gem aktif dan pet team bersamaan (bisa sudah dibaca lebih awal, bersamaan dengan potong cash)
+async function performHunt(userId, { rng = Math.random, now = Date.now(), preread, defer = false } = {}) {
+    // Baca gem aktif dan pet team bersamaan (bisa sudah dibaca lebih awal, bersamaan dengan potong cash)
     const [active, pets] = await (preread || readHuntData(userId));
     const teamPets = Array.isArray(pets) ? pets : [];
     const { count, opts } = Gems.huntEffects(active);
@@ -31,9 +31,9 @@ async function performHunt(userId, { rng = Math.random, now = Date.now(), prerea
     const counts = {};
     for (const a of hunt.ordered) counts[a.key] = a.count;
 
-    // Ronde 2: semua tulis ke database bersamaan
-    const [, remaining, , lootbox] = await Promise.all([
-        addAnimals(userId, counts),
+    // Semua tulis ke database bersamaan. Hewan wajib tersimpan (error = refund); sisanya hanya dicatat.
+    const saved = addAnimals(userId, counts);
+    const rest = Promise.all([
         Gems.consumeHunt(userId, active, count),
         teamPets.length
             ? Promise.resolve().then(() => teamUtil.giveXpToUserTeams(userId, hunt.xp)).catch((error) => {
@@ -45,7 +45,14 @@ async function performHunt(userId, { rng = Math.random, now = Date.now(), prerea
             return { claimed: false, count: 0 };
         })
     ]);
-    return { hunt, count, active, remaining, teamPets, lootbox };
+    const remaining = Gems.remainingAfterHunt(active, count);
+    const base = { hunt, count, active, remaining, teamPets, now };
+    if (defer) {
+        // Pesan boleh dikirim sekarang; `writes` selesai saat database sudah tersimpan semua.
+        return { ...base, lootbox: { claimed: false, count: 0 }, writes: Promise.all([saved, rest]).then(([, [, , lootbox]]) => lootbox) };
+    }
+    const [, [, , lootbox]] = await Promise.all([saved, rest]);
+    return { ...base, lootbox };
 }
 
 function buildText(name, result, now = Date.now()) {
@@ -86,17 +93,30 @@ module.exports = {
 
         let result;
         try {
-            result = await performHunt(userId, { preread });
+            result = await performHunt(userId, { preread, defer: true });
         } catch (error) {
             console.error('[FUNECONOMY] hunt failed:', error.message);
             await Economy.add(userId, HUNT_COST).catch(() => {});
             return sendTemporaryError(message, errorLine(name, 'something went wrong while hunting, you were refunded!'));
         }
+        // Kirim hasil sekarang; penyimpanan ke database selesai di belakang.
+        const writes = result.writes;
+        writes.catch(() => {});
         const sent = await send(message, buildText(name, result));
+        writes.then(async (lootbox) => {
+            if (!lootbox?.claimed) return;
+            result.lootbox = lootbox;
+            trackFor(message, 'lootbox');
+            await sent.edit({ content: buildText(name, result), allowedMentions: { parse: [] } }).catch(() => {});
+        }, async (error) => {
+            console.error('[FUNECONOMY] hunt save failed:', error.message);
+            await Economy.add(userId, HUNT_COST).catch(() => {});
+            await sendTemporaryError(message, errorLine(name, 'something went wrong while saving your hunt, you were refunded!')).catch(() => {});
+        });
         // Task & quest: hunt, lootbox yang ditemukan, dan rank hewan (quest "find")
         trackFor(message, 'hunt', { ranks: (result.hunt.ordered || []).map((a) => ({ rank: a.rank, count: a.count })) });
-        if (result.lootbox?.claimed) trackFor(message, 'lootbox');
         return sent;
     },
     _internals: { performHunt, buildText }
 };
+            
