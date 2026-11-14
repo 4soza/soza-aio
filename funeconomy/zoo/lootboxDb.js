@@ -7,6 +7,8 @@ const { dayNumber } = require('./format');
 const DUPLICATE_KEY = 11000;
 const DAILY_LIMIT = 3;
 const MAX_OPEN = 100;
+// Fabled lootbox dari hunt: jarang (0,2% per hunt) dan maksimal 1 per hari.
+const FLOOT_CHANCE = 0.002;
 
 async function ensure(userId) {
     for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -42,6 +44,22 @@ async function claimFromHunt(userId, { now = Date.now(), rng = Math.random } = {
     return next ? { claimed: true, count: next.claimcount } : { claimed: false, count: 0 };
 }
 
+async function claimFabledFromHunt(userId, { now = Date.now(), rng = Math.random } = {}) {
+    if (rng() >= FLOOT_CHANCE) return false;
+    await ensure(userId);
+    const got = await Lootbox.findOneAndUpdate(
+        { userId, fclaimDay: { $lt: dayNumber(now) } },
+        { $inc: { fboxcount: 1 }, $set: { fclaimDay: dayNumber(now) } },
+        { new: true }
+    ).lean();
+    return !!got;
+}
+
+async function getFabledCount(userId) {
+    const doc = await Lootbox.findOne({ userId }).lean();
+    return doc?.fboxcount || 0;
+}
+
 async function getBoxCount(userId) {
     const doc = await Lootbox.findOne({ userId }).lean();
     return doc?.boxcount || 0;
@@ -67,4 +85,25 @@ async function openBoxes(userId, count, rng = Math.random) {
     return { gems };
 }
 
-module.exports = { DAILY_LIMIT, MAX_OPEN, claimFromHunt, getBoxCount, openBoxes };
+/** Buka `count` fabled lootbox: semua gem fabled. Return { gems } atau null kalau tidak cukup. */
+async function openFabledBoxes(userId, count, rng = Math.random) {
+    const taken = await Lootbox.findOneAndUpdate(
+        { userId, fboxcount: { $gte: count } },
+        { $inc: { fboxcount: -count } },
+        { new: true }
+    ).lean();
+    if (!taken) return null;
+    const gems = Gems.randomFabledGems(count, rng);
+    try {
+        const counts = {};
+        for (const [key, { count: n }] of Object.entries(gems)) counts[key] = n;
+        await Gems.addGems(userId, counts);
+    } catch (error) {
+        await Lootbox.updateOne({ userId }, { $inc: { fboxcount: count } }).catch(() => {});
+        throw error;
+    }
+    return { gems };
+}
+
+module.exports = {
+    FLOOT_CHANCE, claimFabledFromHunt, getFabledCount, openFabledBoxes, DAILY_LIMIT, MAX_OPEN, claimFromHunt, getBoxCount, openBoxes };
