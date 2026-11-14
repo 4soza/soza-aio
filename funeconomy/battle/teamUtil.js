@@ -65,11 +65,11 @@ async function getActiveTeamPets(userId) {
 }
 
 async function incXp(userId, names, xp, overrides = {}) {
-	for (const name of names) {
+	await Promise.all(names.map((name) => {
 		const amount = Math.ceil(overrides[name] ?? xp);
-		if (!(amount > 0)) continue;
-		await Animal.updateOne({ userId, name }, { $inc: { xp: amount } });
-	}
+		if (!(amount > 0)) return null;
+		return Animal.updateOne({ userId, name }, { $inc: { xp: amount } });
+	}));
 }
 
 /*
@@ -310,3 +310,4 @@ module.exports = {
 	getBattleTeam, buildAnimals, generateEnemyTeam, isDead, getPidFromTeam,
 	statDigits, statBlock, weaponLine, filled, ownsAnimal
 };
+			
