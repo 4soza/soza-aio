@@ -69,6 +69,21 @@ const ROSTER = [
     ["scorpion", "🦂", "fabled", [6, 9, 6, 6, 5, 6], "One sting is all it takes.", ["scorpion"]],
     ["bat", "🦇", "fabled", [6, 7, 5, 8, 8, 6], "Rules the night.", ["bat"]],
     ["otter", "🦦", "fabled", [7, 7, 6, 7, 8, 6], "Holds hands while it sleeps.", ["otter"]],
+    ["gspider", "🕷️", "gem", [5, 7, 4, 5, 6, 4], "Spins webs made of gems.", ["gspider"]],
+    ["gshrimp", "🦐", "gem", [4, 6, 3, 7, 7, 4], "Small, shiny, and surprisingly strong.", ["gshrimp"]],
+    ["gpanda", "🐼", "gem", [8, 5, 5, 4, 4, 5], "Eats bamboo and gem dust.", ["gpanda"]],
+    ["gfish", "🐟", "gem", [5, 5, 4, 6, 7, 5], "Swims through crystal water.", ["gfish"]],
+    ["gcamel", "🐫", "gem", [8, 5, 5, 5, 5, 5], "Carries a whole desert of treasure.", ["gcamel"]],
+    ["lsquid", "🦑", "legendary", [5, 5, 3, 5, 8, 5], "Hides in the dark and strikes with ink.", ["lsquid"]],
+    ["lowl", "🦉", "legendary", [4, 5, 3, 6, 8, 4], "Watches over the night.", ["lowl"]],
+    ["llion", "🦁", "legendary", [6, 8, 4, 3, 3, 4], "A golden mane and a loud roar.", ["llion"]],
+    ["lfox", "🦊", "legendary", [4, 6, 3, 6, 7, 4], "Clever, quick, and never caught.", ["lfox"]],
+    ["ldeer", "🦌", "legendary", [6, 5, 4, 5, 5, 6], "Graceful, with antlers like a crown.", ["ldeer"]],
+    ["fwolf", "🐺", "fabled", [7, 9, 5, 6, 5, 6], "Leads the pack under a full moon.", ["fwolf"]],
+    ["fgorilla", "🦍", "fabled", [9, 9, 7, 5, 4, 6], "The strongest of the jungle.", ["fgorilla"]],
+    ["ffrog", "🐸", "fabled", [6, 6, 6, 8, 8, 7], "A tiny prince of magic.", ["ffrog"]],
+    ["feagle", "🦅", "fabled", [6, 9, 5, 7, 7, 6], "Rules the sky above the clouds.", ["feagle"]],
+    ["fboar", "🐗", "fabled", [9, 8, 8, 5, 4, 7], "Nothing stops its charge.", ["fboar"]],
     ["sloth", "🦥", "hidden", [10, 8, 8, 8, 8, 8], "Takes its time, then wins.", ["sloth"]],
     ["hedgehog", "🦔", "hidden", [9, 9, 9, 8, 8, 8], "Prickly on the outside, rare on the inside.", ["hedgehog"]],
     ["beaver", "🦫", "hidden", [10, 9, 8, 9, 8, 8], "Builds legends one log at a time.", ["beaver"]],
@@ -118,3 +133,4 @@ function zooPoints(counts) {
 }
 
 module.exports = { RANKS, RANK_ORDER, ANIMALS, ANIMALS_BY_RANK, findAnimal, findRank, zooPoints };
+     
