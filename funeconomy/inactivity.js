@@ -36,7 +36,9 @@ function greyedPayload(message) {
     // Gambar yang dilampirkan dan dipakai embed (attachment://) harus tetap dirujuk lewat attachment://;
     // kalau tidak, Discord menampilkan lampiran itu lagi di luar embed (gambar jadi dobel).
     const attachments = [...(message.attachments?.values?.() || [])];
-    const byUrl = (url) => attachments.find((a) => String(url || '').split('?')[0] === String(a.url || '').split('?')[0]);
+    // Cocokkan lewat nama file (host bisa beda: cdn / media proxy), bukan seluruh URL.
+    const base = (url) => decodeURIComponent(String(url || '').split('?')[0].split('/').pop() || '');
+    const byUrl = (url) => attachments.find((a) => base(url) === a.name || base(url) === base(a.url));
     const embeds = (message.embeds || []).map((e) => {
         const json = { ...plain(e), color: EXPIRED_COLOR };
         const att = json.image?.url && byUrl(json.image.url);
