@@ -259,7 +259,7 @@ function generateEnemyTeam(playerTeam, { random = Math.random } = {}) {
 		animalUtil.stats(animal);
 		team.push(animal);
 	}
-	return { userId: null, index: 0, name: 'Wild team', streak: 0, highestStreak: 0, team };
+	return { userId: null, index: 0, name: 'Enemy Team', streak: 0, highestStreak: 0, team };
 }
 
 /* Checks if the team is dead */
