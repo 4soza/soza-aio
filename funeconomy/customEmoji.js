@@ -54,6 +54,14 @@ for (const name of PASSIVE_NAMES) DEFS[`p_${name.toLowerCase()}`] = { fallback: 
 // Robot HuntBot per rarity: <huruf rank>hb (chb, uhb, rhb, ehb, mhb, lhb, fhb); legendary dan fabled animasi.
 const ROBOT_KEYS = { common: 'chb', uncommon: 'uhb', rare: 'rhb', epic: 'ehb', mythic: 'mhb', legendary: 'lhb', fabled: 'fhb' };
 for (const [rank, key] of Object.entries(ROBOT_KEYS)) DEFS[key] = { fallback: '🤖', animated: rank === 'legendary' || rank === 'fabled' };
+// Emoji hewan baru per rarity (key hewan = nama file); semuanya animasi.
+const ANIMAL_EMOJI = {
+    gspider: '🕷️', gshrimp: '🦐', gpanda: '🐼', gfish: '🐟', gcamel: '🐫',
+    lsquid: '🦑', lowl: '🦉', llion: '🦁', lfox: '🦊', ldeer: '🦌',
+    fwolf: '🐺', fgorilla: '🦍', ffrog: '🐸', feagle: '🦅', fboar: '🐗'
+};
+for (const [key, fallback] of Object.entries(ANIMAL_EMOJI)) DEFS[key] = { animated: true, fallback };
+DEFS.floot = { animated: true, fallback: '🎁' }; // fabled lootbox
 // Ikon buff/debuff di samping nama hewan (b_<nama>), key = id buff di funeconomy/battle/buffs.
 const BUFF_KEYS = { 1: 'b_taunt', 2: 'b_poison', 3: 'b_flame', 4: 'b_defenseup', 5: 'b_freeze', 6: 'b_attackup',
     7: 'b_attackupplus', 8: 'b_attackupplusplus', 9: 'b_mortality', 10: 'b_celebration', 11: 'b_leech', 12: 'b_stinky' };
@@ -96,6 +104,7 @@ const gear = (kind, className, id) => {
 };
 /** Emoji kustom buff menurut id buff; null kalau belum tersedia. */
 const buff = (id) => live.get(BUFF_KEYS[id]) || null;
+const floot = () => get('floot');
 const robot = (rank) => get(ROBOT_KEYS[rank]);
 const shard = () => get('shard');
 const unknown = () => get('unknown');
@@ -128,6 +137,13 @@ function apply() {
     for (const gem of Object.values(GEMS)) {
         const custom = live.get(`${gem.key.slice(0, 1)}gem${GEM_SHAPES[gem.type]}`);
         gem.emoji = custom || `${gem.icon}${RANKS[gem.rank].emoji}`;
+    }
+    const { ANIMALS } = require('./zoo/data');
+    for (const [key, fallback] of Object.entries(ANIMAL_EMOJI)) {
+        if (!ANIMALS[key]) continue;
+        const emoji = live.get(key) || fallback;
+        ANIMALS[key].uni = emoji;
+        ANIMALS[key].value = emoji;
     }
     const ringShop = require('./shop/ringShop');
     for (const [id, key] of Object.entries(RINGS)) if (ringShop.RINGS[id]) ringShop.RINGS[id].emoji = get(key);
@@ -170,5 +186,5 @@ function reset() { live.clear(); apply(); }
 /** id emoji kustom dari teks `<:nama:id>` (atau null untuk emoji Unicode). */
 const customId = (text) => /^<a?:\w+:(\d+)>$/.exec(String(text || ''))?.[1] || null;
 
-module.exports = { DEFS, get, gear, buff, robot, shard, unknown, crate, crateShake, crateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId };
-               
+module.exports = { DEFS, get, gear, buff, robot, floot, shard, unknown, crate, crateShake, crateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId };
+        
