@@ -49,7 +49,8 @@ function greyedPayload(message) {
     });
     if (!embeds.length && !components.length) return null;
     const payload = { embeds, components, allowedMentions: { parse: [] } };
-    if (attachments.length) payload.attachments = attachments;
+    // Hanya id + nama: lampiran yang sudah ada dipertahankan, tidak diunggah ulang.
+    if (attachments.length) payload.attachments = attachments.map((a) => ({ id: a.id, filename: a.name }));
     return payload;
 }
 
