@@ -7,6 +7,16 @@ const { RANKS } = require('../zoo/data');
 const { takeForExchange, takeRanks } = require('../zoo/zooDb');
 const { parseExchangeArgs, rankSummary } = require('../zoo/args');
 const ringShop = require('../shop/ringShop');
+const weaponDb = require('../battle/weaponDb');
+const weaponView = require('../battle/weaponView');
+const { track } = require('../inactivity');
+
+// Rank senjata untuk jual: cw uw rw ew mw lw fw (atau "uncommonweapons"). Kata "common"/"rare" sendiri tetap jual hewan.
+function weaponRank(token) {
+    const t = String(token || '').toLowerCase();
+    if (!/^[curemlf]w$/.test(t) && !/weapons?$/.test(t)) return -1;
+    return weaponDb.rankFromAlias(t);
+}
 
 const err = (message, name, text) => sendTemporaryError(message, `**🚫 | ${name}**, ${text}`);
 
@@ -44,7 +54,31 @@ module.exports = {
             return send(message, `**💰 | ${name}** sold ${ringShop.article(sold.ring.name)} **${sold.ring.name}** ${sold.ring.emoji} for **${cfg.CASH_EMOJI} ${fmt(sold.price)}**`);
         }
 
+        // `ssell uw` = jual semua senjata uncommon (ada konfirmasi), `ssell {weaponID}` = jual satu senjata.
+        const wRank = args.length === 1 ? weaponRank(args[0]) : -1;
+        if (wRank >= 0) {
+            if (onCooldown(message, 'sell')) return;
+            cooldown.start('sell', userId);
+            const weapons = await weaponDb.findRankWeapons(userId, wRank);
+            if (!weapons.length) return err(message, name, 'You do not have any weapons of that rank to sell!');
+            return track(await message.channel.send({
+                ...weaponView.sellMessage(userId, wRank, weapons), allowedMentions: { parse: [] }
+            }));
+        }
+
         const parsed = parseExchangeArgs(args);
+        if (parsed.error === 'notfound' && args.length === 1 && weaponDb.expandUWID(args[0])) {
+            if (onCooldown(message, 'sell')) return;
+            cooldown.start('sell', userId);
+            const result = await weaponDb.removeWeapon(userId, weaponDb.expandUWID(args[0]));
+            if (result.error === 'equipped') return err(message, name, 'please unequip the weapon to sell it!');
+            if (result.error === 'unsellable') return err(message, name, 'This weapon cannot be sold!');
+            if (result.error === 'favorite') return err(message, name, 'unfavorite this weapon to sell it!');
+            if (result.error) return err(message, name, 'I could not find that animal, rank or weapon!');
+            const price = weaponDb.SELL_PRICES[result.weapon.rank.name];
+            await Economy.add(userId, price);
+            return send(message, `**🔪 | ${name}** sold ${result.weapon.rank.emoji}${result.weapon.emoji} **${result.weapon.name}** for **${cfg.CASH_EMOJI} ${fmt(price)}**`);
+        }
 
         if (parsed.error === 'none') return err(message, name, 'Please specify what rank/animal to sell!');
         if (parsed.error === 'invalid') return err(message, name, 'Invalid arguments!');
