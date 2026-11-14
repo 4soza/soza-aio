@@ -47,6 +47,14 @@ function getLvl(xp, gain, traitName) {
     return null;
 }
 
+/** Rarity robot dari rata-rata progres semua trait (level / level maksimal). Semua trait max = fabled. */
+const ROBOT_TIERS = [['fabled', 1], ['legendary', 0.75], ['mythic', 0.5], ['epic', 0.3], ['rare', 0.15], ['uncommon', 0.05], ['common', 0]];
+function robotRank(doc) {
+    const traits = readTraits(doc);
+    const progress = TRAIT_NAMES.reduce((sum, name) => sum + Math.min(1, traits[name].lvl / TRAITS[name].max), 0) / TRAIT_NAMES.length;
+    return ROBOT_TIERS.find(([, min]) => progress >= min - 1e-9)[0];
+}
+
 /** Semua trait dari dokumen (atau default level 0). */
 function readTraits(doc) {
     const out = {};
@@ -135,4 +143,6 @@ async function claim(userId, now = Date.now()) {
     return { claimed: { huntcount: doc.huntcount, totalGain, totalExp, radar: t.radar.stat } };
 }
 
-module.exports = { TRAITS, TRAIT_NAMES, TRAIT_ALIASES, getLvl, readTraits, get, addEssence, upgrade, start, claim };
+module.exports = {
+    robotRank, TRAITS, TRAIT_NAMES, TRAIT_ALIASES, getLvl, readTraits, get, addEssence, upgrade, start, claim };
+                                    
