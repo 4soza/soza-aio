@@ -12,6 +12,7 @@ const SCORE_ORDER = ['hidden', 'fabled', 'bot', 'gem', 'legendary', 'mythical', 
 
 function buildZoo(name, docs, useTotal) {
     const shown = {};
+    const seen = {}; // pernah ditangkap (walau sekarang jumlahnya 0): tetap tampil sebagai hewan, bukan tanda tanya
     const totals = {};
     const rankTotals = {};
     let biggest = 0;
@@ -19,6 +20,7 @@ function buildZoo(name, docs, useTotal) {
         const animal = ANIMALS[doc.name];
         if (!animal) continue;
         totals[doc.name] = doc.totalcount || 0;
+        if (doc.totalcount > 0 || doc.count > 0) seen[doc.name] = true;
         rankTotals[animal.rank] = (rankTotals[animal.rank] || 0) + (doc.totalcount || 0);
         const n = useTotal ? doc.totalcount : doc.count;
         if (n > 0) { shown[doc.name] = n; biggest = Math.max(biggest, n); }
@@ -30,9 +32,9 @@ function buildZoo(name, docs, useTotal) {
         const keys = ANIMALS_BY_RANK[rankId];
         let cells;
         if (PLACEHOLDER_RANKS.has(rankId)) {
-            cells = keys.map((k) => (shown[k] ? `${ANIMALS[k].uni}${toSmallNum(shown[k], digits)}` : `${emojis.unknown()}${toSmallNum(0, digits)}`));
+            cells = keys.map((k) => (seen[k] ? `${ANIMALS[k].uni}${toSmallNum(shown[k] || 0, digits)}` : `${emojis.unknown()}${toSmallNum(0, digits)}`));
         } else {
-            cells = keys.filter((k) => shown[k]).map((k) => `${ANIMALS[k].uni}${toSmallNum(shown[k], digits)}`);
+            cells = keys.filter((k) => seen[k]).map((k) => `${ANIMALS[k].uni}${toSmallNum(shown[k] || 0, digits)}`);
         }
         if (!cells.length) continue;
         let line = `${RANKS[rankId].emoji}    `;
@@ -57,13 +59,10 @@ module.exports = {
     async execute(message, args) {
         if (onCooldown(message, 'zoo')) return;
         const display = ['display', 'd', '-display'].includes(String(args[0] || '').toLowerCase());
-        const docs = await getZoo(message.author.id).catch(() => []);
-        // hewan yang sudah habis dijual tetap tampil di mode display (totalcount)
-        let all = docs;
-        if (display) {
-            const Animal = require('../../models/funeconomy/animal');
-            all = await Animal.find({ userId: message.author.id, totalcount: { $gt: 0 } }).lean();
-        }
+        // Hewan yang pernah ditangkap tetap tampil (jumlah 0 kalau sudah habis dijual atau di-sacrifice)
+        const Animal = require('../../models/funeconomy/animal');
+        const all = await Animal.find({ userId: message.author.id, $or: [{ totalcount: { $gt: 0 } }, { count: { $gt: 0 } }] }).lean()
+            .catch(() => getZoo(message.author.id).catch(() => []));
         const text = buildZoo(displayName(message), all, display);
         for (const part of chunkLines(text)) await send(message, part);
     },
