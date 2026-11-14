@@ -21,6 +21,7 @@ function buildGetStarted() {
         `\`${p}cash\` · check your balance`,
         `\`${p}s <bet>\` · \`${p}cf <bet>\` · \`${p}bj <bet>\` · \`${p}hl <bet>\` · \`${p}rl <bet> <red/black>\` · \`${p}mines <bet> [1-8, default 3]\``,
         'Slots, coinflip, blackjack, HighLow, roulette, and Mines',
+        `\`${p}h\` · hunt animals · \`${p}b\` · battle with your team`,
         `\`${p}lb\` · see the rankings`
     ].join('\n');
 }
