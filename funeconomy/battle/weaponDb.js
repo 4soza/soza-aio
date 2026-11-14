@@ -205,14 +205,19 @@ async function removeWeapon(userId, uwid) {
 	return { weapon };
 }
 
-/* Hapus semua senjata (maks 500) di satu rank yang tidak dipakai & bukan favorit. */
-async function removeRank(userId, rankIndex) {
+/* Senjata di satu rank yang boleh dijual/dibongkar: tidak dipakai, bukan favorit, bukan unsellable (maks 500). */
+async function findRankWeapons(userId, rankIndex) {
 	const { min, max, last } = rankBounds(rankIndex);
 	const avg = {};
 	if (min === 0) avg.$gte = 0; else avg.$gt = min;
 	if (!last) avg.$lte = max;
 	const docs = await Weapon.find({ userId, animal: null, favorite: { $ne: true }, avg }).limit(MAX_RANK_BATCH).lean();
-	const weapons = docs.map(parseWeapon).filter((w) => w && !w.unsellable);
+	return docs.map(parseWeapon).filter((w) => w && !w.unsellable);
+}
+
+/* Hapus semua senjata (maks 500) di satu rank yang tidak dipakai & bukan favorit. */
+async function removeRank(userId, rankIndex) {
+	const weapons = await findRankWeapons(userId, rankIndex);
 	if (!weapons.length) return { weapons: [] };
 	const ids = weapons.map((w) => w.ruwid);
 	const result = await Weapon.deleteMany({ userId, uwid: { $in: ids }, animal: null, favorite: { $ne: true } });
@@ -284,5 +289,6 @@ module.exports = {
 	SELL_PRICES, SHARD_PRICES, RANK_NAMES, REROLL_PRICE, SORTS,
 	rankFromAlias, shortenUWID, expandUWID, parseWeapon, toDoc, nextUwid, randomWeapon, saveWeapon,
 	getWeaponDoc, getWeapon, listWeapons, countByType, equip, unequip, setFavorite, addKills, rankBounds,
-	removeWeapon, removeRank, startReroll, pendingWeapon, confirmReroll, cancelReroll, weaponsForAnimals
+	removeWeapon, removeRank, findRankWeapons, startReroll, pendingWeapon, confirmReroll, cancelReroll, weaponsForAnimals
 };
+	
