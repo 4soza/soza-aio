@@ -52,6 +52,13 @@ function animalCompactText(animal) {
 	return text;
 }
 
+/* Satu hewan, mode image: HP/WP sudah ada di gambar, jadi teksnya cukup level, hewan, dan perlengkapan */
+function animalMiniText(animal) {
+	let text = `L.${animal.stats.lvl} ${animal.animal.value}${buffText(animal)}`;
+	text += animal.weapon ? ` - ${weaponText(animal.weapon)}` : ' - _no weapon_';
+	return text;
+}
+
 /* Log satu turn dalam code block (dipotong agar muat di embed) */
 function parseLogs(turnLogs, limit = 3500) {
 	let text = '```ini\n';
@@ -64,10 +71,10 @@ function parseLogs(turnLogs, limit = 3500) {
 }
 
 function teamField(name, animals, display) {
-	const render = display === 'compact' ? animalCompactText : animalDisplayText;
+	const render = display === 'image' ? animalMiniText : display === 'compact' ? animalCompactText : animalDisplayText;
 	const rows = animals.map(render);
 	let value = rows.join('\n');
-	if (value.length > 1024) value = rows.map(animalCompactText).join('\n').slice(0, 1024);
+	if (value.length > 1024) value = rows.map(display === 'image' ? animalMiniText : animalCompactText).join('\n').slice(0, 1024);
 	return { name: String(name).slice(0, 256), value: value || '-', inline: true };
 }
 
@@ -139,7 +146,7 @@ async function displayBattle(event, setting, send, { title, iconURL, delayMs = 2
 
 	let msg;
 	for (let i = 0; i < turns.length; i++) {
-		const embed = renderTurn(event, turns[i], opts);
+		let embed = renderTurn(event, turns[i], opts);
 		let files = [];
 		if (setting.display === 'image') {
 			try {
@@ -151,9 +158,10 @@ async function displayBattle(event, setting, send, { title, iconURL, delayMs = 2
 					length
 				});
 				files = [{ attachment: png, name }];
-				delete embed.fields;
 				embed.image = { url: `attachment://${name}` };
 			} catch (error) {
+				// Gambar gagal: pakai teks compact lengkap (dengan HP/WP) sebagai gantinya
+				embed = renderTurn(event, turns[i], { ...opts, display: 'compact' });
 				console.error('[BATTLE] Could not render battle image, using text:', error.message);
 			}
 		}
@@ -167,3 +175,4 @@ async function displayBattle(event, setting, send, { title, iconURL, delayMs = 2
 }
 
 module.exports = { updateTeamStats, animalDisplayText, animalCompactText, parseLogs, renderTurn, finalText, displayBattle, weaponText, EMBED_COLOR };
+			
