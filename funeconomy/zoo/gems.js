@@ -51,6 +51,23 @@ function randomGem(rng = Math.random) {
 }
 
 /** Gem acak sebanyak `count`. Return { key: { gem, count } }. */
+/** Gem fabled acak (untuk fabled lootbox): tipe acak (rata). */
+function randomFabledGem(rng = Math.random) {
+    const type = TYPE_ORDER[Math.trunc(rng() * TYPE_ORDER.length)];
+    return GEMS_BY_TYPE[type][LETTERS.indexOf('f')];
+}
+
+/** Sama seperti randomGems, randomFabledGems, tapi semuanya gem fabled. */
+function randomFabledGems(count, rng = Math.random) {
+    const out = {};
+    for (let i = 0; i < count; i += 1) {
+        const gem = randomFabledGem(rng);
+        if (out[gem.key]) out[gem.key].count += 1;
+        else out[gem.key] = { gem, count: 1 };
+    }
+    return out;
+}
+
 function randomGems(count, rng = Math.random) {
     const out = {};
     for (let i = 0; i < count; i += 1) {
@@ -160,7 +177,6 @@ function describeUse(gem) {
 }
 
 module.exports = {
-    TYPES, TYPE_ORDER, GEMS, GEMS_BY_TYPE, getGemById, randomGem, randomGems, addGems, getInventory,
+    TYPES, TYPE_ORDER, GEMS, GEMS_BY_TYPE, getGemById, randomGem, randomGems, randomFabledGem, randomFabledGems, addGems, getInventory,
     activeOf, getActiveGems, activate, huntUsage, remainingAfterHunt, consumeHunt, huntEffects, describeUse
 };
-    
