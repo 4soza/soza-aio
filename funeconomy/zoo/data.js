@@ -45,14 +45,10 @@ const ROSTER = [
     ["rooster", "🐓", "uncommon", [3, 4, 3, 2, 2, 2], "The alarm cluck", ["chicken", "rooster"]],
     ["unicorn", "🦄", "mythical", [6, 3, 3, 4, 5, 4], "Rainbows follow it everywhere.", ["unicorn"]],
     ["dragon", "🐉", "mythical", [5, 7, 3, 3, 4, 3], "Breathes fire and hoards cash.", ["dragon"]],
-    ["lion", "🦁", "mythical", [5, 6, 3, 3, 3, 3], "The king of the zoo.", ["lion"]],
     ["shark", "🦈", "mythical", [4, 7, 2, 3, 3, 3], "Always hungry.", ["shark"]],
-    ["gorilla", "🦍", "mythical", [7, 6, 4, 2, 1, 3], "Strong, silent, and loves bananas.", ["gorilla", "ape"]],
     ["octopus", "🐙", "mythical", [4, 3, 2, 4, 7, 4], "Eight arms, zero chill.", ["octopus", "squid"]],
     ["trex", "🦖", "mythical", [6, 7, 3, 2, 2, 3], "Tiny arms, huge bite.", ["trex", "dino", "dinosaur"]],
     ["sauropod", "🦕", "mythical", [8, 3, 4, 3, 2, 4], "A gentle giant from long ago.", ["sauropod", "brontosaurus"]],
-    ["eagle", "🦅", "legendary", [5, 7, 3, 4, 4, 4], "Sees everything from above.", ["eagle", "hawk"]],
-    ["owl", "🦉", "legendary", [4, 4, 3, 5, 8, 4], "Wise and a little judgy.", ["owl"]],
     ["leopard", "🐆", "legendary", [5, 8, 3, 4, 3, 4], "Fast, spotted, and fierce.", ["leopard", "panther"]],
     ["bison", "🦬", "legendary", [9, 6, 5, 3, 2, 3], "Charges first, asks later.", ["bison", "buffalo"]],
     ["mammoth", "🦣", "legendary", [9, 6, 5, 3, 2, 4], "Frozen in time, thawed for you.", ["mammoth"]],
@@ -133,4 +129,4 @@ function zooPoints(counts) {
 }
 
 module.exports = { RANKS, RANK_ORDER, ANIMALS, ANIMALS_BY_RANK, findAnimal, findRank, zooPoints };
-                                
+     
