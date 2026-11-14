@@ -164,7 +164,8 @@ async function display(message, client) {
     const body = `Married since **${formatDate(marriage.marriedAt)}** (**${db.marriedDays(marriage)} days**)\n`
         + `You have claimed **${marriage.dailies || 0} dailies** together!\n${pick(QUOTES)} ${pick(QUOTES2)}`;
     const description = ringUrl ? body : `${ring.emoji} ${body}`;
-    const embed = { author: { name: `${name}, you are happily married to ${partner}!` }, description, color: EMBED_COLOR };
+    const avatar = message.author.displayAvatarURL?.({ extension: 'png', size: 64 });
+    const embed = { author: { name: `${name}, you are happily married to ${partner}!`, ...(avatar ? { icon_url: avatar } : {}) }, description, color: EMBED_COLOR };
     if (ringUrl) embed.thumbnail = { url: ringUrl };
     if (!canEmbed(message)) return send(message, `${ring.emoji} | **${name}**, you are happily married to **${partner}**!\n${ringUrl ? `${ring.emoji} ` : ''}${description}`);
     return message.channel.send({ embeds: [embed], allowedMentions: { parse: [] } });
@@ -284,3 +285,4 @@ async function handleButton(interaction) {
 }
 
 module.exports = { BUTTON_PREFIX, parseMarryArgs, marry, display, accept, decline, divorce, upgrade, handleButton };
+                                                        
