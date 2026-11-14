@@ -58,9 +58,17 @@ for (const [rank, key] of Object.entries(ROBOT_KEYS)) DEFS[key] = { fallback: '�
 const ANIMAL_EMOJI = {
     gspider: '🕷️', gshrimp: '🦐', gpanda: '🐼', gfish: '🐟', gcamel: '🐫',
     lsquid: '🦑', lowl: '🦉', llion: '🦁', lfox: '🦊', ldeer: '🦌',
-    fwolf: '🐺', fgorilla: '🦍', ffrog: '🐸', feagle: '🦅', fboar: '🐗'
+    fwolf: '🐺', fgorilla: '🦍', ffrog: '🐸', feagle: '🦅', fboar: '🐗',
+    // hewan lama yang dulu memakai emoji biasa
+    leopard: '🐆', bison: '🦬', mammoth: '🦣', swan: '🦢',
+    peacock: '🦚', parrot: '🦜', flamingo: '🦩', dolphin: '🐬',
+    elderdragon: '🐲', scorpion: '🦂', bat: '🦇', otter: '🦦'
 };
-for (const [key, fallback] of Object.entries(ANIMAL_EMOJI)) DEFS[key] = { animated: true, fallback };
+// Hewan lama: nama emoji/file memakai huruf depan rarity (l/g/f), key hewannya tetap.
+const OLD_PREFIX = { leopard: 'l', bison: 'l', mammoth: 'l', swan: 'l', peacock: 'g', parrot: 'g', flamingo: 'g', dolphin: 'g',
+    elderdragon: 'f', scorpion: 'f', bat: 'f', otter: 'f' };
+const emojiName = (animalKey) => (OLD_PREFIX[animalKey] ? `${OLD_PREFIX[animalKey]}${animalKey}` : animalKey);
+for (const [key, fallback] of Object.entries(ANIMAL_EMOJI)) DEFS[emojiName(key)] = { animated: true, fallback };
 DEFS.floot = { animated: true, fallback: '🎁' }; // fabled lootbox
 // Ikon buff/debuff di samping nama hewan (b_<nama>), key = id buff di funeconomy/battle/buffs.
 const BUFF_KEYS = { 1: 'b_taunt', 2: 'b_poison', 3: 'b_flame', 4: 'b_defenseup', 5: 'b_freeze', 6: 'b_attackup',
@@ -141,7 +149,7 @@ function apply() {
     const { ANIMALS } = require('./zoo/data');
     for (const [key, fallback] of Object.entries(ANIMAL_EMOJI)) {
         if (!ANIMALS[key]) continue;
-        const emoji = live.get(key) || fallback;
+        const emoji = live.get(emojiName(key)) || fallback;
         ANIMALS[key].uni = emoji;
         ANIMALS[key].value = emoji;
     }
@@ -187,4 +195,4 @@ function reset() { live.clear(); apply(); }
 const customId = (text) => /^<a?:\w+:(\d+)>$/.exec(String(text || ''))?.[1] || null;
 
 module.exports = { DEFS, get, gear, buff, robot, floot, shard, unknown, crate, crateShake, crateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId };
-        
+            
