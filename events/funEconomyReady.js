@@ -1,6 +1,7 @@
 const { startScheduler } = require('../funeconomy/lottery');
 const { startSweeper } = require('../funeconomy/gameExpiry');
 const customEmoji = require('../funeconomy/customEmoji');
+const { migrateAnimals } = require('../funeconomy/zoo/migrateAnimals');
 const highlow = require('../funeconomy/highlow');
 const mines = require('../funeconomy/mines');
 
@@ -13,6 +14,7 @@ module.exports = {
         startScheduler(client);
         // Unggah emoji kustom (rarity, shard, crate, lootbox) lalu pakai; gagal = tetap emoji Unicode.
         customEmoji.sync(client).catch((error) => console.warn('[FUNECONOMY] Emoji sync failed:', error.message));
+        migrateAnimals().catch((error) => console.warn('[FUNECONOMY] Migrasi hewan gagal:', error.message));
         startSweeper(client, [highlow.expireStaleGames, mines.expireStaleGames]);
     }
 };
