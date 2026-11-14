@@ -141,6 +141,31 @@ async function removeMember(userId, target) {
 	return { ok: true, slots: updated.teams[index].slots, index };
 }
 
+/*
+ * Pasang hewan di slot `pos` team aktif (key = null untuk mengosongkan). Kalau hewan itu sudah ada di slot lain,
+ * keduanya bertukar tempat (seperti OwO). Minimal satu hewan harus tersisa.
+ */
+async function setSlot(userId, pos, key) {
+	if (!Number.isInteger(pos) || pos < 1 || pos > SLOT_COUNT) return { error: 'invalid' };
+	const doc = await ensureTeams(userId);
+	const index = doc.teams[doc.active] ? doc.active : 0;
+	const slots = (doc.teams[index].slots || [null, null, null]).slice(0, SLOT_COUNT);
+	while (slots.length < SLOT_COUNT) slots.push(null);
+	if (key) {
+		if (!ANIMALS[key] || !(await ownsAnimal(userId, key))) return { error: 'notowned' };
+		const from = slots.indexOf(key);
+		if (from === pos - 1) return { ok: true, slots, index };
+		if (from >= 0) slots[from] = slots[pos - 1];
+		slots[pos - 1] = key;
+	} else {
+		if (!slots[pos - 1]) return { ok: true, slots, index };
+		slots[pos - 1] = null;
+	}
+	if (!filled({ slots }).length) return { error: 'last' };
+	await Team.updateOne({ userId }, { $set: { [`teams.${index}.slots`]: slots } });
+	return { ok: true, slots, index };
+}
+
 async function renameTeam(userId, name) {
 	name = String(name).replace(/[\u0000-\u001f`@]/g, '').trim();
 	if (!name.length) return { error: 'invalid' };
@@ -306,8 +331,7 @@ function statBlock(animal, digits) {
 module.exports = {
 	MAX_TEAMS, SLOT_COUNT,
 	getActiveTeamPets, giveXpToUserTeams,
-	getTeamDoc, ensureTeams, getActiveTeam, addMember, removeMember, renameTeam, setActive, updateTeamStreak,
+	getTeamDoc, ensureTeams, getActiveTeam, addMember, removeMember, setSlot, renameTeam, setActive, updateTeamStreak,
 	getBattleTeam, buildAnimals, generateEnemyTeam, isDead, getPidFromTeam,
 	statDigits, statBlock, weaponLine, filled, ownsAnimal
 };
-			
