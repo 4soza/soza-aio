@@ -169,12 +169,6 @@ async function displayBattle(event, setting, send, { title, iconURL, delayMs = 2
 		if (i < turns.length - 1) await sleep(setting.speed === 'lengthy' ? 2500 : delayMs);
 	}
 	// Hasil battle tidak kadaluarsa (seperti OwO): warna embed tetap sesuai hasil (menang/kalah/seri).
-	if (msg) {
-		// Diagnosa sementara: berapa lampiran/embed yang benar-benar ada di pesan battle ini
-		msg.channel?.messages?.fetch?.(msg.id).then((fresh) => {
-			console.log(`[BATTLE] Pesan ${fresh.id}: lampiran=${fresh.attachments.size}, embed=${fresh.embeds.length}`);
-		}).catch(() => {});
-	}
 	return msg;
 }
 
