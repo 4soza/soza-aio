@@ -9,7 +9,6 @@ const WeaponInterface = require('./WeaponInterface.js');
 const battleUtil = require('./util/battleUtil.js');
 const { sleep } = require('../utils');
 const { renderBattleImage } = require('./battleImage.js');
-const { track } = require('../inactivity');
 
 const EMBED_COLOR = 0x7ab8f5; // biru yang sama dengan HighLow
 
@@ -145,7 +144,6 @@ async function displayBattle(event, setting, send, { title, iconURL, delayMs = 2
 	else if (setting.speed === 'lengthy') turns = Array.from({ length: length + 1 }, (_, i) => i);
 
 	let msg;
-	let lastFiles = [];
 	for (let i = 0; i < turns.length; i++) {
 		let embed = renderTurn(event, turns[i], opts);
 		let files = [];
@@ -166,13 +164,17 @@ async function displayBattle(event, setting, send, { title, iconURL, delayMs = 2
 				console.error('[BATTLE] Could not render battle image, using text:', error.message);
 			}
 		}
-		lastFiles = files;
 		if (!msg) msg = await send(embed, files);
 		else await msg.edit({ embeds: [embed], files, attachments: [], allowedMentions: { parse: [] } }).catch(() => {});
 		if (i < turns.length - 1) await sleep(setting.speed === 'lengthy' ? 2500 : delayMs);
 	}
-	// Setelah 10 menit tanpa aktivitas, embed hasil battle jadi abu-abu (seperti HighLow).
-	if (msg) track(msg, lastFiles);
+	// Hasil battle tidak kadaluarsa (seperti OwO): warna embed tetap sesuai hasil (menang/kalah/seri).
+	if (msg) {
+		// Diagnosa sementara: berapa lampiran/embed yang benar-benar ada di pesan battle ini
+		msg.channel?.messages?.fetch?.(msg.id).then((fresh) => {
+			console.log(`[BATTLE] Pesan ${fresh.id}: lampiran=${fresh.attachments.size}, embed=${fresh.embeds.length}`);
+		}).catch(() => {});
+	}
 	return msg;
 }
 
