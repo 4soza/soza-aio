@@ -26,7 +26,7 @@ function greyComponent(component) {
 }
 
 /** Versi abu-abu dari pesan: warna embed abu-abu, semua tombol nonaktif. Return null kalau tidak ada yang perlu diubah. */
-function greyedPayload(message) {
+function greyedPayload(message, nameOf = (a) => a.name) {
     const isV2 = message.flags && typeof message.flags.has === 'function' && message.flags.has(IS_COMPONENTS_V2);
     if (isV2) {
         const components = (message.components || []).map(greyComponent);
@@ -43,7 +43,7 @@ function greyedPayload(message) {
         const json = { ...plain(e), color: EXPIRED_COLOR };
         for (const key of ['image', 'thumbnail']) {
             const att = json[key]?.url && byUrl(json[key].url);
-            if (att) json[key] = { url: `attachment://${att.name}` };
+            if (att) json[key] = { url: `attachment://${nameOf(att)}` };
         }
         return json;
     });
@@ -54,7 +54,7 @@ function greyedPayload(message) {
     if (!embeds.length && !components.length) return null;
     const payload = { embeds, components, allowedMentions: { parse: [] } };
     // Hanya id + nama: lampiran yang sudah ada dipertahankan, tidak diunggah ulang.
-    if (attachments.length) payload.attachments = attachments.map((a) => ({ id: a.id, filename: a.name }));
+    if (attachments.length) payload.attachments = attachments.map((a) => ({ id: a.id, filename: nameOf(a) }));
     return payload;
 }
 
@@ -64,18 +64,20 @@ function greyedPayload(message) {
  * Jadi gambar lama diunduh dari CDN lalu dipasang ulang; kalau gagal diunduh, pakai payload biasa.
  */
 async function greyedPayloadWithFiles(message) {
-    const payload = greyedPayload(message);
+    // Nama file baru (seperti update turn battle yang selalu ganti nama), supaya tidak bentrok dengan lampiran lama.
+    const nameOf = (a) => String(a.name).replace(/(\.\w+)?$/, (ext) => `-g${ext}`);
+    const payload = greyedPayload(message, nameOf);
     if (!payload?.attachments?.length) return payload;
     try {
         const list = [...message.attachments.values()];
         const files = await Promise.all(list.map(async (a) => {
             const res = await fetch(a.url);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return { attachment: Buffer.from(await res.arrayBuffer()), name: a.name };
+            return { attachment: Buffer.from(await res.arrayBuffer()), name: nameOf(a) };
         }));
         return { ...payload, files, attachments: [] };
     } catch {
-        return payload;
+        return greyedPayload(message); // gagal unduh: pertahankan lampiran lama dengan nama aslinya
     }
 }
 
@@ -85,7 +87,10 @@ async function expire(message) {
         const fresh = await message.channel.messages.fetch(message.id);
         const payload = await greyedPayloadWithFiles(fresh);
         if (payload) await fresh.edit(payload);
-    } catch { /* pesan sudah dihapus atau bot kehilangan akses */ }
+    } catch (error) {
+        // pesan sudah dihapus atau bot kehilangan akses
+        console.warn(`[INACTIVITY] Gagal membuat pesan abu-abu: ${error.message}`);
+    }
 }
 
 /** Mulai atau ulang hitungan 10 menit untuk pesan ini. Return pesan yang sama supaya bisa dipakai langsung. */
