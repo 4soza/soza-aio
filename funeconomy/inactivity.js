@@ -6,6 +6,7 @@
 const { EXPIRE_MS, EXPIRED_COLOR } = require('./gameExpiry');
 
 const timers = new Map(); // messageId -> timeout
+const extras = new Map(); // messageId -> file yang dikirim bersama pesan (supaya tidak perlu diunduh lagi)
 
 const plain = (x) => (x && typeof x.toJSON === 'function' ? x.toJSON() : x);
 
@@ -63,30 +64,37 @@ function greyedPayload(message, nameOf = (a) => a.name) {
  * Jalur yang pasti benar adalah yang dipakai battle saat update turn: unggah file lagi + attachments: [].
  * Jadi gambar lama diunduh dari CDN lalu dipasang ulang; kalau gagal diunduh, pakai payload biasa.
  */
-async function greyedPayloadWithFiles(message) {
+async function greyedPayloadWithFiles(message, known) {
     // Nama file baru (seperti update turn battle yang selalu ganti nama), supaya tidak bentrok dengan lampiran lama.
     const nameOf = (a) => String(a.name).replace(/(\.\w+)?$/, (ext) => `-g${ext}`);
     const payload = greyedPayload(message, nameOf);
-    if (!payload?.attachments?.length) return payload;
+    if (!payload?.attachments?.length) return { payload, mode: 'plain' };
+    const list = [...message.attachments.values()];
     try {
-        const list = [...message.attachments.values()];
+        // Gambar yang masih ada di memori (dari saat battle dikirim) dipakai langsung; kalau tidak ada, diunduh dari Discord.
         const files = await Promise.all(list.map(async (a) => {
+            const mine = known?.find((f) => f.name === a.name);
+            if (mine) return { attachment: mine.attachment, name: nameOf(a) };
             const res = await fetch(a.url);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return { attachment: Buffer.from(await res.arrayBuffer()), name: nameOf(a) };
         }));
-        return { ...payload, files, attachments: [] };
-    } catch {
-        return greyedPayload(message); // gagal unduh: pertahankan lampiran lama dengan nama aslinya
+        return { payload: { ...payload, files, attachments: [] }, mode: 'reupload' };
+    } catch (error) {
+        console.warn(`[INACTIVITY] Gambar tidak bisa dipasang ulang (${error.message}); lampiran lama dipertahankan`);
+        return { payload: greyedPayload(message), mode: 'keep' };
     }
 }
 
 async function expire(message) {
     timers.delete(message.id);
+    const known = extras.get(message.id);
+    extras.delete(message.id);
     try {
         const fresh = await message.channel.messages.fetch(message.id);
-        const payload = await greyedPayloadWithFiles(fresh);
+        const { payload, mode } = await greyedPayloadWithFiles(fresh, known);
         if (payload) await fresh.edit(payload);
+        console.log(`[INACTIVITY] Pesan ${message.id} jadi abu-abu (${mode})`);
     } catch (error) {
         // pesan sudah dihapus atau bot kehilangan akses
         console.warn(`[INACTIVITY] Gagal membuat pesan abu-abu: ${error.message}`);
@@ -94,9 +102,10 @@ async function expire(message) {
 }
 
 /** Mulai atau ulang hitungan 10 menit untuk pesan ini. Return pesan yang sama supaya bisa dipakai langsung. */
-function track(message) {
+function track(message, files) {
     if (!message?.id || !message.channel?.messages?.fetch) return message;
     clearTimeout(timers.get(message.id));
+    if (files?.length) extras.set(message.id, files);
     const timer = setTimeout(() => expire(message), EXPIRE_MS);
     timer.unref?.();
     timers.set(message.id, timer);
@@ -104,3 +113,4 @@ function track(message) {
 }
 
 module.exports = { track, greyedPayload, greyedPayloadWithFiles, greyComponent };
+            
