@@ -46,7 +46,7 @@ module.exports = {
         if (count === 1) {
             const gem = entries[0].gem;
             const gemName = `${gem.rankName} ${gem.type} Gem`;
-            first = `**${emojis.lootboxShake()} | ${name}** opens a lootbox\n**${emojis.lootboxOpen()} |** and finds a ...`;
+            first = `${BLANK} **| ${name}** opens a lootbox\n**${emojis.lootboxShake()} |** and finds a ...`;
             last = `**${gem.emoji} | ${name}** opens a lootbox\n**${emojis.lootboxOpen()} |** and finds a${/^[EU]/.test(gemName) ? 'n' : ''} **${gemName}**!`;
         } else {
             const gemText = entries.map((e) => `${e.gem.emoji}${toSmallNum(e.count)}`).join(' ');
