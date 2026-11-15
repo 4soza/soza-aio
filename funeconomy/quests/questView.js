@@ -32,6 +32,9 @@ const bar = (current, goal, size = 10) => {
     return '▰'.repeat(filled) + '▱'.repeat(size - filled);
 };
 
+/** Emoji task: lootbox dan crate memakai emoji kustom bot, sisanya emoji bawaan. */
+const taskEmoji = (task) => (task.key === 'lootbox' ? emojis.lootbox() : task.key === 'crate' ? emojis.crate() : task.emoji);
+
 /** "📦 1 · 🧰 1 · cash 1,000 · shard 100" untuk objek hadiah. */
 function rewardText(reward) {
     const parts = [];
@@ -60,7 +63,7 @@ function checklist(kind, ownerId, ownerName, state, notice) {
     const lines = tasks.map((task) => {
         const current = Math.min(progress[task.key] || 0, task.goal);
         const done = current >= task.goal;
-        return `${done ? '✅' : '⬜'} ${task.emoji} **${done ? `~~${task.label}~~` : task.label}** \`${current}/${task.goal}\`\n${bar(current, task.goal)}`;
+        return `${done ? '✅' : '⬜'} ${taskEmoji(task)} **${done ? `~~${task.label}~~` : task.label}** \`${current}/${task.goal}\`\n${bar(current, task.goal)}`;
     });
     const resetAt = kind === 'weekly' ? state.weeklyResetAt : state.dailyResetAt;
     const reward = db.rewardOf(kind);
@@ -133,18 +136,32 @@ async function handleButton(interaction) {
     if (interaction.user.id !== ownerId) {
         return interaction.reply({ content: `${cfg.EMOJI.ERROR} | This is not your menu!`, flags: EPHEMERAL });
     }
+    // Kalau database lambat, tunda jawaban supaya interaksi tidak kadaluarsa (Discord hanya memberi 3 detik).
+    const deferTimer = setTimeout(() => {
+        if (!interaction.deferred && !interaction.replied) interaction.deferUpdate().catch(() => {});
+    }, 2000);
+    const warn = (content) => (interaction.deferred || interaction.replied
+        ? interaction.followUp({ content, flags: EPHEMERAL })
+        : interaction.reply({ content, flags: EPHEMERAL }));
+    try {
+        return await handle();
+    } finally {
+        clearTimeout(deferTimer);
+    }
+
+    async function handle() {
     let notice;
     if (action === 'claim') {
         if (tab === 'quests') {
             const result = await db.claimQuests(ownerId);
-            if (!result.ok) return interaction.reply({ content: `${cfg.EMOJI.ERROR} | You have no finished quests to claim!`, flags: EPHEMERAL });
+            if (!result.ok) return warn(`${cfg.EMOJI.ERROR} | You have no finished quests to claim!`);
             notice = `**You claimed ${result.count} quest${result.count === 1 ? '' : 's'}!**\n${rewardText(result.reward)}`;
         } else {
             const kind = tab === 'weekly' ? 'weekly' : 'daily';
             const result = await db.claimChecklist(ownerId, kind);
             if (!result.ok) {
                 const why = result.error === 'claimed' ? 'You already claimed these rewards!' : 'Finish every task first!';
-                return interaction.reply({ content: `${cfg.EMOJI.ERROR} | ${why}`, flags: EPHEMERAL });
+                return warn(`${cfg.EMOJI.ERROR} | ${why}`);
             }
             notice = `**You claimed your rewards!**\n${rewardText(result.reward)}`;
         }
@@ -152,7 +169,7 @@ async function handleButton(interaction) {
         const result = await db.reroll(ownerId);
         if (!result.ok) {
             const why = result.error === 'used' ? 'You already rerolled today!' : 'There is no quest that can be rerolled!';
-            return interaction.reply({ content: `${cfg.EMOJI.ERROR} | ${why}`, flags: EPHEMERAL });
+            return warn(`${cfg.EMOJI.ERROR} | ${why}`);
         }
         notice = '🔁 Your quests were rerolled!';
     } else if (action === 'lock') {
@@ -161,7 +178,12 @@ async function handleButton(interaction) {
         if (quest) await db.setLocked(ownerId, quest.qid, !quest.locked);
     }
     const message = await buildMessage(ownerId, displayOf(interaction), tab, { notice });
+    if (interaction.deferred) {
+        const { flags, ...rest } = message;
+        return interaction.editReply(rest);
+    }
     return interaction.update(message);
+    }
 }
 
 module.exports = { BUTTON_PREFIX, buildMessage, handleButton, rewardText, bar, track };
