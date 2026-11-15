@@ -6,7 +6,8 @@ const { takeForExchange, takeRanks } = require('../zoo/zooDb');
 const { parseExchangeArgs, rankSummary } = require('../zoo/args');
 const { addEssence } = require('../zoo/huntbot');
 
-const ESSENCE = '✨';
+const emojis = require('../customEmoji');
+const essenceIcon = () => emojis.essence();
 const err = (message, name, text) => sendTemporaryError(message, `**🚫 | ${name}**, ${text}`);
 
 async function sacrificeAnimal(userId, animal, count) {
@@ -47,7 +48,7 @@ module.exports = {
         if (parsed.ranks) {
             const result = await sacrificeRanks(userId, parsed.ranks);
             if (result.error) return err(message, name, "You don't have enough animals! >:c");
-            return send(message, `**🔪 | ${name}** sacrificed **${rankSummary(result.taken)}** for a total of **${ESSENCE} ${fmt(result.total)}**`);
+            return send(message, `**🔪 | ${name}** sacrificed **${rankSummary(result.taken)}** for a total of **${essenceIcon()} ${fmt(result.total)}**`);
         }
         const result = await sacrificeAnimal(userId, parsed.animal, parsed.count);
         if (result.error) {
@@ -55,7 +56,7 @@ module.exports = {
                 ? "You don't have enough animals! >:c"
                 : "You can't sacrifice more than you have silly! >:c");
         }
-        return send(message, `**🔪 | ${name}** sacrificed **${parsed.animal.uni}x${result.sold}** for **${ESSENCE} ${fmt(result.total)}**`);
+        return send(message, `**🔪 | ${name}** sacrificed **${parsed.animal.uni}x${result.sold}** for **${essenceIcon()} ${fmt(result.total)}**`);
     },
     _internals: { sacrificeAnimal, sacrificeRanks }
 };
