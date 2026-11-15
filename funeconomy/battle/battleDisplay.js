@@ -145,6 +145,7 @@ async function displayBattle(event, setting, send, { title, iconURL, delayMs = 2
 	else if (setting.speed === 'lengthy') turns = Array.from({ length: length + 1 }, (_, i) => i);
 
 	let msg;
+	let lastFiles = [];
 	for (let i = 0; i < turns.length; i++) {
 		let embed = renderTurn(event, turns[i], opts);
 		let files = [];
@@ -165,14 +166,15 @@ async function displayBattle(event, setting, send, { title, iconURL, delayMs = 2
 				console.error('[BATTLE] Could not render battle image, using text:', error.message);
 			}
 		}
+		lastFiles = files;
 		if (!msg) msg = await send(embed, files);
 		else await msg.edit({ embeds: [embed], files, attachments: [], allowedMentions: { parse: [] } }).catch(() => {});
 		if (i < turns.length - 1) await sleep(setting.speed === 'lengthy' ? 2500 : delayMs);
 	}
 	// Setelah 10 menit tanpa aktivitas, embed hasil battle jadi abu-abu (seperti HighLow).
-	if (msg) track(msg);
+	if (msg) track(msg, lastFiles);
 	return msg;
 }
 
 module.exports = { updateTeamStats, animalDisplayText, animalCompactText, parseLogs, renderTurn, finalText, displayBattle, weaponText, EMBED_COLOR };
-			
+	
