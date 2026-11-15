@@ -19,7 +19,7 @@ function botImage(icon) {
     const id = emojis.customId(icon);
     return id ? `https://cdn.discordapp.com/emojis/${id}.${String(icon).startsWith('<a:') ? 'gif' : 'png'}?size=128` : ROBOT_IMAGE;
 }
-const ESSENCE = '✨';
+const essenceIcon = () => emojis.essence();
 const ROBOT_IMAGE = 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/72x72/1f916.png';
 const err = (message, name, text) => sendTemporaryError(message, `**🚫 | ${name}**, ${text}`);
 
@@ -87,7 +87,7 @@ async function display(message, name, icon = BOT) {
         traitLine('⚔ Experience', t.exp),
         traitLine('📡 Radar', t.radar),
         '',
-        `${ESSENCE} Animal Essence - \`${fmt(doc?.essence || 0)}\``,
+        `${essenceIcon()} Animal Essence - \`${fmt(doc?.essence || 0)}\``,
         `\`Current Max Autohunt: ${fmt(maxhunt)} animals, ${fmt(Math.floor(t.gain.stat * t.duration.stat))} essence, and ${fmt(Math.floor(t.exp.stat * t.duration.stat))} xp for ${fmt(maxhunt * t.cost.stat)} cash\``
     ];
     if (progress) body.push('', `${icon} **HUNTBOT is currently hunting!**`, progressText(progress, icon));
@@ -164,4 +164,4 @@ module.exports = {
     },
     _internals: { parseHours, startHunt, claimAndAnnounce }
 };
-    
+                  
