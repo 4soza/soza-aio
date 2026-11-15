@@ -58,11 +58,32 @@ function greyedPayload(message) {
     return payload;
 }
 
+/*
+ * Edit yang hanya "merujuk" lampiran lama membuat Discord menampilkan lampiran itu lagi di luar embed (gambar dobel).
+ * Jalur yang pasti benar adalah yang dipakai battle saat update turn: unggah file lagi + attachments: [].
+ * Jadi gambar lama diunduh dari CDN lalu dipasang ulang; kalau gagal diunduh, pakai payload biasa.
+ */
+async function greyedPayloadWithFiles(message) {
+    const payload = greyedPayload(message);
+    if (!payload?.attachments?.length) return payload;
+    try {
+        const list = [...message.attachments.values()];
+        const files = await Promise.all(list.map(async (a) => {
+            const res = await fetch(a.url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return { attachment: Buffer.from(await res.arrayBuffer()), name: a.name };
+        }));
+        return { ...payload, files, attachments: [] };
+    } catch {
+        return payload;
+    }
+}
+
 async function expire(message) {
     timers.delete(message.id);
     try {
         const fresh = await message.channel.messages.fetch(message.id);
-        const payload = greyedPayload(fresh);
+        const payload = await greyedPayloadWithFiles(fresh);
         if (payload) await fresh.edit(payload);
     } catch { /* pesan sudah dihapus atau bot kehilangan akses */ }
 }
@@ -77,4 +98,4 @@ function track(message) {
     return message;
 }
 
-module.exports = { track, greyedPayload, greyComponent };
+module.exports = { track, greyedPayload, greyedPayloadWithFiles, greyComponent };
