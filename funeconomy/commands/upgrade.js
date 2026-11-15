@@ -4,7 +4,8 @@ const { fmt, displayName, send, sendTemporaryError, onCooldown } = require('../u
 const HuntBot = require('../zoo/huntbot');
 const { BLANK } = require('../zoo/format');
 
-const ESSENCE = '✨';
+const emojis = require('../customEmoji');
+const essenceIcon = () => emojis.essence();
 const err = (message, name, text) => sendTemporaryError(message, `**🚫 | ${name}**, ${text}`);
 
 module.exports = {
@@ -36,7 +37,7 @@ module.exports = {
         if (result.error) return err(message, name, 'You do not have enough animal essence!');
 
         const { stat, spent } = result;
-        let text = `**🛠 | ${name}**, You successfully upgraded \`${trait}\` with **${fmt(spent)} Animal Essence** ${ESSENCE}!`;
+        let text = `**🛠 | ${name}**, You successfully upgraded \`${trait}\` with **${fmt(spent)} Animal Essence** ${essenceIcon()}!`;
         text += `\n${BLANK} **|** \`${trait}: ${stat.stat + stat.prefix} -  Lvl ${stat.lvl} ${stat.max ? '[MAX]' : `[${stat.currentxp}/${stat.maxxp}]`}\``;
         if (stat.max) text += `\n${BLANK} **|** HuntBot is at max level!`;
         else if (stat.lvlup) text += `\n${BLANK} **|** HuntBot Leveled Up!! 🎉`;
