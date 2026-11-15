@@ -105,5 +105,12 @@ async function openFabledBoxes(userId, count, rng = Math.random) {
     return { gems };
 }
 
+/** Tambah lootbox biasa atau fabled (untuk perintah pemilik bot). Return dokumen terbaru. */
+async function addBoxes(userId, amount, fabled = false) {
+    await ensure(userId);
+    return Lootbox.findOneAndUpdate({ userId }, { $inc: { [fabled ? 'fboxcount' : 'boxcount']: amount } }, { new: true }).lean();
+}
+
 module.exports = {
-    FLOOT_CHANCE, claimFabledFromHunt, getFabledCount, openFabledBoxes, DAILY_LIMIT, MAX_OPEN, claimFromHunt, getBoxCount, openBoxes };
+    addBoxes, FLOOT_CHANCE, claimFabledFromHunt, getFabledCount, openFabledBoxes, DAILY_LIMIT, MAX_OPEN, claimFromHunt, getBoxCount, openBoxes };
+                   
