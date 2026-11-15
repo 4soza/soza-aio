@@ -50,7 +50,7 @@ module.exports = {
             last = `**${gem.emoji} | ${name}** opens a lootbox\n**${emojis.lootboxOpen()} |** and finds a${/^[EU]/.test(gemName) ? 'n' : ''} **${gemName}**!`;
         } else {
             const gemText = entries.map((e) => `${e.gem.emoji}${toSmallNum(e.count)}`).join(' ');
-            first = `${BLANK} **| ${name}** opens ${count} lootboxes\n**${emojis.lootboxOpen()} |** and finds...`;
+            first = `${BLANK} **| ${name}** opens ${count} lootboxes\n**${emojis.lootboxShake()} |** and finds...`;
             last = `${BLANK} **| ${name}** opens ${count} lootboxes\n**${emojis.lootboxOpen()} |** and finds: ${gemText}`;
         }
         const sent = await send(message, first);
