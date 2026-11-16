@@ -132,7 +132,21 @@ async function addDaily(userId) {
     await Marriage.updateOne({ users: String(userId) }, { $inc: { dailies: 1 } });
 }
 
+/*
+ * Daily bareng pasangan: catat hari daily user ini. Kalau pasangan juga sudah claim di hari yang sama,
+ * hitung 1 daily bersama (sekali per hari). Return true kalau dailies bertambah.
+ */
+async function recordDaily(userId, day) {
+    const id = String(userId);
+    const doc = await Marriage.findOneAndUpdate({ users: id }, { $set: { [`claimDays.${id}`]: day } }, { new: true }).lean();
+    if (!doc) return false;
+    const partner = partnerOf(doc, id);
+    if (!partner || doc.claimDays?.[partner] !== day) return false;
+    const res = await Marriage.updateOne({ _id: doc._id, togetherDay: { $ne: day } }, { $set: { togetherDay: day }, $inc: { dailies: 1 } });
+    return res.modifiedCount > 0;
+}
+
 module.exports = {
-    PROPOSAL_MS, sortPair, getMarriage, partnerOf, marriedDays, getPending,
+    PROPOSAL_MS, recordDaily, sortPair, getMarriage, partnerOf, marriedDays, getPending,
     propose, setProposalMessage, accept, decline, upgradeRing, divorce, addDaily
 };
