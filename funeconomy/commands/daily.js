@@ -3,6 +3,7 @@ const Economy = require('../../models/funeconomy/economy');
 const cooldown = require('../cooldown');
 const { rewardDaily } = require('../levelUp');
 const emojis = require('../customEmoji');
+const marriageDb = require('../shop/marriageDb');
 const Lootbox = require('../../models/funeconomy/lootbox');
 const Crate = require('../../models/funeconomy/crate');
 const { trackFor } = require('../quests/questTrack');
@@ -54,6 +55,8 @@ module.exports = {
         ].join('\n'));
 
         trackFor(message, 'daily');
+        // Daily bareng pasangan: dihitung 1 kalau kedua pasangan sudah claim di hari yang sama.
+        await marriageDb.recordDaily(userId, dayNumber(now)).catch((error) => console.error('[FUNECONOMY] marriage daily failed:', error.message));
 
         // Bonus XP dari daily; level up diumumkan terpisah setelah pesan daily.
         await rewardDaily({
