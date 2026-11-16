@@ -46,12 +46,12 @@ module.exports = {
         if (count === 1) {
             const gem = entries[0].gem;
             const gemName = `${gem.rankName} ${gem.type} Gem`;
-            first = `${BLANK} **| ${name}** opens a fabled lootbox\n**${emojis.floot()} |** and finds a ...`;
-            last = `**${gem.emoji} | ${name}** opens a fabled lootbox\n**${emojis.floot()} |** and finds a${/^[EU]/.test(gemName) ? 'n' : ''} **${gemName}**!`;
+            first = `${BLANK} **| ${name}** opens a fabled lootbox\n**${emojis.flootShake()} |** and finds a ...`;
+            last = `**${gem.emoji} | ${name}** opens a fabled lootbox\n**${emojis.flootOpen()} |** and finds a${/^[EU]/.test(gemName) ? 'n' : ''} **${gemName}**!`;
         } else {
             const gemText = entries.map((e) => `${e.gem.emoji}${toSmallNum(e.count)}`).join(' ');
-            first = `${BLANK} **| ${name}** opens ${count} fabled lootboxes\n**${emojis.floot()} |** and finds...`;
-            last = `${BLANK} **| ${name}** opens ${count} fabled lootboxes\n**${emojis.floot()} |** and finds: ${gemText}`;
+            first = `${BLANK} **| ${name}** opens ${count} fabled lootboxes\n**${emojis.flootShake()} |** and finds...`;
+            last = `${BLANK} **| ${name}** opens ${count} fabled lootboxes\n**${emojis.flootOpen()} |** and finds: ${gemText}`;
         }
         const sent = await send(message, first);
         const timer = setTimeout(() => { sent.edit?.(last)?.catch?.(() => {}); }, 3000);
