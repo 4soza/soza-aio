@@ -1,5 +1,7 @@
 // Based on OwO Bot by Christopher Thai, CC BY-NC-SA 4.0
-const { fmt, displayName, send, sendTemporaryError, onCooldown } = require('../utils');
+const { fmt, displayName, send, sendEmbed, canEmbed, sendTemporaryError, onCooldown } = require('../utils');
+const emojis = require('../customEmoji');
+const { EMBED_COLOR } = require('../battle/battleDisplay');
 const cooldown = require('../cooldown');
 const { RANKS } = require('../zoo/data');
 const { findAnimal } = require('../zoo/data');
@@ -17,10 +19,16 @@ async function totalCaught(key) {
     } catch { return null; }
 }
 
+/** Emoji weapon kustom (yang berbingkai) kalau sudah ada; kalau belum, emoji bawaan. */
+const weaponEmoji = (id) => {
+    const W = WeaponInterface.weapons[id];
+    return emojis.gear('w', W.name, id) || W.getEmoji;
+};
+
 /** Tiga emoji weapon pertama untuk class hewan ini, lalu "+ N more". */
 function weaponLine(animal) {
     const ids = weaponIdsFor(animal);
-    const shown = ids.slice(0, 3).map((id) => WeaponInterface.weapons[id].getEmoji).join('');
+    const shown = ids.slice(0, 3).map(weaponEmoji).join('');
     return ids.length > 3 ? `${shown} + ${ids.length - 3} more` : shown;
 }
 
@@ -62,6 +70,8 @@ module.exports = {
             '',
             `**Class:** ${classOf(animal)}: ${weaponLine(animal)}`
         ].filter((l) => l !== null);
-        return send(message, lines.join('\n'));
+        const text = lines.slice(2).join('\n');
+        if (!canEmbed(message)) return send(message, lines.join('\n'));
+        return sendEmbed(message, { title: `${animal.uni} ${animal.name}`, description: `*${animal.desc}*\n${text}`, color: EMBED_COLOR });
     }
 };
