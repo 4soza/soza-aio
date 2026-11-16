@@ -73,7 +73,7 @@ function teamField(name, animals, display) {
 	const render = display === 'image' ? animalMiniText : display === 'compact' ? animalCompactText : animalDisplayText;
 	const rows = animals.map(render);
 	let value = rows.join('\n');
-	if (value.length > 1024) value = rows.map(display === 'image' ? animalMiniText : animalCompactText).join('\n').slice(0, 1024);
+	if (value.length > 1024) value = animals.map(display === 'image' ? animalMiniText : animalCompactText).join('\n').slice(0, 1024);
 	return { name: String(name).slice(0, 256), value: value || '-', inline: true };
 }
 
@@ -83,6 +83,15 @@ function teamField(name, animals, display) {
  */
 function renderTurn(event, turn, { display = 'image', showLogs = false, title, iconURL } = {}) {
 	const length = event.getLength();
+
+	// Pengaman: hewan tanpa stat dihitung ulang (dan dicatat) supaya tampilan tidak error.
+	for (const side of [event.player, event.enemy]) {
+		for (const animal of side?.team || []) {
+			if (animal.stats) continue;
+			console.warn(`[BATTLE] Stat hilang untuk hewan ${animal.key}, dihitung ulang`);
+			animalUtil.stats(animal);
+		}
+	}
 	if (turn === 0) {
 		updateTeamStats(event.player.team, 100);
 		updateTeamStats(event.enemy.team, 100);
@@ -172,5 +181,5 @@ async function displayBattle(event, setting, send, { title, iconURL, delayMs = 2
 	return msg;
 }
 
-module.exports = { updateTeamStats, animalDisplayText, animalCompactText, parseLogs, renderTurn, finalText, displayBattle, weaponText, EMBED_COLOR };
-	
+module.exports = { teamField, updateTeamStats, animalDisplayText, animalCompactText, parseLogs, renderTurn, finalText, displayBattle, weaponText, EMBED_COLOR };
+		
