@@ -4,6 +4,8 @@ const cooldown = require('../cooldown');
 const { RANKS } = require('../zoo/data');
 const { findAnimal } = require('../zoo/data');
 const { getAnimalDoc } = require('../zoo/zooDb');
+const WeaponInterface = require('../battle/WeaponInterface');
+const { classOf, weaponIdsFor } = require('../battle/animalClass');
 
 const err = (message, name, text) => sendTemporaryError(message, `**🚫 | ${name}**, ${text}`);
 
@@ -13,6 +15,13 @@ async function totalCaught(key) {
         const rows = await Animal.aggregate([{ $match: { name: key } }, { $group: { _id: null, total: { $sum: '$totalcount' } } }]);
         return rows[0]?.total || 0;
     } catch { return null; }
+}
+
+/** Tiga emoji weapon pertama untuk class hewan ini, lalu "+ N more". */
+function weaponLine(animal) {
+    const ids = weaponIdsFor(animal);
+    const shown = ids.slice(0, 3).map((id) => WeaponInterface.weapons[id].getEmoji).join('');
+    return ids.length > 3 ? `${shown} + ${ids.length - 3} more` : shown;
 }
 
 module.exports = {
@@ -46,8 +55,12 @@ module.exports = {
             `**Points:** ${fmt(rank.points)}`,
             `**Sell:** ${sell}`,
             `**Sacrifice:** ${sac}`,
-            `❤️ \`${animal.hpr}\` ⚔️ \`${animal.attr}\` 🛡️ \`${animal.prr}\``,
-            `💧 \`${animal.wpr}\` 🔮 \`${animal.magr}\` ✨ \`${animal.mrr}\``
+            '',
+            `**Base stats (${animal.hpr + animal.attr + animal.prr + animal.wpr + animal.magr + animal.mrr} total)**`,
+            `${WeaponInterface.hpEmoji} \`${animal.hpr}\` ${WeaponInterface.strEmoji} \`${animal.attr}\` ${WeaponInterface.prEmoji} \`${animal.prr}\``,
+            `${WeaponInterface.wpEmoji} \`${animal.wpr}\` ${WeaponInterface.magEmoji} \`${animal.magr}\` ${WeaponInterface.mrEmoji} \`${animal.mrr}\``,
+            '',
+            `**Class:** ${classOf(animal)}: ${weaponLine(animal)}`
         ].filter((l) => l !== null);
         return send(message, lines.join('\n'));
     }
