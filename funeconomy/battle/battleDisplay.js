@@ -101,17 +101,33 @@ function renderTurn(event, turn, { display = 'image', showLogs = false, title, i
 		updateTeamStats(event.enemy.team, current.enemy);
 	}
 
+	const playerName = event.player.name || `${event.playerName}'s team`;
+	const enemyName = event.enemy.name || `${event.enemyName}'s team`;
 	const embed = {
 		color: EMBED_COLOR,
-		author: { name: title || `${event.playerName} goes into battle!`, ...(iconURL ? { icon_url: iconURL } : {}) },
-		fields: [
-			teamField(event.player.name || `${event.playerName}'s team`, event.player.team, display),
-			teamField(event.enemy.name || `${event.enemyName}'s team`, event.enemy.team, display)
-		]
+		author: { name: title || `${event.playerName} goes into battle!`, ...(iconURL ? { icon_url: iconURL } : {}) }
 	};
 
-	if (showLogs && turn > 0 && event.logs[turn - 1].battleLogs) {
-		embed.description = parseLogs(event.logs[turn - 1].battleLogs);
+	if (display === 'image' || display === 'compact') {
+		embed.fields = [
+			teamField(playerName, event.player.team, display),
+			teamField(enemyName, event.enemy.team, display)
+		];
+		if (showLogs && turn > 0 && event.logs[turn - 1].battleLogs) {
+			embed.description = parseLogs(event.logs[turn - 1].battleLogs);
+		}
+	} else {
+		// Gaya teks: kedua tim ditaruh di description (batas 4096, bukan 1024 per field) seperti OwO,
+		// jadi semua hewan tetap tampil lengkap dan gayanya seragam. Hanya jatuh ke compact kalau benar-benar kepanjangan.
+		const block = (name, animals, render) => `**${String(name).slice(0, 256)}**\n${animals.map(render).join('\n\n') || '-'}`;
+		let teams = `${block(playerName, event.player.team, animalDisplayText)}\n\n${block(enemyName, event.enemy.team, animalDisplayText)}`;
+		if (teams.length > 3900) teams = `${block(playerName, event.player.team, animalCompactText)}\n\n${block(enemyName, event.enemy.team, animalCompactText)}`.slice(0, 3900);
+		let logs = '';
+		if (showLogs && turn > 0 && event.logs[turn - 1].battleLogs) {
+			const room = 4090 - teams.length - 1;
+			if (room >= 200) logs = `${parseLogs(event.logs[turn - 1].battleLogs, room - 20)}\n`;
+		}
+		embed.description = `${logs}${teams}`;
 	}
 
 	if (turn === length) {
@@ -182,4 +198,4 @@ async function displayBattle(event, setting, send, { title, iconURL, delayMs = 2
 }
 
 module.exports = { teamField, updateTeamStats, animalDisplayText, animalCompactText, parseLogs, renderTurn, finalText, displayBattle, weaponText, EMBED_COLOR };
-		
+																						   
