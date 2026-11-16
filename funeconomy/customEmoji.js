@@ -70,6 +70,9 @@ const OLD_PREFIX = { leopard: 'l', bison: 'l', mammoth: 'l', swan: 'l', peacock:
     elderdragon: 'f', scorpion: 'f', bat: 'f', otter: 'f' };
 const emojiName = (animalKey) => (OLD_PREFIX[animalKey] ? `${OLD_PREFIX[animalKey]}${animalKey}` : animalKey);
 for (const [key, fallback] of Object.entries(ANIMAL_EMOJI)) DEFS[emojiName(key)] = { animated: true, fallback };
+// Ikon stat: HP, STR, PR, WP, MAG, MR (tampil di dex, weapon, dan battle).
+DEFS.stat_hp = { fallback: '❤️' }; DEFS.stat_str = { fallback: '🗡️' }; DEFS.stat_pr = { fallback: '🛡️' };
+DEFS.stat_wp = { fallback: '💠' }; DEFS.stat_mag = { fallback: '🔮' }; DEFS.stat_mr = { fallback: '🌀' };
 DEFS.floot = { animated: true, fallback: '🎁' }; // fabled lootbox (diam)
 DEFS.floot2 = { animated: true, fallback: '🎁' }; // fabled lootbox bergetar
 DEFS.floot3 = { animated: true, fallback: '🎁' }; // fabled lootbox terbuka
@@ -201,4 +204,3 @@ function reset() { live.clear(); apply(); }
 const customId = (text) => /^<a?:\w+:(\d+)>$/.exec(String(text || ''))?.[1] || null;
 
 module.exports = { DEFS, get, gear, buff, robot, floot, flootShake, flootOpen, shard, essence, unknown, crate, crateShake, crateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId };
-                     
