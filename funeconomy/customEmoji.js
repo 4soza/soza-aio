@@ -70,7 +70,9 @@ const OLD_PREFIX = { leopard: 'l', bison: 'l', mammoth: 'l', swan: 'l', peacock:
     elderdragon: 'f', scorpion: 'f', bat: 'f', otter: 'f' };
 const emojiName = (animalKey) => (OLD_PREFIX[animalKey] ? `${OLD_PREFIX[animalKey]}${animalKey}` : animalKey);
 for (const [key, fallback] of Object.entries(ANIMAL_EMOJI)) DEFS[emojiName(key)] = { animated: true, fallback };
-DEFS.floot = { animated: true, fallback: '🎁' }; // fabled lootbox
+DEFS.floot = { animated: true, fallback: '🎁' }; // fabled lootbox (diam)
+DEFS.floot2 = { animated: true, fallback: '🎁' }; // fabled lootbox bergetar
+DEFS.floot3 = { animated: true, fallback: '🎁' }; // fabled lootbox terbuka
 // Ikon buff/debuff di samping nama hewan (b_<nama>), key = id buff di funeconomy/battle/buffs.
 const BUFF_KEYS = { 1: 'b_taunt', 2: 'b_poison', 3: 'b_flame', 4: 'b_defenseup', 5: 'b_freeze', 6: 'b_attackup',
     7: 'b_attackupplus', 8: 'b_attackupplusplus', 9: 'b_mortality', 10: 'b_celebration', 11: 'b_leech', 12: 'b_stinky' };
@@ -114,6 +116,8 @@ const gear = (kind, className, id) => {
 /** Emoji kustom buff menurut id buff; null kalau belum tersedia. */
 const buff = (id) => live.get(BUFF_KEYS[id]) || null;
 const floot = () => get('floot');
+const flootShake = () => get('floot2');
+const flootOpen = () => get('floot3');
 const robot = (rank) => get(ROBOT_KEYS[rank]);
 const shard = () => get('shard');
 const essence = () => get('essence');
@@ -196,5 +200,5 @@ function reset() { live.clear(); apply(); }
 /** id emoji kustom dari teks `<:nama:id>` (atau null untuk emoji Unicode). */
 const customId = (text) => /^<a?:\w+:(\d+)>$/.exec(String(text || ''))?.[1] || null;
 
-module.exports = { DEFS, get, gear, buff, robot, floot, shard, essence, unknown, crate, crateShake, crateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId };
-    
+module.exports = { DEFS, get, gear, buff, robot, floot, flootShake, flootOpen, shard, essence, unknown, crate, crateShake, crateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId };
+                     
