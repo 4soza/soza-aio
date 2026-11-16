@@ -7,7 +7,10 @@ const marriageSchema = new mongoose.Schema({
     users: { type: [String], required: true },
     ring: { type: Number, required: true, min: 1, max: 7 },
     marriedAt: { type: Date, default: Date.now },
-    dailies: { type: Number, default: 0, min: 0 }
+    dailies: { type: Number, default: 0, min: 0 },
+    // Hari daily terakhir tiap pasangan (userId -> nomor hari) dan hari terakhir yang sudah dihitung bersama.
+    claimDays: { type: mongoose.Schema.Types.Mixed, default: {} },
+    togetherDay: { type: Number, default: -1 }
 }, { timestamps: true });
 
 marriageSchema.index({ users: 1 }, { unique: true });
