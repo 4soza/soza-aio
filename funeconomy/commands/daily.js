@@ -85,7 +85,7 @@ module.exports = {
 
         const sent = await send(message, [
             `${cfg.EMOJI.DAILY} | **${name}**, Here is your daily **${cfg.CASH_EMOJI} ${fmt(result.amount)} ${cfg.CASH_NAME}**!`,
-            `${cfg.EMOJI.DAILY} | You're on a **${fmt(result.streak)}** daily streak!`,
+            `${cfg.EMOJI.BLANK} | You're on a **${fmt(result.streak)}** daily streak!`,
             ...(boxGranted ? [`${box === 'lootbox' ? emojis.lootbox() : emojis.crate()} | You received a **${box}**!`] : []),
             ...(coupleLine ? [coupleLine] : []),
             `${cfg.EMOJI.TIMER} | Your next daily is in: ${formatDuration(msUntilReset(now))}`
