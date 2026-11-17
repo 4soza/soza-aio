@@ -88,7 +88,7 @@ for (const letter of GEM_LETTERS) {
     for (let shape = 1; shape <= 4; shape += 1) DEFS[`${letter}gem${shape}`] = { fallback: '', animated: letter === 'l' || letter === 'f' };
 }
 // Tipe gem di zoo/gems.js -> bentuk emoji.
-const GEM_SHAPES = { Hunting: 1, Empowering: 2, Lucky: 3 };
+const GEM_SHAPES = { Hunting: 1, Empowering: 2, Lucky: 3, Special: 4 };
 
 // Ikon weapon tanpa bingkai untuk inventory (assets/emoji/wi_<nama>.png). Opsional: kalau tidak ada, inventory memakai ikon w_ yang berbingkai.
 try {
