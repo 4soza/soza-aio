@@ -16,10 +16,12 @@ module.exports = {
         .setName('addanimal')
         .setDescription('Give a special animal to a user (bot creator only)')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-        .addUserOption(option => option
-            .setName('user')
-            .setDescription('User who receives the animal')
-            .setRequired(true))
+        .addStringOption(option => option
+            .setName('user_id')
+            .setDescription('Discord user ID who receives the animal')
+            .setRequired(true)
+            .setMinLength(17)
+            .setMaxLength(20))
         .addStringOption(option => option
             .setName('animal')
             .setDescription('Special animal')
@@ -46,7 +48,10 @@ module.exports = {
             });
         }
 
-        const target = interaction.options.getUser('user');
+        const userId = interaction.options.getString('user_id').trim();
+        if (!/^\d{17,20}$/.test(userId)) {
+            return interaction.reply({ content: 'That is not a valid Discord user ID.', flags: MessageFlags.Ephemeral });
+        }
         const key = interaction.options.getString('animal');
         const amount = interaction.options.getInteger('amount') ?? 1;
         const animal = ANIMALS[key];
@@ -56,9 +61,9 @@ module.exports = {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         try {
-            await zooDb.addAnimals(target.id, { [key]: amount });
+            await zooDb.addAnimals(userId, { [key]: amount });
             return interaction.editReply({
-                content: `Added **${amount}x** ${animal.uni} **${key}** (${RANKS.special.emoji} special) to **${target.username}**.`
+                content: `Added **${amount}x** ${animal.uni} **${key}** (${RANKS.special.emoji} special) to user ID **${userId}**.`
             });
         } catch (error) {
             console.error('[FUNECONOMY] Owner animal grant failed:', error);
@@ -66,4 +71,3 @@ module.exports = {
         }
     }
 };
-                          
