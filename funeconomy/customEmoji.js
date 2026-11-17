@@ -63,7 +63,9 @@ const ANIMAL_EMOJI = {
     // hewan lama yang dulu memakai emoji biasa
     leopard: '🐆', bison: '🦬', mammoth: '🦣', swan: '🦢',
     peacock: '🦚', parrot: '🦜', flamingo: '🦩', dolphin: '🐬',
-    elderdragon: '🐲', scorpion: '🦂', bat: '🦇', otter: '🦦'
+    elderdragon: '🐲', scorpion: '🦂', bat: '🦇', otter: '🦦',
+    // hewan special (buatan sendiri)
+    sfox: '🦊', sjelly: '🪼', scloud: '🐑', sfrog: '🐸', sowl: '🦉', speng: '🐧', sturtle: '🐢', skoi: '🐟'
 };
 // Hewan lama: nama emoji/file memakai huruf depan rarity (l/g/f), key hewannya tetap.
 const OLD_PREFIX = { leopard: 'l', bison: 'l', mammoth: 'l', swan: 'l', peacock: 'g', parrot: 'g', flamingo: 'g', dolphin: 'g',
@@ -135,7 +137,7 @@ const lootboxOpen = () => get('lb3');
 // Rank hewan (zoo/data.js RANKS) dan rank senjata (WeaponInterface.ranks) -> key emoji.
 const ZOO_RANKS = {
     common: 'common', uncommon: 'uncommon', rare: 'rare', epic: 'epic',
-    mythical: 'mythic', gem: 'gem', legendary: 'legendary', fabled: 'fabled'
+    mythical: 'mythic', gem: 'gem', legendary: 'legendary', fabled: 'fabled', special: 'special'
 };
 const WEAPON_RANKS = {
     Common: 'common', Uncommon: 'uncommon', Rare: 'rare', Epic: 'epic',
