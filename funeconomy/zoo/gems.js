@@ -1,5 +1,5 @@
 // Based on OwO Bot by Christopher Thai, CC BY-NC-SA 4.0
-// Gem Hunting / Empowering / Lucky (Patreon dan Special tidak dipakai).
+// Gem Hunting / Empowering / Lucky (Patreon tidak dipakai; Special menaikkan peluang hewan rank special).
 const Gem = require('../../models/funeconomy/gem');
 const { RANKS } = require('./data');
 
@@ -11,7 +11,8 @@ const LETTERS = ['c', 'u', 'r', 'e', 'm', 'l', 'f'];
 const TYPES = {
     Hunting:    { icon: '🏹', suffix: 1, firstId: 51, lengths: [25, 25, 50, 75, 75, 100, 100], amounts: [1, 3, 4, 5, 6, 7, 9] },
     Empowering: { icon: '⚡', suffix: 3, firstId: 65, lengths: [50, 100, 250, 450, 525, 800, 1000] },
-    Lucky:      { icon: '🍀', suffix: 4, firstId: 72, lengths: [50, 100, 250, 450, 525, 800, 1000], amounts: [1, 2, 3, 4, 5, 6, 7] }
+    Lucky:      { icon: '🍀', suffix: 4, firstId: 72, lengths: [50, 100, 250, 450, 525, 800, 1000], amounts: [1, 2, 3, 4, 5, 6, 7] },
+    Special:    { icon: '⭐', suffix: 5, firstId: 79, lengths: [50, 100, 250, 450, 525, 800, 1000], amounts: [2, 3, 4, 5, 6, 8, 10] }
 };
 const TYPE_ORDER = Object.keys(TYPES);
 
@@ -130,6 +131,7 @@ function huntUsage(active, count) {
     if (active.Hunting) usage.Hunting = 1;
     if (active.Empowering) usage.Empowering = Math.trunc(count / 2);
     if (active.Lucky) usage.Lucky = both ? Math.trunc(count / 2) : count;
+    if (active.Special) usage.Special = both ? Math.trunc(count / 2) : count;
     return usage;
 }
 
@@ -163,6 +165,7 @@ function huntEffects(active) {
     if (Object.keys(active).length) {
         opts.gem = true;
         opts.lucky = active.Lucky ? { amount: active.Lucky.gem.amount } : undefined;
+        opts.special = active.Special ? { amount: active.Special.gem.amount } : undefined;
         if (active.Hunting) count += active.Hunting.gem.amount;
         if (active.Empowering) count *= 2;
     }
@@ -173,6 +176,7 @@ function describeUse(gem) {
     const head = `Your next ${gem.length} `;
     if (gem.type === 'Hunting') return `${head}manual hunts will be increased by ${gem.amount}`;
     if (gem.type === 'Empowering') return `${head}animals will be doubled! It can stack with Hunting gems!`;
+    if (gem.type === 'Special') return `${head}animals will have a +${gem.amount}x higher chance of finding special tiers!`;
     return `${head}animals will have a +${gem.amount}x higher chance of finding gem tiers!`;
 }
 
