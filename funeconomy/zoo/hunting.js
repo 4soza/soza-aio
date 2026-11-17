@@ -6,7 +6,7 @@ const LOOTBOX_CHANCE = 0.05;
 
 /**
  * Peluang (persen) tiap rank. Rank conditional (bot) hanya aktif lewat opts; gem muncul dari hunt biasa dan dikali gem Lucky:
- *   opts.gem = true (ada gem aktif), opts.lucky = { amount }, opts.huntbot = persen rank bot.
+ *   opts.gem = true (ada gem aktif), opts.lucky = { amount }, opts.special = { amount }, opts.huntbot = persen rank bot.
  */
 function getRarities(opts = {}) {
     const rarity = {};
@@ -17,6 +17,12 @@ function getRarities(opts = {}) {
         if (opts.lucky) gemRarity *= opts.lucky.amount;
         rarity.common -= gemRarity - rarity.gem;
         rarity.gem = gemRarity;
+    }
+    if (opts.special) {
+        // Gem Special melipatgandakan peluang rank special.
+        const specialRarity = RANKS.special.rarity * opts.special.amount;
+        rarity.common -= specialRarity - rarity.special;
+        rarity.special = specialRarity;
     }
     if (opts.huntbot) {
         rarity.bot = opts.huntbot;
@@ -63,4 +69,3 @@ function huntMany(count, opts = {}, rng = Math.random) {
 }
 
 module.exports = { HUNT_COST, LOOTBOX_CHANCE, getRarities, pickRank, randomAnimal, huntMany };
-                                                                              
