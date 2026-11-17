@@ -65,7 +65,7 @@ const ANIMAL_EMOJI = {
     peacock: '🦚', parrot: '🦜', flamingo: '🦩', dolphin: '🐬',
     elderdragon: '🐲', scorpion: '🦂', bat: '🦇', otter: '🦦',
     // hewan special (buatan sendiri)
-    sfox: '🦊', sjelly: '🪼', scloud: '🐑', sfrog: '🐸', sowl: '🦉', speng: '🐧', sturtle: '🐢', skoi: '🐟'
+    sjelly: '🪼', shamster: '🐹', skoala: '🐨', sraccoon: '🦝', sseal: '🦭', schameleon: '🦎', shippo: '🦛', salpaca: '🦙'
 };
 // Hewan lama: nama emoji/file memakai huruf depan rarity (l/g/f), key hewannya tetap.
 const OLD_PREFIX = { leopard: 'l', bison: 'l', mammoth: 'l', swan: 'l', peacock: 'g', parrot: 'g', flamingo: 'g', dolphin: 'g',
