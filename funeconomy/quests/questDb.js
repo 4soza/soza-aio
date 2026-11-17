@@ -65,6 +65,32 @@ async function grant(userId, reward) {
 
 const questPrize = (quest) => ({ [quest.prize]: data.questReward(quest.name, quest.level, quest.prize) });
 
+/* ---------- perbaikan quest "find" ---------- */
+
+// Dulu progres quest "Hunt 3 animals that are <rank>" tidak pernah dihitung (bug). Sekali saja setelah perbaikan,
+// semua quest itu yang belum selesai langsung diselesaikan supaya pemain yang sudah mengerjakannya tidak mengulang.
+const FIND_FIX_MARKER = '__find_quest_fix_v1';
+let findFixed = null;
+
+function settleFindQuests() {
+    if (!findFixed) {
+        findFixed = (async () => {
+            if (await Quest.findOne({ userId: FIND_FIX_MARKER }).lean()) return;
+            await Quest.updateMany(
+                { quests: { $elemMatch: { name: 'find', done: false } } },
+                { $set: { 'quests.$[q].done': true, 'quests.$[q].count': data.questGoal('find', 0) } },
+                { arrayFilters: [{ 'q.name': 'find', 'q.done': false }] }
+            );
+            await Quest.updateOne({ userId: FIND_FIX_MARKER }, { $setOnInsert: { userId: FIND_FIX_MARKER } }, { upsert: true })
+                .catch((error) => { if (error?.code !== DUPLICATE_KEY) throw error; });
+        })().catch((error) => {
+            findFixed = null; // coba lagi nanti
+            console.error('[FUNECONOMY] find quest fix failed:', error.message);
+        });
+    }
+    return findFixed;
+}
+
 /* ---------- progres ---------- */
 
 /**
@@ -74,6 +100,7 @@ const questPrize = (quest) => ({ [quest.prize]: data.questReward(quest.name, que
 async function track(userId, key, { count = 1, now = Date.now(), ranks } = {}) {
     try {
         userId = String(userId);
+        await settleFindQuests();
         const inc = {};
         if (data.DAILY_TASKS.some((t) => t.key === key)) inc[`daily.${key}`] = count;
         if (data.WEEKLY_TASKS.some((t) => t.key === key)) inc[`weekly.${key}`] = count;
@@ -86,7 +113,10 @@ async function track(userId, key, { count = 1, now = Date.now(), ranks } = {}) {
                 await Quest.updateOne(fast, { $inc: inc });
             }
         }
-        return await trackQuests(userId, key, count, ranks);
+        const finished = await trackQuests(userId, key, count, ranks);
+        // Quest "find" dihitung dari rank hewan hasil hunt.
+        if (key === 'hunt' && ranks?.length) finished.push(...await trackQuests(userId, 'find', 1, ranks));
+        return finished;
     } catch (error) {
         console.error('[FUNECONOMY] quest track failed:', error.message);
         return [];
@@ -124,6 +154,7 @@ async function trackQuests(userId, key, count, ranks) {
  */
 async function getState(userId, { now = Date.now(), random = Math.random } = {}) {
     userId = String(userId);
+    await settleFindQuests();
     await rollover(userId, now);
     const today = dayNumber(now);
     const first = await Quest.findOneAndUpdate(
