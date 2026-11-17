@@ -7,8 +7,8 @@ const { toSmallNum, chunkLines, BLANK } = require('../zoo/format');
 
 // Rank yang menampilkan semua hewan (yang belum ditemukan jadi ❓)
 const PLACEHOLDER_RANKS = new Set(['common', 'uncommon', 'rare', 'epic', 'mythical', 'legendary']);
-const SCORE_LABEL = { hidden: 'H', fabled: 'F', bot: 'B', gem: 'G', legendary: 'L', mythical: 'M', epic: 'E', rare: 'R', uncommon: 'U', common: 'C' };
-const SCORE_ORDER = ['hidden', 'fabled', 'bot', 'gem', 'legendary', 'mythical', 'epic', 'rare', 'uncommon', 'common'];
+const SCORE_LABEL = { hidden: 'H', special: 'S', fabled: 'F', bot: 'B', gem: 'G', legendary: 'L', mythical: 'M', epic: 'E', rare: 'R', uncommon: 'U', common: 'C' };
+const SCORE_ORDER = ['hidden', 'special', 'fabled', 'bot', 'gem', 'legendary', 'mythical', 'epic', 'rare', 'uncommon', 'common'];
 
 function buildZoo(name, docs, useTotal) {
     const shown = {};
