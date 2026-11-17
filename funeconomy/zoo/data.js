@@ -1,12 +1,12 @@
 /**
  * Data hewan untuk hunt, zoo, dan battle (gaya OwO).
  * Dasar rank, harga, poin, dan XP mengikuti OwO (CC BY-NC-SA 4.0, https://github.com/ChristopherBThai/Discord-OwO-Bot).
- * Daftar hewan memakai emoji Unicode. Rank patreon, special (event), dan distorted tidak dipakai.
+ * Daftar hewan memakai emoji Unicode. Rank patreon dan distorted tidak dipakai. Rank special bisa didapat dari hunt (0.01%) atau owner (/addanimal).
  */
 
 // rarity = persen peluang tiap hunt. Rank "conditional" hanya muncul lewat gem atau hunt bot.
 const RANKS = {
-    common:    { order: 1,  emoji: '⚪', alias: ['c'],              rarity: 58.4989, price: 1,       points: 1,      essence: 1,      xp: 1 },
+    common:    { order: 1,  emoji: '⚪', alias: ['c'],              rarity: 58.4889, price: 1,       points: 1,      essence: 1,      xp: 1 },
     uncommon:  { order: 2,  emoji: '🟢', alias: ['u', 'uc'],        rarity: 30,      price: 3,       points: 5,      essence: 5,      xp: 10 },
     rare:      { order: 3,  emoji: '🔵', alias: ['r'],              rarity: 10,      price: 10,      points: 20,     essence: 20,     xp: 20 },
     epic:      { order: 4,  emoji: '🟣', alias: ['e'],              rarity: 1,       price: 250,     points: 250,    essence: 250,    xp: 400 },
@@ -15,6 +15,7 @@ const RANKS = {
     legendary: { order: 9,  emoji: '🟠', alias: ['l', 'legend'],    rarity: 0.3,     price: 15000,   points: 10000,  essence: 10000,  xp: 2000 },
     bot:       { order: 10, emoji: '🤖', alias: ['b'],              rarity: 0,       price: 50000,   points: 30000,  essence: 10000,  xp: 100000, conditional: true },
     fabled:    { order: 13, emoji: '🟡', alias: ['f'],              rarity: 0.001,   price: 250000,  points: 100000, essence: 100000, xp: 100000 },
+    special:   { order: 11, emoji: '🌈', alias: ['sp'],             rarity: 0.01,    price: 100000,  points: 200000, essence: 200000, xp: 150000 },
     hidden:    { order: 14, emoji: '⚫', alias: ['h'],              rarity: 0.0001,  price: 1000000, points: 500000, essence: 500000, xp: 300000 }
 };
 const RANK_ORDER = Object.keys(RANKS).sort((a, b) => RANKS[a].order - RANKS[b].order);
@@ -80,6 +81,14 @@ const ROSTER = [
     ["ffrog", "🐸", "fabled", [6, 6, 6, 8, 8, 7], "A tiny prince of magic.", ["ffrog"]],
     ["feagle", "🦅", "fabled", [6, 9, 5, 7, 7, 6], "Rules the sky above the clouds.", ["feagle"]],
     ["fboar", "🐗", "fabled", [9, 8, 8, 5, 4, 7], "Nothing stops its charge.", ["fboar"]],
+    ["sfox", "🦊", "special", [5, 7, 5, 8, 9, 6], "A fox born under the stars. Tiny galaxies drift in its fur.", ["sfox"]],
+    ["sjelly", "🪼", "special", [6, 4, 5, 7, 9, 8], "Glows softly and leaves a trail of bubbles.", ["sjelly"]],
+    ["scloud", "🐑", "special", [8, 4, 8, 6, 7, 8], "A fluffy cloud sheep that sparks when it gets excited.", ["scloud"]],
+    ["sfrog", "🐸", "special", [7, 6, 6, 8, 8, 7], "Wears a mushroom cap and sprinkles glowing spores.", ["sfrog"]],
+    ["sowl", "🦉", "special", [5, 6, 5, 9, 8, 7], "Carries a lantern and a swarm of fireflies.", ["sowl"]],
+    ["speng", "🐧", "special", [8, 6, 8, 7, 6, 8], "An ice penguin that makes snow wherever it waddles.", ["speng"]],
+    ["sturtle", "🐢", "special", [9, 7, 9, 5, 6, 8], "A lava shell that never cools down.", ["sturtle"]],
+    ["skoi", "🐟", "special", [6, 9, 5, 7, 7, 6], "A koi that swims through falling sakura petals.", ["skoi"]],
     ["sloth", "🦥", "hidden", [10, 8, 8, 8, 8, 8], "Takes its time, then wins.", ["sloth"]],
     ["hedgehog", "🦔", "hidden", [9, 9, 9, 8, 8, 8], "Prickly on the outside, rare on the inside.", ["hedgehog"]],
     ["beaver", "🦫", "hidden", [10, 9, 8, 9, 8, 8], "Builds legends one log at a time.", ["beaver"]],
@@ -129,4 +138,3 @@ function zooPoints(counts) {
 }
 
 module.exports = { RANKS, RANK_ORDER, ANIMALS, ANIMALS_BY_RANK, findAnimal, findRank, zooPoints };
-     
