@@ -5,6 +5,7 @@ const { send, sleep, displayName, onCooldown } = require('../utils');
 const cooldown = require('../cooldown');
 const { fail } = require('../battle/commandUtil');
 const { weaponIcons } = require('../battle/weaponView');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 const BLANK = '▫️';
 
@@ -46,6 +47,25 @@ module.exports = {
         }
         const sent = await send(message, text1);
         await sleep(3000);
-        await sent.edit({ content: text2, allowedMentions: { parse: [] } }).catch(() => send(message, text2).catch(() => {}));
+        // Tombol 🔍 membuka detail tiap senjata (ephemeral), urutan sama seperti daftar di pesan.
+        const view = (id, disabled = false) => new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId(`fbattle:cv:${userId}:${id}:0:open`).setEmoji('🔍').setStyle(ButtonStyle.Secondary).setDisabled(disabled)
+        );
+        // Setelah 10 menit tombol 🔍 dimatikan (hasil crate di memori juga kedaluwarsa).
+        const expireButton = (msg) => {
+            const timer = setTimeout(() => msg.edit({ components: [view(msg.id, true)] }).catch(() => {}), crateDb.OPENED_TTL_MS);
+            timer.unref?.();
+        };
+        const ids = weapons.map((w) => w.ruwid);
+        const edited = await sent.edit({ content: text2, components: [view(sent.id)], allowedMentions: { parse: [] } }).catch(() => null);
+        if (edited) { crateDb.rememberOpen(sent.id, userId, ids); expireButton(sent); }
+        else {
+            const fallback = await send(message, text2).catch(() => null);
+            if (fallback) {
+                crateDb.rememberOpen(fallback.id, userId, ids);
+                await fallback.edit({ components: [view(fallback.id)] }).catch(() => {});
+                expireButton(fallback);
+            }
+        }
     }
 };
