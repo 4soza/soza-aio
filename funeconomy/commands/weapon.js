@@ -6,6 +6,7 @@ const weaponDb = require('../battle/weaponDb');
 const teamUtil = require('../battle/teamUtil');
 const challengeDb = require('../battle/challengeDb');
 const weaponView = require('../battle/weaponView');
+const crateDb = require('../battle/crateDb');
 const { ANIMALS } = require('../zoo/data');
 const Animal = require('../../models/funeconomy/animal');
 const { canEmbed, send, onCooldown } = require('../utils');
@@ -32,7 +33,20 @@ async function describe(message, token, client) {
     const owner = doc.userId === message.author.id ? message.author : await client.users.fetch(doc.userId).catch(() => null);
     const ownerName = owner ? userName(message.guild, owner) : 'A User';
     if (!canEmbed(message)) return send(message, `**${weapon.fullName}** ${weapon.avgQuality}%`);
-    return message.channel.send({ embeds: [weaponView.detailEmbed(weapon, ownerName, doc.animal)], allowedMentions: { parse: [] } });
+    // Tampilan sama dengan detail dari 🔍 crate: ada bintang favorit, abu-abu dan tombol mati setelah 10 menit.
+    const noMentions = { parse: [] };
+    const first = await weaponView.crateViewMessage(doc.userId, ownerName, [uwid], 0, '0');
+    if (!first) return fail(message, `I could not find a weapon with that unique weapon id! Please use \`${cfg.PREFIX}weapon\` for the weapon ID!`);
+    const sent = await message.channel.send({ ...first, allowedMentions: noMentions });
+    crateDb.rememberOpen(sent.id, doc.userId, [uwid]);
+    const live = await weaponView.crateViewMessage(doc.userId, ownerName, [uwid], 0, sent.id);
+    if (live) await sent.edit({ components: live.components, flags: live.flags, allowedMentions: noMentions }).catch(() => {});
+    const timer = setTimeout(async () => {
+        const dead = await weaponView.crateViewMessage(doc.userId, ownerName, [uwid], 0, sent.id, true);
+        if (dead) await sent.edit({ components: dead.components, flags: dead.flags }).catch(() => {});
+    }, crateDb.OPENED_TTL_MS);
+    timer.unref?.();
+    return sent;
 }
 
 async function equip(message, uwidToken, petToken) {
