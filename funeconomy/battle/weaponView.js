@@ -199,5 +199,47 @@ function sellMessage(ownerId, rankIndex, weapons, { disabled = false, color = EM
 	return { embeds: [embed], components: [row], ...(files.length ? { files } : {}) };
 }
 
-module.exports = { sellMessage, PREFIX, PER_PAGE, listMessage, helpText, RANK_NAMES, SORT_LABELS, detailEmbed, describeWeapon, rerollMessage, weaponIcons };
-		
+/* URL gambar dari emoji kustom (untuk gambar kecil di kanan atas) */
+function emojiImageUrl(emoji) {
+	const match = /^<(a?):\w+:(\d+)>$/.exec(emoji || '');
+	return match ? `https://cdn.discordapp.com/emojis/${match[2]}.${match[1] ? 'gif' : 'png'}?size=128` : null;
+}
+
+/*
+ * Detail senjata hasil buka crate seperti OwO: satu senjata per halaman + tombol halaman dan bintang favorit (ephemeral).
+ * customId: fbattle:cv:<owner>:<crateMessageId>:<index>:<first|prev|next|last|star>
+ */
+async function crateViewMessage(ownerId, ownerName, uwids, index, crateMessageId) {
+	if (!uwids.length) return null;
+	const total = uwids.length;
+	index = ((index % total) + total) % total;
+	const doc = await weaponDb.getWeaponDoc(uwids[index], ownerId);
+	const weapon = weaponDb.parseWeapon(doc);
+	if (!weapon) return null;
+	weapon.favorite = !!doc.favorite;
+	let body = `**Name:** ${weapon.name}\n**Owner:** ${ownerName}\n`;
+	body += describeWeapon(weapon).description.replace(/^\*\*Name:\*\*.*\n/, '');
+	const footer = `Reroll Changes: ${weapon.rrCount} | Reroll Attempts: ${weapon.rrAttempt}`;
+	const image = emojiImageUrl(weapon.emoji);
+	const head = text(`### ${weapon.rank.emoji} ${weapon.fullName}`);
+	const id = (act, target) => `${PREFIX}:cv:${ownerId}:${crateMessageId}:${target}:${act}`;
+	const nav = (act, emoji, target) => button(id(act, target), { emoji, disabled: total <= 1 });
+	const components = [
+		image ? { type: 9, components: [head], accessory: { type: 11, media: { url: image } } } : head,
+		separator(),
+		text(body.slice(0, 3800)),
+		separator(),
+		{ type: 9, components: [text(`-# ${footer}`)], accessory: button(id('star', index), { emoji: weapon.favorite ? '⭐' : '☆' }) },
+		{
+			type: 1,
+			components: [
+				nav('first', '⏪', 0), nav('prev', '◀️', index),
+				button(id('now', index), { label: `${index + 1}/${total}`, disabled: true }),
+				nav('next', '▶️', index), nav('last', '⏩', index)
+			]
+		}
+	];
+	return { components: [{ type: 17, accent_color: EMBED_COLOR, components }], flags: V2 };
+}
+
+module.exports = { crateViewMessage, sellMessage, PREFIX, PER_PAGE, listMessage, helpText, RANK_NAMES, SORT_LABELS, detailEmbed, describeWeapon, rerollMessage, weaponIcons };

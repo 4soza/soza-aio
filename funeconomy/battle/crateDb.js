@@ -67,6 +67,26 @@ async function openCrates(userId, count) {
 	return { weapons };
 }
 
+/* Hasil buka crate diingat sementara supaya tombol 🔍 bisa membuka detail tiap senjata selama 10 menit (hilang juga saat bot restart). */
+const OPENED = new Map();
+const OPENED_TTL = 10 * 60 * 1000; // sama dengan waktu tombol 🔍 aktif di pesan crate
+const OPENED_MAX = 500;
+const OPENED_TTL_MS = OPENED_TTL;
+
+function rememberOpen(messageId, userId, uwids) {
+	const now = Date.now();
+	for (const [key, value] of OPENED) if (now - value.at > OPENED_TTL) OPENED.delete(key);
+	while (OPENED.size >= OPENED_MAX) OPENED.delete(OPENED.keys().next().value);
+	OPENED.set(String(messageId), { userId: String(userId), uwids: uwids.slice(), at: now });
+}
+
+function recallOpen(messageId) {
+	const entry = OPENED.get(String(messageId));
+	if (!entry) return null;
+	if (Date.now() - entry.at > OPENED_TTL) { OPENED.delete(String(messageId)); return null; }
+	return entry;
+}
+
 async function addCrates(userId, amount) {
 	await ensure(userId);
 	return Crate.findOneAndUpdate({ userId }, { $inc: { boxcount: amount } }, { new: true }).lean();
@@ -92,5 +112,5 @@ async function useShards(userId, amount) {
 module.exports = {
 	useShards,
 	CRATE_CHANCE, MAX_PER_DAY, MAX_OPEN, dayNumber, msUntilReset,
-	getCrate, crateFromBattle, openCrates, addCrates, getShards, addShards
+	getCrate, crateFromBattle, openCrates, addCrates, rememberOpen, recallOpen, OPENED_TTL_MS, getShards, addShards
 };

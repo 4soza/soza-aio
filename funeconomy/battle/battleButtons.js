@@ -18,6 +18,7 @@ const teamUtil = require('./teamUtil.js');
 const teamView = require('./teamView.js');
 const challengeDb = require('./challengeDb.js');
 const cfg = require('../config');
+const crateDb = require('./crateDb.js');
 
 const BUTTON_PREFIX = friend.BUTTON_PREFIX;
 const ephemeral = (interaction, content) => interaction.reply({ content, flags: MessageFlags.Ephemeral });
@@ -180,6 +181,28 @@ async function handleTeamSettings(interaction, parts) {
 	return interaction.update({ components: message.components });
 }
 
+/* fbattle:cv:<owner>:<crateMessageId>:<index>:<act>  - detail senjata hasil buka crate */
+async function handleCrateView(interaction, parts) {
+	const [, , ownerId, crateMessageId, indexText, act] = parts;
+	if (interaction.user.id !== ownerId) return ephemeral(interaction, "This isn't your crate!");
+	const opened = crateDb.recallOpen(crateMessageId);
+	if (!opened || opened.userId !== ownerId) return ephemeral(interaction, 'These crate results are no longer available. Use `' + cfg.PREFIX + 'weapon {weaponID}` to see a weapon.');
+	let index = parseInt(indexText, 10) || 0;
+	const total = opened.uwids.length;
+	if (act === 'star') {
+		const doc = await weaponDb.getWeaponDoc(opened.uwids[index], ownerId);
+		if (doc) await weaponDb.setFavorite(ownerId, opened.uwids[index], !doc.favorite);
+	} else if (act === 'first') index = 0;
+	else if (act === 'prev') index -= 1;
+	else if (act === 'next') index += 1;
+	else if (act === 'last') index = total - 1;
+	const message = await weaponView.crateViewMessage(ownerId, userName(interaction.guild, interaction.user), opened.uwids, index, crateMessageId);
+	if (!message) return ephemeral(interaction, 'That weapon no longer exists.');
+	// Tombol 🔍 di pesan crate (bukan ephemeral) membuka pesan baru; tombol halaman memperbarui pesan ephemeral.
+	if (act === 'open') return interaction.reply({ ...message, flags: message.flags | MessageFlags.Ephemeral });
+	return interaction.update({ components: message.components, flags: message.flags });
+}
+
 async function handleButton(interaction) {
 	const parts = interaction.customId.split(':');
 	try {
@@ -188,6 +211,7 @@ async function handleButton(interaction) {
 		if (parts[1] === 'wpf') return await handleWeaponFilter(interaction, parts);
 		if (parts[1] === 'wps') return await handleWeaponSort(interaction, parts);
 		if (parts[1] === 'wph') return await handleWeaponHelp(interaction, parts);
+		if (parts[1] === 'cv') return await handleCrateView(interaction, parts);
 		if (parts[1] === 'rr') return await handleReroll(interaction, parts);
 		if (parts[1] === 'sw') return await handleWeaponSell(interaction, parts);
 		if (parts[1] === 'tv') return await handleTeamView(interaction, parts);
