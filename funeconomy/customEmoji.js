@@ -81,7 +81,7 @@ DEFS.stat_hp = { fallback: '❤️' }; DEFS.stat_str = { fallback: '🗡️' }; 
 DEFS.stat_wp = { fallback: '💠' }; DEFS.stat_mag = { fallback: '🔮' }; DEFS.stat_mr = { fallback: '🌀' };
 // Ikon tombol/UI (PNG statis): halaman, cari, reroll, gembok.
 DEFS.nav_first = { fallback: '⏪' }; DEFS.nav_prev = { fallback: '◀️' }; DEFS.nav_next = { fallback: '▶️' }; DEFS.nav_last = { fallback: '⏩' };
-DEFS.search = { fallback: '🔍' }; DEFS.reroll = { fallback: '🔄' }; DEFS.rerollchanges = { fallback: '🔨' };
+DEFS.search = { fallback: '🔍' }; DEFS.reroll = { fallback: '🔄' }; DEFS.rerollchanges = { fallback: '🔨' }; DEFS.rerollattempts = { fallback: '🔄' };
 DEFS.lock = { fallback: '🔒' }; DEFS.unlock = { fallback: '🔓' };
 DEFS.floot = { animated: true, fallback: '🎁' }; // fabled lootbox (diam)
 DEFS.floot2 = { animated: true, fallback: '🎁' }; // fabled lootbox bergetar
