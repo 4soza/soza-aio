@@ -51,7 +51,7 @@ const PASSIVE_NAMES = ['Absolve', 'Critical', 'Discharge', 'Energize', 'Enrage',
     'Lifesteal', 'Magic', 'MagicResist', 'Manatap', 'PhysicalResist', 'Regeneration', 'Sacrifice', 'Safeguard', 'Snail',
     'Sprout', 'Strength', 'Thorns', 'WeaponPoint',
     // passive baru (khusus bot ini)
-    'Rend', 'Photosynthesis', 'Tide', 'Ferocity', 'Wildfire', 'Frostbite', 'Lifebloom'];
+    'Rend', 'Execute', 'Photosynthesis', 'Tide', 'Ferocity', 'Sharpness', 'Wildfire', 'Frostbite', 'Lifebloom'];
 for (const name of WEAPON_NAMES) DEFS[`w_${name.toLowerCase()}`] = { fallback: '' };
 for (const name of PASSIVE_NAMES) DEFS[`p_${name.toLowerCase()}`] = { fallback: '' };
 // Robot HuntBot per rarity: <huruf rank>hb (chb, uhb, rhb, ehb, mhb, lhb, fhb); legendary dan fabled animasi.
