@@ -198,8 +198,8 @@ async function handleCrateView(interaction, parts) {
 	else if (act === 'last') index = total - 1;
 	const message = await weaponView.crateViewMessage(ownerId, userName(interaction.guild, interaction.user), opened.uwids, index, crateMessageId);
 	if (!message) return ephemeral(interaction, 'That weapon no longer exists.');
-	// Tombol 🔍 di pesan crate (bukan ephemeral) membuka pesan baru; tombol halaman memperbarui pesan ephemeral.
-	if (act === 'open') return interaction.reply({ ...message, flags: message.flags | MessageFlags.Ephemeral });
+	// Tombol 🔍 di pesan crate membuka pesan baru (terlihat semua orang, seperti OwO); tombol halaman memperbarui pesan itu.
+	if (act === 'open') return interaction.reply({ ...message, allowedMentions: { parse: [] } });
 	return interaction.update({ components: message.components, flags: message.flags });
 }
 
