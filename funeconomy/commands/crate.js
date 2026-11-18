@@ -5,7 +5,6 @@ const { send, sleep, displayName, onCooldown } = require('../utils');
 const cooldown = require('../cooldown');
 const { fail } = require('../battle/commandUtil');
 const { weaponIcons } = require('../battle/weaponView');
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 const BLANK = '▫️';
 
@@ -45,27 +44,34 @@ module.exports = {
             text1 = `${BLANK} | **${name}** opens ${count} weapon crates\n${emojis.crateShake()} | and finds...`;
             text2 = `${BLANK} | **${name}** opens ${count} weapon crates\n${emojis.crateOpen()} | and finds: ${weapons.map((w) => w.emoji).join('')}`;
         }
-        const sent = await send(message, text1);
+        // Pesan memakai Components V2 supaya tombol 🔍 tampil di samping teks (seperti OwO).
+        const V2 = 32768;
+        const lines = (t) => ({ type: 10, content: t });
+        const sent = await message.channel.send({ components: [lines(text1)], flags: V2, allowedMentions: { parse: [] } }).catch(() => null);
+        if (!sent) return;
         await sleep(3000);
         // Tombol 🔍 membuka detail tiap senjata (ephemeral), urutan sama seperti daftar di pesan.
-        const view = (id, disabled = false) => new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId(`fbattle:cv:${userId}:${id}:0:open`).setEmoji(emojis.button(emojis.get('search'))).setStyle(ButtonStyle.Secondary).setDisabled(disabled)
-        );
+        const view = (id, disabled = false) => ({
+            type: 9,
+            components: [lines(text2)],
+            accessory: { type: 2, style: 2, custom_id: `fbattle:cv:${userId}:${id}:0:open`, emoji: emojis.button(emojis.get('search')), disabled }
+        });
         // Setelah 10 menit tombol 🔍 dimatikan (hasil crate di memori juga kedaluwarsa).
         const expireButton = (msg) => {
-            const timer = setTimeout(() => msg.edit({ components: [view(msg.id, true)] }).catch(() => {}), crateDb.OPENED_TTL_MS);
+            const timer = setTimeout(() => msg.edit({ components: [view(msg.id, true)], flags: V2 }).catch(() => {}), crateDb.OPENED_TTL_MS);
             timer.unref?.();
         };
         const ids = weapons.map((w) => w.ruwid);
-        const edited = await sent.edit({ content: text2, components: [view(sent.id)], allowedMentions: { parse: [] } }).catch(() => null);
+        const edited = await sent.edit({ components: [view(sent.id)], flags: V2, allowedMentions: { parse: [] } }).catch(() => null);
         if (edited) { crateDb.rememberOpen(sent.id, userId, ids); expireButton(sent); }
         else {
-            const fallback = await send(message, text2).catch(() => null);
+            const fallback = await message.channel.send({ components: [view('0')], flags: V2, allowedMentions: { parse: [] } }).catch(() => null);
             if (fallback) {
                 crateDb.rememberOpen(fallback.id, userId, ids);
-                await fallback.edit({ components: [view(fallback.id)] }).catch(() => {});
+                await fallback.edit({ components: [view(fallback.id)], flags: V2 }).catch(() => {});
                 expireButton(fallback);
             }
         }
     }
 };
+                                                      
