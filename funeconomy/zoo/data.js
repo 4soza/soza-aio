@@ -58,10 +58,11 @@ const ROSTER = [
     ["parrot", "🦜", "gem", [5, 5, 4, 6, 6, 5], "Repeats everything you say.", ["parrot"]],
     ["flamingo", "🦩", "gem", [6, 4, 5, 6, 6, 5], "Stands on one leg for style.", ["flamingo"]],
     ["dolphin", "🐬", "gem", [6, 5, 4, 6, 7, 5], "So smart it knows your name.", ["dolphin"]],
-    ["robot", "🤖", "bot", [7, 5, 6, 5, 5, 5], "Beep boop. Built by the hunt bot.", ["robot"]],
-    ["invader", "👾", "bot", [5, 6, 5, 6, 6, 5], "Came from far away to join your zoo.", ["invader", "alien"]],
-    ["ufo", "🛸", "bot", [6, 5, 5, 6, 7, 5], "Unidentified, but definitely yours.", ["ufo"]],
-    ["teddy", "🧸", "bot", [8, 4, 6, 5, 4, 6], "The cutest thing the hunt bot ever found.", ["teddy", "bear"]],
+    ["bsloth", "🦥", "bot", [9, 4, 8, 3, 5, 8], "A slow steel sloth that never lets go of its branch.", ["bsloth"]],
+    ["blobster", "🦞", "bot", [6, 9, 8, 4, 3, 5], "A steel lobster with sparks flying from its claws.", ["blobster", "lobster"]],
+    ["bhedgehog", "🦔", "bot", [6, 8, 9, 4, 4, 6], "Its metal spikes crackle with electricity.", ["bhedgehog"]],
+    ["bgiraffe", "🦒", "bot", [7, 6, 5, 5, 5, 9], "A tall steel giraffe with a glowing eye.", ["bgiraffe", "giraffe"]],
+    ["btrex", "🦖", "bot", [7, 10, 6, 4, 3, 5], "A mechanical t-rex that breathes fire.", ["btrex"]],
     ["elderdragon", "🐲", "fabled", [8, 8, 6, 6, 6, 5], "An ancient dragon that rarely shows itself.", ["elderdragon", "fabled"]],
     ["scorpion", "🦂", "fabled", [6, 9, 6, 6, 5, 6], "One sting is all it takes.", ["scorpion"]],
     ["bat", "🦇", "fabled", [6, 7, 5, 8, 8, 6], "Rules the night.", ["bat"]],
@@ -92,6 +93,8 @@ const ROSTER = [
     ["sloth", "🦥", "hidden", [10, 8, 8, 8, 8, 8], "Takes its time, then wins.", ["sloth"]],
     ["hedgehog", "🦔", "hidden", [9, 9, 9, 8, 8, 8], "Prickly on the outside, rare on the inside.", ["hedgehog"]],
     ["beaver", "🦫", "hidden", [10, 9, 8, 9, 8, 8], "Builds legends one log at a time.", ["beaver"]],
+    ["skunk", "🦨", "hidden", [8, 8, 7, 9, 10, 8], "Nobody dares to find out how bad it really smells.", ["skunk"]],
+    ["kangaroo", "🦘", "hidden", [9, 10, 8, 7, 7, 8], "Hops over every obstacle with a mighty kick.", ["kangaroo", "roo"]],
 ];
 
 const ANIMALS = {};
