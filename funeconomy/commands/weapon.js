@@ -106,7 +106,7 @@ async function reroll(message, args) {
     if (result.error === 'disabled') return fail(message, "I can't reroll this weapon!", 4000);
     if (result.error === 'shards') return fail(message, `you need ${weaponDb.REROLL_PRICE} ${emojis.shard()} Weapon Shards to reroll a weapon!`, 4000);
     return track(await message.channel.send({
-        ...weaponView.rerollMessage(message.author.id, userName(message.guild, message.author), result.weapon, result.next),
+        ...weaponView.rerollMessage(message.author.id, userName(message.guild, message.author), result.weapon, result.next, { shards: result.shards }),
         allowedMentions: { parse: [] }
     }));
 }
