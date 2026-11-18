@@ -79,6 +79,10 @@ for (const [key, fallback] of Object.entries(ANIMAL_EMOJI)) DEFS[emojiName(key)]
 // Ikon stat: HP, STR, PR, WP, MAG, MR (tampil di dex, weapon, dan battle).
 DEFS.stat_hp = { fallback: '❤️' }; DEFS.stat_str = { fallback: '🗡️' }; DEFS.stat_pr = { fallback: '🛡️' };
 DEFS.stat_wp = { fallback: '💠' }; DEFS.stat_mag = { fallback: '🔮' }; DEFS.stat_mr = { fallback: '🌀' };
+// Ikon tombol/UI (PNG statis): halaman, cari, reroll, gembok.
+DEFS.nav_first = { fallback: '⏪' }; DEFS.nav_prev = { fallback: '◀️' }; DEFS.nav_next = { fallback: '▶️' }; DEFS.nav_last = { fallback: '⏩' };
+DEFS.search = { fallback: '🔍' }; DEFS.reroll = { fallback: '🔄' }; DEFS.rerollchanges = { fallback: '🔨' };
+DEFS.lock = { fallback: '🔒' }; DEFS.unlock = { fallback: '🔓' };
 DEFS.floot = { animated: true, fallback: '🎁' }; // fabled lootbox (diam)
 DEFS.floot2 = { animated: true, fallback: '🎁' }; // fabled lootbox bergetar
 DEFS.floot3 = { animated: true, fallback: '🎁' }; // fabled lootbox terbuka
@@ -203,10 +207,16 @@ async function sync(client) {
     return live.size;
 }
 
+/** Emoji (unicode atau <:nama:id>) -> objek emoji untuk tombol Discord. */
+function button(text) {
+    const m = /^<(a?):(\w+):(\d+)>$/.exec(String(text || ''));
+    return m ? { id: m[3], name: m[2], animated: !!m[1] } : { name: text };
+}
+
 /** Untuk tes: hapus semua emoji kustom dan kembalikan ke Unicode. */
 function reset() { live.clear(); apply(); }
 
 /** id emoji kustom dari teks `<:nama:id>` (atau null untuk emoji Unicode). */
 const customId = (text) => /^<a?:\w+:(\d+)>$/.exec(String(text || ''))?.[1] || null;
 
-module.exports = { DEFS, get, gear, buff, robot, floot, flootShake, flootOpen, shard, essence, unknown, crate, crateShake, crateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId };
+module.exports = { DEFS, get, gear, buff, robot, floot, flootShake, flootOpen, shard, essence, unknown, crate, crateShake, crateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId, button };
