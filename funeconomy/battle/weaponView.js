@@ -229,7 +229,7 @@ async function crateViewMessage(ownerId, ownerName, uwids, index, crateMessageId
 		separator(),
 		text(body.slice(0, 3800)),
 		separator(),
-		{ type: 9, components: [text(`-# ${footer}`)], accessory: button(id('star', index), { emoji: weapon.favorite ? '⭐' : '☆' }) },
+		{ type: 9, components: [text(`-# ${footer}`)], accessory: button(id('star', index), { emoji: '⭐', style: weapon.favorite ? 1 : 2 })
 		{
 			type: 1,
 			components: [
