@@ -147,7 +147,7 @@ function rerollField(title, weapon) {
 }
 
 /* Perbandingan reroll (CURRENT vs NEW) + tombol konfirmasi */
-function rerollMessage(ownerId, ownerName, oldWeapon, newWeapon, { disabled = false, color = EMBED_COLOR, note } = {}) {
+function rerollMessage(ownerId, ownerName, oldWeapon, newWeapon, { disabled = false, color = EMBED_COLOR, note, shards } = {}) {
 	const embed = {
 		author: { name: `${ownerName} spent ${weaponDb.REROLL_PRICE} Weapon Shards to reroll!` },
 		color,
@@ -158,11 +158,16 @@ function rerollMessage(ownerId, ownerName, oldWeapon, newWeapon, { disabled = fa
 		embed.description = `⚠️ Your wear will change from \`${oldWeapon.wearName}\` to \`${newWeapon.wearName}\` ⚠️`;
 	}
 	const id = (action) => `${PREFIX}:rr:${action}:${ownerId}:${oldWeapon.ruwid}`;
-	const row = new ActionRowBuilder().addComponents(
-		new ButtonBuilder().setCustomId(id('confirm')).setLabel('Confirm').setEmoji('✅').setStyle(ButtonStyle.Success).setDisabled(disabled),
-		new ButtonBuilder().setCustomId(id('cancel')).setLabel('Cancel').setEmoji('❎').setStyle(ButtonStyle.Danger).setDisabled(disabled),
-		new ButtonBuilder().setCustomId(id('again')).setLabel('Reroll').setEmoji(emojis.button(emojis.get('reroll'))).setStyle(ButtonStyle.Secondary).setDisabled(disabled)
-	);
+	const buttons = [
+		new ButtonBuilder().setCustomId(id('confirm')).setLabel('Confirm').setEmoji(emojis.button(emojis.get('check'))).setStyle(ButtonStyle.Success).setDisabled(disabled),
+		new ButtonBuilder().setCustomId(id('cancel')).setLabel('Cancel').setEmoji(emojis.button(emojis.get('cross'))).setStyle(ButtonStyle.Danger).setDisabled(disabled)
+	];
+	// Tombol abu-abu (tidak bisa diklik) berisi sisa Weapon Shards, seperti OwO.
+	if (shards !== undefined && shards !== null) {
+		buttons.push(new ButtonBuilder().setCustomId(id('shards')).setLabel(Number(shards).toLocaleString('en-US')).setEmoji(emojis.button(emojis.shard())).setStyle(ButtonStyle.Secondary).setDisabled(true));
+	}
+	buttons.push(new ButtonBuilder().setCustomId(id('again')).setLabel('Reroll').setEmoji(emojis.button(emojis.get('reroll'))).setStyle(ButtonStyle.Primary).setDisabled(disabled));
+	const row = new ActionRowBuilder().addComponents(buttons);
 	return { content: note || '', embeds: [embed], components: [row] };
 }
 

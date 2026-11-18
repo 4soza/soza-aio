@@ -76,22 +76,22 @@ async function handleReroll(interaction, parts) {
 
 	if (action === 'confirm') {
 		const saved = await weaponDb.confirmReroll(ownerId, uwid);
-		const msg = weaponView.rerollMessage(ownerId, name, current, next, { disabled: true, color: 0x00ff00 });
+		const msg = weaponView.rerollMessage(ownerId, name, current, next, { disabled: true, color: 0x00ff00, shards: await crateDb.getShards(ownerId) });
 		if (!saved) msg.content = 'Failed to change weapon stats!';
 		return interaction.update(msg);
 	}
 	if (action === 'cancel') {
 		await weaponDb.cancelReroll(ownerId, uwid);
-		return interaction.update(weaponView.rerollMessage(ownerId, name, current, next, { disabled: true, color: 0xff0000 }));
+		return interaction.update(weaponView.rerollMessage(ownerId, name, current, next, { disabled: true, color: 0xff0000, shards: await crateDb.getShards(ownerId) }));
 	}
 	if (action === 'again') {
 		const type = doc.pending.type;
 		const result = await weaponDb.startReroll(ownerId, uwid, type);
 		if (result.error === 'shards') {
-			return interaction.update(weaponView.rerollMessage(ownerId, name, current, next, { note: `You don't have enough ${emojis.shard()} Weapon Shards!`, color: 0xff0000 }));
+			return interaction.update(weaponView.rerollMessage(ownerId, name, current, next, { note: `You don't have enough ${emojis.shard()} Weapon Shards!`, color: 0xff0000, shards: await crateDb.getShards(ownerId) }));
 		}
 		if (result.error) return interaction.update({ content: 'This reroll is no longer active.', components: [] });
-		return interaction.update(weaponView.rerollMessage(ownerId, name, result.weapon, result.next));
+		return interaction.update(weaponView.rerollMessage(ownerId, name, result.weapon, result.next, { shards: result.shards }));
 	}
 }
 

@@ -230,8 +230,9 @@ async function startReroll(userId, uwid, type, { free = false } = {}) {
 	const weapon = parseWeapon(doc);
 	if (!weapon) return { error: 'missing' };
 	if (weapon.unsellable || weapon.disableRR) return { error: 'disabled' };
+	let paid = null;
 	if (!free) {
-		const paid = await Crate.findOneAndUpdate(
+		paid = await Crate.findOneAndUpdate(
 			{ userId, shards: { $gte: REROLL_PRICE } }, { $inc: { shards: -REROLL_PRICE } }, { new: true }
 		).lean();
 		if (!paid) return { error: 'shards' };
@@ -250,7 +251,7 @@ async function startReroll(userId, uwid, type, { free = false } = {}) {
 			}
 		}
 	});
-	return { weapon, next };
+	return { weapon, next, shards: paid ? paid.shards : undefined };
 }
 
 /* Bangun instance weapon dari hasil reroll yang menunggu */
@@ -291,4 +292,3 @@ module.exports = {
 	getWeaponDoc, getWeapon, listWeapons, countByType, equip, unequip, setFavorite, addKills, rankBounds,
 	removeWeapon, removeRank, findRankWeapons, startReroll, pendingWeapon, confirmReroll, cancelReroll, weaponsForAnimals
 };
-	
