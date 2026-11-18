@@ -182,6 +182,25 @@ async function handleTeamSettings(interaction, parts) {
 }
 
 /* fbattle:cv:<owner>:<crateMessageId>:<index>:<act>  - detail senjata hasil buka crate */
+const crateExpiryTimers = new Set();
+/** Setelah 10 menit sejak crate dibuka, detail senjata jadi abu-abu dan tombolnya mati. */
+function scheduleCrateExpiry(interaction, ownerId, crateMessageId, opened) {
+	if (crateExpiryTimers.has(crateMessageId)) return;
+	crateExpiryTimers.add(crateMessageId);
+	const wait = Math.max(0, opened.at + crateDb.OPENED_TTL_MS - Date.now());
+	const timer = setTimeout(async () => {
+		crateExpiryTimers.delete(crateMessageId);
+		try {
+			const msg = await interaction.message.fetch();
+			const star = JSON.stringify(msg.components).match(/fbattle:cv:\d+:\d+:(\d+):star/);
+			const index = star ? parseInt(star[1], 10) : 0;
+			const view = await weaponView.crateViewMessage(ownerId, userName(interaction.guild, interaction.user), opened.uwids, index, crateMessageId, true);
+			if (view) await msg.edit({ components: view.components, flags: view.flags });
+		} catch { /* pesan sudah dihapus */ }
+	}, wait);
+	timer.unref?.();
+}
+
 async function handleCrateView(interaction, parts) {
 	const [, , ownerId, crateMessageId, indexText, act] = parts;
 	if (interaction.user.id !== ownerId) return ephemeral(interaction, "This isn't your crate!");
@@ -199,6 +218,7 @@ async function handleCrateView(interaction, parts) {
 	const message = await weaponView.crateViewMessage(ownerId, userName(interaction.guild, interaction.user), opened.uwids, index, crateMessageId);
 	if (!message) return ephemeral(interaction, 'That weapon no longer exists.');
 	// Tombol 🔍 menggantikan pesan crate dengan detail senjata (seperti OwO); tombol halaman memperbarui pesan yang sama.
+	if (act === 'open') scheduleCrateExpiry(interaction, ownerId, crateMessageId, opened);
 	return interaction.update({ components: message.components, flags: message.flags });
 }
 

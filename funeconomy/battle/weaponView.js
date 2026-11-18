@@ -209,7 +209,7 @@ function emojiImageUrl(emoji) {
  * Detail senjata hasil buka crate seperti OwO: satu senjata per halaman + tombol halaman dan bintang favorit (ephemeral).
  * customId: fbattle:cv:<owner>:<crateMessageId>:<index>:<first|prev|next|last|star>
  */
-async function crateViewMessage(ownerId, ownerName, uwids, index, crateMessageId) {
+async function crateViewMessage(ownerId, ownerName, uwids, index, crateMessageId, expired = false) {
 	if (!uwids.length) return null;
 	const total = uwids.length;
 	index = ((index % total) + total) % total;
@@ -223,13 +223,13 @@ async function crateViewMessage(ownerId, ownerName, uwids, index, crateMessageId
 	const image = emojiImageUrl(weapon.emoji);
 	const head = text(`### ${weapon.rank.emoji} ${weapon.fullName}`);
 	const id = (act, target) => `${PREFIX}:cv:${ownerId}:${crateMessageId}:${target}:${act}`;
-	const nav = (act, emoji, target) => button(id(act, target), { emoji, disabled: total <= 1 });
+	const nav = (act, emoji, target) => button(id(act, target), { emoji, disabled: expired || total <= 1 });
 	const components = [
 		image ? { type: 9, components: [head], accessory: { type: 11, media: { url: image } } } : head,
 		separator(),
 		text(body.slice(0, 3800)),
 		separator(),
-		{ type: 9, components: [text(`-# ${footer}`)], accessory: button(id('star', index), { emoji: '⭐', style: weapon.favorite ? 1 : 2 }) },
+		{ type: 9, components: [text(`-# ${footer}`)], accessory: button(id('star', index), { emoji: '⭐', style: weapon.favorite ? 1 : 2, disabled: expired }) },
 		{
 			type: 1,
 			components: [
@@ -239,7 +239,7 @@ async function crateViewMessage(ownerId, ownerName, uwids, index, crateMessageId
 			]
 		}
 	];
-	return { components: [{ type: 17, accent_color: EMBED_COLOR, components }], flags: V2 };
+	return { components: [{ type: 17, accent_color: expired ? EXPIRED_COLOR : EMBED_COLOR, components }], flags: V2 };
 }
 
 module.exports = { crateViewMessage, sellMessage, PREFIX, PER_PAGE, listMessage, helpText, RANK_NAMES, SORT_LABELS, detailEmbed, describeWeapon, rerollMessage, weaponIcons };
