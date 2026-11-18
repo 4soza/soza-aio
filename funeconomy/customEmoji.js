@@ -19,6 +19,8 @@ const DEFS = {
     fabled: { animated: true, fallback: '🟡' },
     gem: { animated: true, fallback: '💎' },
     special: { fallback: '🌈' },
+    hidden: { animated: true, fallback: '⚫' },
+    bot: { animated: true, fallback: '🤖' },
     cring: { fallback: '⚪💍' },
     uring: { fallback: '🟢💍' },
     rring: { fallback: '🔵💍' },
@@ -64,6 +66,8 @@ const ANIMAL_EMOJI = {
     leopard: '🐆', bison: '🦬', mammoth: '🦣', swan: '🦢',
     peacock: '🦚', parrot: '🦜', flamingo: '🦩', dolphin: '🐬',
     elderdragon: '🐲', scorpion: '🦂', bat: '🦇', otter: '🦦',
+    // hewan hidden dan bot (buatan sendiri)
+    sloth: '🦥', hedgehog: '🦔', beaver: '🦫', skunk: '🦨', kangaroo: '🦘', bsloth: '🦥', blobster: '🦞', bhedgehog: '🦔', bgiraffe: '🦒', btrex: '🦖',
     // hewan special (buatan sendiri)
     sjelly: '🪼', shamster: '🐹', skoala: '🐨', sraccoon: '🦝', sseal: '🦭', schameleon: '🦎', shippo: '🦛', salpaca: '🦙'
 };
@@ -137,7 +141,7 @@ const lootboxOpen = () => get('lb3');
 // Rank hewan (zoo/data.js RANKS) dan rank senjata (WeaponInterface.ranks) -> key emoji.
 const ZOO_RANKS = {
     common: 'common', uncommon: 'uncommon', rare: 'rare', epic: 'epic',
-    mythical: 'mythic', gem: 'gem', legendary: 'legendary', fabled: 'fabled', special: 'special'
+    mythical: 'mythic', gem: 'gem', legendary: 'legendary', fabled: 'fabled', special: 'special', hidden: 'hidden', bot: 'bot'
 };
 const WEAPON_RANKS = {
     Common: 'common', Uncommon: 'uncommon', Rare: 'rare', Epic: 'epic',
