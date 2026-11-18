@@ -198,8 +198,7 @@ async function handleCrateView(interaction, parts) {
 	else if (act === 'last') index = total - 1;
 	const message = await weaponView.crateViewMessage(ownerId, userName(interaction.guild, interaction.user), opened.uwids, index, crateMessageId);
 	if (!message) return ephemeral(interaction, 'That weapon no longer exists.');
-	// Tombol 🔍 di pesan crate membuka pesan baru (terlihat semua orang, seperti OwO); tombol halaman memperbarui pesan itu.
-	if (act === 'open') return interaction.reply({ ...message, allowedMentions: { parse: [] } });
+	// Tombol 🔍 menggantikan pesan crate dengan detail senjata (seperti OwO); tombol halaman memperbarui pesan yang sama.
 	return interaction.update({ components: message.components, flags: message.flags });
 }
 
