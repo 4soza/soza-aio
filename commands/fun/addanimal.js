@@ -7,14 +7,16 @@ const { ANIMALS, RANKS } = require('../../funeconomy/zoo/data');
 const zooDb = require('../../funeconomy/zoo/zooDb');
 
 const MAX_GRANT = 1000;
-const SPECIALS = Object.values(ANIMALS).filter((a) => a.rank === 'special');
+// Discord membatasi pilihan command maksimal 25: special (8) + hidden (5) + bot (9) = 22.
+const GRANTABLE = ['special', 'hidden', 'bot'];
+const SPECIALS = Object.values(ANIMALS).filter((a) => GRANTABLE.includes(a.rank));
 
 module.exports = {
     category: 'fun',
     registerGuildOnly: true,
     data: new SlashCommandBuilder()
         .setName('addanimal')
-        .setDescription('Give a special animal to a user (bot creator only)')
+        .setDescription('Give a special, hidden or bot animal to a user (bot creator only)')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addStringOption(option => option
             .setName('user_id')
@@ -24,9 +26,9 @@ module.exports = {
             .setMaxLength(20))
         .addStringOption(option => option
             .setName('animal')
-            .setDescription('Special animal')
+            .setDescription('Special, hidden or bot animal')
             .setRequired(true)
-            .addChoices(...SPECIALS.map((a) => ({ name: a.key, value: a.key }))))
+            .addChoices(...SPECIALS.map((a) => ({ name: `${a.key} (${a.rank})`, value: a.key }))))
         .addIntegerOption(option => option
             .setName('amount')
             .setDescription(`Amount to add (1-${MAX_GRANT})`)
@@ -55,15 +57,15 @@ module.exports = {
         const key = interaction.options.getString('animal');
         const amount = interaction.options.getInteger('amount') ?? 1;
         const animal = ANIMALS[key];
-        if (!animal || animal.rank !== 'special') {
-            return interaction.reply({ content: 'That is not a special animal.', flags: MessageFlags.Ephemeral });
+        if (!animal || !GRANTABLE.includes(animal.rank)) {
+            return interaction.reply({ content: 'That animal cannot be granted.', flags: MessageFlags.Ephemeral });
         }
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         try {
             await zooDb.addAnimals(userId, { [key]: amount });
             return interaction.editReply({
-                content: `Added **${amount}x** ${animal.uni} **${key}** (${RANKS.special.emoji} special) to user ID **${userId}**.`
+                content: `Added **${amount}x** ${animal.uni} **${key}** (${RANKS[animal.rank].emoji} ${animal.rank}) to user ID **${userId}**.`
             });
         } catch (error) {
             console.error('[FUNECONOMY] Owner animal grant failed:', error);
@@ -71,3 +73,4 @@ module.exports = {
         }
     }
 };
+                
