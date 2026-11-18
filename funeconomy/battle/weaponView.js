@@ -30,7 +30,7 @@ const V2 = 32768; // MessageFlags.IsComponentsV2
 const text = (content) => ({ type: 10, content });
 const separator = () => ({ type: 14, divider: true, spacing: 1 });
 const button = (customId, { label, emoji, style = 2, disabled = false } = {}) => ({
-	type: 2, custom_id: customId, style, disabled, ...(label ? { label } : {}), ...(emoji ? { emoji: { name: emoji } } : {})
+	type: 2, custom_id: customId, style, disabled, ...(label ? { label } : {}), ...(emoji ? { emoji: emojis.button(emoji) } : {})
 });
 
 /* Bagian customId yang menyimpan keadaan daftar: <owner>:<sort>:<wid>:<rank|x> */
@@ -84,11 +84,11 @@ async function listMessage(userId, ownerName, { page = 0, sort = 'id', wid, rank
 		{
 			type: 1,
 			components: [
-				nav('first', '⏪', 0),
-				nav('prev', '◀️', page),
+				nav('first', emojis.get('nav_first'), 0),
+				nav('prev', emojis.get('nav_prev'), page),
 				button(`fbattle:wp:${id}:${page}:now`, { label: `${page + 1}/${maxPage}`, disabled: true }),
-				nav('next', '▶️', page),
-				nav('last', '⏩', page)
+				nav('next', emojis.get('nav_next'), page),
+				nav('last', emojis.get('nav_last'), page)
 			]
 		}
 	];
@@ -161,7 +161,7 @@ function rerollMessage(ownerId, ownerName, oldWeapon, newWeapon, { disabled = fa
 	const row = new ActionRowBuilder().addComponents(
 		new ButtonBuilder().setCustomId(id('confirm')).setLabel('Confirm').setEmoji('✅').setStyle(ButtonStyle.Success).setDisabled(disabled),
 		new ButtonBuilder().setCustomId(id('cancel')).setLabel('Cancel').setEmoji('❎').setStyle(ButtonStyle.Danger).setDisabled(disabled),
-		new ButtonBuilder().setCustomId(id('again')).setLabel('Reroll').setEmoji('🔄').setStyle(ButtonStyle.Secondary).setDisabled(disabled)
+		new ButtonBuilder().setCustomId(id('again')).setLabel('Reroll').setEmoji(emojis.button(emojis.get('reroll'))).setStyle(ButtonStyle.Secondary).setDisabled(disabled)
 	);
 	return { content: note || '', embeds: [embed], components: [row] };
 }
@@ -219,7 +219,7 @@ async function crateViewMessage(ownerId, ownerName, uwids, index, crateMessageId
 	weapon.favorite = !!doc.favorite;
 	let body = `**Name:** ${weapon.name}\n**Owner:** ${ownerName}\n`;
 	body += describeWeapon(weapon).description.replace(/^\*\*Name:\*\*.*\n/, '');
-	const footer = `Reroll Changes: ${weapon.rrCount} | Reroll Attempts: ${weapon.rrAttempt}`;
+	const footer = `${emojis.get('rerollchanges')} Reroll Changes: ${weapon.rrCount} | ${emojis.get('reroll')} Reroll Attempts: ${weapon.rrAttempt}`;
 	const image = emojiImageUrl(weapon.emoji);
 	const head = text(`### ${weapon.rank.emoji} ${weapon.fullName}`);
 	const id = (act, target) => `${PREFIX}:cv:${ownerId}:${crateMessageId}:${target}:${act}`;
@@ -233,9 +233,9 @@ async function crateViewMessage(ownerId, ownerName, uwids, index, crateMessageId
 		{
 			type: 1,
 			components: [
-				nav('first', '⏪', 0), nav('prev', '◀️', index),
+				nav('first', emojis.get('nav_first'), 0), nav('prev', emojis.get('nav_prev'), index),
 				button(id('now', index), { label: `${index + 1}/${total}`, disabled: true }),
-				nav('next', '▶️', index), nav('last', '⏩', index)
+				nav('next', emojis.get('nav_next'), index), nav('last', emojis.get('nav_last'), index)
 			]
 		}
 	];

@@ -3,18 +3,19 @@
  * (https://github.com/ChristopherBThai/Discord-OwO-Bot), adapted for this bot.
  */
 const cfg = require('../config');
+const emojis = require('../customEmoji');
 const teamUtil = require('./teamUtil.js');
 const { EMBED_COLOR } = require('./battleDisplay.js');
 const Animal = require('../../models/funeconomy/animal');
 const animalUtil = require('./animalUtil.js');
-const { ANIMALS } = require('../zoo/data');
+const { ANIMALS, RANKS } = require('../zoo/data');
 
 const V2 = 32768; // MessageFlags.IsComponentsV2
 const PER_PAGE = 24; // + satu opsi "kosong" = 25 (batas select menu)
 const text = (content) => ({ type: 10, content });
 const separator = () => ({ type: 14, divider: true, spacing: 1 });
 const button = (customId, { label, emoji, style = 2, disabled = false } = {}) => ({
-	type: 2, custom_id: customId, style, disabled, ...(label ? { label } : {}), ...(emoji ? { emoji: { name: emoji } } : {})
+	type: 2, custom_id: customId, style, disabled, ...(label ? { label } : {}), ...(emoji ? { emoji: emojis.button(emoji) } : {})
 });
 
 /* Emoji hewan (unicode atau <:nama:id>) -> objek emoji untuk select menu */
@@ -89,9 +90,9 @@ async function teamPage(userId, ownerName, avatar, index, { expired = false } = 
 	const components = [{
 		type: 1,
 		components: [
-			button(id('prev'), { emoji: '◀️', disabled: expired }),
+			button(id('prev'), { emoji: emojis.get('nav_prev'), disabled: expired }),
 			button(`fbattle:tv:${userId}:${index}:page`, { label: `${index + 1}/${total}`, disabled: true }),
-			button(id('next'), { emoji: '▶️', disabled: expired }),
+			button(id('next'), { emoji: emojis.get('nav_next'), disabled: expired }),
 			button(id('star'), { emoji: '⭐', style: active ? 1 : 2, disabled: expired }),
 			button(id('gear'), { emoji: '⚙️', disabled: expired })
 		]
@@ -99,13 +100,14 @@ async function teamPage(userId, ownerName, avatar, index, { expired = false } = 
 	return { embeds: [embed], components };
 }
 
-/* Hewan yang boleh dipasang (punya, atau sudah ada di team), urut level tertinggi dulu */
+/* Hewan yang boleh dipasang (punya, atau sudah ada di team), urut level tertinggi, lalu rank tertinggi (special/legendary dulu), lalu nama */
 async function pickableAnimals(userId, team) {
 	const inTeam = teamUtil.filled(team);
 	const docs = await Animal.find({ userId, $or: [{ count: { $gt: 0 } }, { name: { $in: inTeam } }] }).lean();
 	return docs.filter((d) => ANIMALS[d.name]).map((d) => ({
-		key: d.name, nickname: d.nickname || ANIMALS[d.name].name, uni: ANIMALS[d.name].uni, lvl: animalUtil.toLvl(d.xp || 0).lvl
-	})).sort((a, b) => b.lvl - a.lvl || a.key.localeCompare(b.key));
+		key: d.name, nickname: d.nickname || ANIMALS[d.name].name, uni: ANIMALS[d.name].uni, lvl: animalUtil.toLvl(d.xp || 0).lvl,
+		rank: RANKS[ANIMALS[d.name].rank]?.order || 0
+	})).sort((a, b) => b.lvl - a.lvl || b.rank - a.rank || a.key.localeCompare(b.key));
 }
 
 /*
@@ -151,9 +153,9 @@ async function settingsMessage(userId, { page = 0, msgId = '0', notice } = {}) {
 		{
 			type: 1,
 			components: [
-				button(`fbattle:tsp:${userId}:${msgId}:${page - 1}`, { emoji: '◀️', disabled: page <= 0 }),
+				button(`fbattle:tsp:${userId}:${msgId}:${page - 1}`, { emoji: emojis.get('nav_prev'), disabled: page <= 0 }),
 				button(`fbattle:tsp:${userId}:${msgId}:${page}:now`, { label: `${page + 1}/${pages}`, disabled: true }),
-				button(`fbattle:tsp:${userId}:${msgId}:${page + 1}`, { emoji: '▶️', disabled: page >= pages - 1 })
+				button(`fbattle:tsp:${userId}:${msgId}:${page + 1}`, { emoji: emojis.get('nav_next'), disabled: page >= pages - 1 })
 			]
 		}
 	];
@@ -162,4 +164,3 @@ async function settingsMessage(userId, { page = 0, msgId = '0', notice } = {}) {
 }
 
 module.exports = { teamEmbeds, teamEmbed, teamPage, settingsMessage, HELP };
-																		   
