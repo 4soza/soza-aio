@@ -219,7 +219,7 @@ async function crateViewMessage(ownerId, ownerName, uwids, index, crateMessageId
 	weapon.favorite = !!doc.favorite;
 	let body = `**Name:** ${weapon.name}\n**Owner:** ${ownerName}\n`;
 	body += describeWeapon(weapon).description.replace(/^\*\*Name:\*\*.*\n/, '');
-	const footer = `${emojis.get('rerollchanges')} Reroll Changes: ${weapon.rrCount} | ${emojis.get('reroll')} Reroll Attempts: ${weapon.rrAttempt}`;
+	const footer = `${emojis.get('rerollchanges')} Reroll Changes: ${weapon.rrCount} | ${emojis.get('rerollattempts')} Reroll Attempts: ${weapon.rrAttempt}`;
 	const image = emojiImageUrl(weapon.emoji);
 	const head = text(`### ${weapon.rank.emoji} ${weapon.fullName}`);
 	const id = (act, target) => `${PREFIX}:cv:${ownerId}:${crateMessageId}:${target}:${act}`;
@@ -229,7 +229,7 @@ async function crateViewMessage(ownerId, ownerName, uwids, index, crateMessageId
 		separator(),
 		text(body.slice(0, 3800)),
 		separator(),
-		{ type: 9, components: [text(`-# ${footer}`)], accessory: button(id('star', index), { emoji: '⭐', style: weapon.favorite ? 1 : 2 })},
+		{ type: 9, components: [text(`-# ${footer}`)], accessory: button(id('star', index), { emoji: '⭐', style: weapon.favorite ? 1 : 2 }) },
 		{
 			type: 1,
 			components: [
