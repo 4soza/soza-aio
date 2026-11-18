@@ -49,7 +49,7 @@ module.exports = {
         await sleep(3000);
         // Tombol 🔍 membuka detail tiap senjata (ephemeral), urutan sama seperti daftar di pesan.
         const view = (id, disabled = false) => new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId(`fbattle:cv:${userId}:${id}:0:open`).setEmoji('🔍').setStyle(ButtonStyle.Secondary).setDisabled(disabled)
+            new ButtonBuilder().setCustomId(`fbattle:cv:${userId}:${id}:0:open`).setEmoji(emojis.button(emojis.get('search'))).setStyle(ButtonStyle.Secondary).setDisabled(disabled)
         );
         // Setelah 10 menit tombol 🔍 dimatikan (hasil crate di memori juga kedaluwarsa).
         const expireButton = (msg) => {
