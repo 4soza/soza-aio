@@ -21,7 +21,7 @@ const TABS = [
 const text = (content) => ({ type: 10, content });
 const separator = () => ({ type: 14, divider: true, spacing: 1 });
 const button = (customId, { label, emoji, style = 2, disabled = false } = {}) => ({
-    type: 2, custom_id: customId, style, disabled, ...(label ? { label } : {}), ...(emoji ? { emoji: { name: emoji } } : {})
+    type: 2, custom_id: customId, style, disabled, ...(label ? { label } : {}), ...(emoji ? { emoji: emojis.button(emoji) } : {})
 });
 const row = (...components) => ({ type: 1, components });
 const fmt = (n) => Number(n).toLocaleString('en-US');
@@ -104,7 +104,7 @@ function questLog(ownerId, ownerName, state, notice) {
         components.push({
             type: 9,
             components: [text(`**${index + 1}.** ${questLines(quest)}`)],
-            accessory: button(`${BUTTON_PREFIX}:quests:${ownerId}:lock:${quest.qid}`, { emoji: quest.locked ? '🔒' : '🔓', style: quest.locked ? 1 : 2 })
+            accessory: button(`${BUTTON_PREFIX}:quests:${ownerId}:lock:${quest.qid}`, { emoji: emojis.get(quest.locked ? 'lock' : 'unlock'), style: quest.locked ? 1 : 2 })
         });
     });
     if (notice) components.push(separator(), text(notice));
@@ -115,7 +115,7 @@ function questLog(ownerId, ownerName, state, notice) {
         separator(),
         row(
             button(`${BUTTON_PREFIX}:quests:${ownerId}:claim`, { label: 'Claim', emoji: '🎁', style: 3, disabled: !anyDone }),
-            button(`${BUTTON_PREFIX}:quests:${ownerId}:reroll`, { label: 'Reroll', emoji: '🔁', disabled: !state.canReroll })
+            button(`${BUTTON_PREFIX}:quests:${ownerId}:reroll`, { label: 'Reroll', emoji: emojis.get('reroll'), disabled: !state.canReroll })
         )
     );
     return components;
