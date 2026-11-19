@@ -2,7 +2,7 @@
 const emojis = require('../customEmoji');
 const cooldown = require('../cooldown');
 const { displayName, send, sendTemporaryError, onCooldown } = require('../utils');
-const { openFabledBoxes, getFabledCount, MAX_OPEN } = require('../zoo/lootboxDb');
+const { openFabledBoxes, getFabledCount, LOOTBOX_MAX_OPEN: MAX_OPEN } = require('../zoo/lootboxDb');
 const { toSmallNum, BLANK } = require('../zoo/format');
 
 const err = (message, name, text) => sendTemporaryError(message, `**🚫 | ${name}**, ${text}`);
@@ -31,31 +31,36 @@ module.exports = {
         }
 
         if (onCooldown(message, 'lootbox')) return;
-        cooldown.start('lootbox', userId);
-
-        let result;
-        try { result = await openFabledBoxes(userId, count); } catch (error) {
+        // Cek saldo cepat dulu supaya pesan pertama langsung muncul; membuka berjalan sambil menunggu 3 detik.
+        let have;
+        try { have = await getFabledCount(userId); } catch (error) {
             console.error('[FUNECONOMY] lootbox failed:', error.message);
             return err(message, name, 'It looks like something went wrong...');
         }
-        if (!result) return err(message, name, "You don't have any fabled lootboxes!");
+        if (have < count) return err(message, name, "You don't have any fabled lootboxes!");
+        cooldown.start('lootbox', userId);
+        const first = count === 1
+            ? `${BLANK} **| ${name}** opens a fabled lootbox\n**${emojis.flootShake()} |** and finds a ...`
+            : `${BLANK} **| ${name}** opens ${count} fabled lootboxes\n**${emojis.flootShake()} |** and finds...`;
+        const sent = await send(message, first);
+        let result;
+        try { [result] = await Promise.all([openFabledBoxes(userId, count), new Promise((r) => setTimeout(r, 3000))]); } catch (error) {
+            console.error('[FUNECONOMY] lootbox failed:', error.message);
+            return sent?.edit?.(`**🚫 | ${name}**, It looks like something went wrong...`)?.catch?.(() => {});
+        }
+        if (!result) return sent?.edit?.(`**🚫 | ${name}**, You don't have any fabled lootboxes!`)?.catch?.(() => {});
 
         const entries = Object.values(result.gems);
-        let first;
         let last;
         if (count === 1) {
             const gem = entries[0].gem;
             const gemName = `${gem.rankName} ${gem.type} Gem`;
-            first = `${BLANK} **| ${name}** opens a fabled lootbox\n**${emojis.flootShake()} |** and finds a ...`;
             last = `**${gem.emoji} | ${name}** opens a fabled lootbox\n**${emojis.flootOpen()} |** and finds a${/^[EU]/.test(gemName) ? 'n' : ''} **${gemName}**!`;
         } else {
             const gemText = entries.map((e) => `${e.gem.emoji}${toSmallNum(e.count)}`).join(' ');
-            first = `${BLANK} **| ${name}** opens ${count} fabled lootboxes\n**${emojis.flootShake()} |** and finds...`;
             last = `${BLANK} **| ${name}** opens ${count} fabled lootboxes\n**${emojis.flootOpen()} |** and finds: ${gemText}`;
         }
-        const sent = await send(message, first);
-        const timer = setTimeout(() => { sent.edit?.(last)?.catch?.(() => {}); }, 3000);
-        timer.unref?.();
+        sent?.edit?.(last)?.catch?.(() => {});
         return sent;
     }
 };

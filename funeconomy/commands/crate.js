@@ -28,28 +28,31 @@ module.exports = {
         }
         if (onCooldown(message, 'crate')) return;
 
-        const result = await crateDb.openCrates(userId, count);
-        if (result.error) return fail(message, "You don't have any weapon crates!", 3000);
+        // Cek saldo cepat (1 baca DB) supaya pesan pertama bisa langsung muncul, tidak menunggu penyimpanan senjata.
+        const have = (await crateDb.getCrate(userId)).boxcount || 0;
+        if (have < count) return fail(message, "You don't have any weapon crates!", 3000);
         cooldown.start('crate', userId);
-        const weapons = result.weapons;
 
-        let text1;
-        let text2;
-        if (count === 1) {
-            const w = weapons[0];
-            text1 = `${BLANK} | **${name}** opens a weapon crate\n${emojis.crateShake()} | and finds a ...`;
-            text2 = `${w.emoji} | **${name}** opens a weapon crate\n${emojis.crateOpen()} | and finds a \`${w.uwid}\` ${weaponIcons(w)} ${w.avgQuality}%`;
-        } else {
-            weapons.sort((a, b) => b.avgQuality - a.avgQuality);
-            text1 = `${BLANK} | **${name}** opens ${count} weapon crates\n${emojis.crateShake()} | and finds...`;
-            text2 = `${BLANK} | **${name}** opens ${count} weapon crates\n${emojis.crateOpen()} | and finds: ${weapons.map((w) => w.emoji).join('')}`;
-        }
+        const text1 = count === 1
+            ? `${BLANK} | **${name}** opens a weapon crate\n${emojis.crateShake()} | and finds a ...`
+            : `${BLANK} | **${name}** opens ${count} weapon crates\n${emojis.crateShake()} | and finds...`;
         // Pesan memakai Components V2 supaya tombol 🔍 tampil di samping teks (seperti OwO).
         const V2 = 32768;
         const lines = (t) => ({ type: 10, content: t });
         const sent = await message.channel.send({ components: [lines(text1)], flags: V2, allowedMentions: { parse: [] } }).catch(() => null);
+        // Penyimpanan senjata berjalan sambil menunggu 3 detik animasi.
+        const [result] = await Promise.all([crateDb.openCrates(userId, count).catch(() => ({ error: 'fail' })), sleep(3000)]);
         if (!sent) return;
-        await sleep(3000);
+        if (result.error) return sent.edit({ components: [lines("🚫 | You don't have any weapon crates!")], flags: V2 }).catch(() => {});
+        const weapons = result.weapons;
+        let text2;
+        if (count === 1) {
+            const w = weapons[0];
+            text2 = `${w.emoji} | **${name}** opens a weapon crate\n${emojis.crateOpen()} | and finds a \`${w.uwid}\` ${weaponIcons(w)} ${w.avgQuality}%`;
+        } else {
+            weapons.sort((a, b) => b.avgQuality - a.avgQuality);
+            text2 = `${BLANK} | **${name}** opens ${count} weapon crates\n${emojis.crateOpen()} | and finds: ${weapons.map((w) => w.emoji).join('')}`;
+        }
         // Tombol 🔍 membuka detail tiap senjata (ephemeral), urutan sama seperti daftar di pesan.
         const view = (id, disabled = false) => ({
             type: 9,
@@ -58,7 +61,12 @@ module.exports = {
         });
         // Setelah 10 menit tombol 🔍 dimatikan (hasil crate di memori juga kedaluwarsa).
         const expireButton = (msg) => {
-            const timer = setTimeout(() => msg.edit({ components: [view(msg.id, true)], flags: V2 }).catch(() => {}), crateDb.OPENED_TTL_MS);
+            const timer = setTimeout(async () => {
+                // Kalau 🔍 sudah diklik, pesan ini sudah berganti jadi detail senjata: jangan ditimpa.
+                const fresh = await msg.fetch().catch(() => null);
+                const id = fresh?.components?.[0]?.accessory?.customId || '';
+                if (id.startsWith('fbattle:cv:') && id.endsWith(':open')) msg.edit({ components: [view(msg.id, true)], flags: V2 }).catch(() => {});
+            }, crateDb.OPENED_TTL_MS);
             timer.unref?.();
         };
         const ids = weapons.map((w) => w.ruwid);
