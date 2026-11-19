@@ -84,6 +84,7 @@ DEFS.nav_first = { fallback: '⏪' }; DEFS.nav_prev = { fallback: '◀️' }; DE
 DEFS.search = { fallback: '🔍' }; DEFS.reroll = { fallback: '🔄' }; DEFS.rerollchanges = { fallback: '🔨' }; DEFS.rerollattempts = { fallback: '🔄' };
 DEFS.star_off = { fallback: '⭐' }; DEFS.star_on = { fallback: '⭐' };
 DEFS.check = { fallback: '✅' }; DEFS.cross = { fallback: '❎' };
+DEFS.gear = { fallback: '⚙️' };
 DEFS.lock = { fallback: '🔒' }; DEFS.unlock = { fallback: '🔓' };
 DEFS.floot = { animated: true, fallback: '🎁' }; // fabled lootbox (diam)
 DEFS.floot2 = { animated: true, fallback: '🎁' }; // fabled lootbox bergetar
