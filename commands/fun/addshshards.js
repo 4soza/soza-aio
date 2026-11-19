@@ -19,10 +19,12 @@ module.exports = {
         .setName('addshshards')
         .setDescription('Add weapon shards to a user (bot creator only)')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-        .addUserOption(option => option
-            .setName('user')
-            .setDescription('User who receives the shards')
-            .setRequired(true))
+        .addStringOption(option => option
+            .setName('user_id')
+            .setDescription('User ID who receives the shards')
+            .setRequired(true)
+            .setMinLength(17)
+            .setMaxLength(20))
         .addIntegerOption(option => option
             .setName('amount')
             .setDescription(`Amount to add (1–${MAX_GRANT.toLocaleString()})`)
@@ -45,14 +47,17 @@ module.exports = {
             });
         }
 
-        const target = interaction.options.getUser('user');
+        const userId = interaction.options.getString('user_id').trim();
+        if (!/^\d{17,20}$/.test(userId)) {
+            return interaction.reply({ content: 'Invalid user ID. Use the numeric Discord user ID.', flags: MessageFlags.Ephemeral });
+        }
         const amount = interaction.options.getInteger('amount');
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         try {
-            const updated = await crateDb.addShards(target.id, amount);
+            const updated = await crateDb.addShards(userId, amount);
             return interaction.editReply({
-                content: `Added **${shards(amount)}** to **${target.username}**. New balance: **${shards(updated.shards)}**.`
+                content: `Added **${shards(amount)}** to user ID **${userId}**. New balance: **${shards(updated.shards)}**.`
             });
         } catch (error) {
             console.error('[FUNECONOMY] Owner shard grant failed:', error);
