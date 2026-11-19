@@ -63,7 +63,7 @@ function checklist(kind, ownerId, ownerName, state, notice) {
     const lines = tasks.map((task) => {
         const current = Math.min(progress[task.key] || 0, task.goal);
         const done = current >= task.goal;
-        return `${done ? '✅' : '⬜'} ${taskEmoji(task)} **${done ? `~~${task.label}~~` : task.label}** \`${current}/${task.goal}\`\n${bar(current, task.goal)}`;
+        return `${done ? '✅' : emojis.get('blank_box')} ${taskEmoji(task)} **${done ? `~~${task.label}~~` : task.label}** \`${current}/${task.goal}\`\n${bar(current, task.goal)}`;
     });
     const resetAt = kind === 'weekly' ? state.weeklyResetAt : state.dailyResetAt;
     const reward = db.rewardOf(kind);
