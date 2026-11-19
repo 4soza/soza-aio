@@ -19,14 +19,14 @@ const RANKS = {
     hidden:    { order: 14, emoji: '⚫', alias: ['h'],              rarity: 0.0001,  price: 1000000, points: 500000, essence: 500000, xp: 300000 }
 };
 // Jendela event (zona WIB, UTC+7). Ubah tanggal di sini untuk memperpanjang/memperpendek event.
-const EVENTS = { christmas: { start: [12, 24], end: [1, 1] } }; // 24 Des 00:00 s/d 1 Jan 23:59 WIB
+const EVENTS = { christmas: { start: [2026, 12, 24], end: [2027, 1, 1] } }; // 24 Des 2026 00:00 s/d 1 Jan 2027 23:59 WIB (tidak berulang tiap tahun)
 function eventActive(name, now = new Date()) {
     const ev = EVENTS[name];
     if (!ev) return false;
     const w = new Date(now.getTime() + 7 * 3600 * 1000);
-    const md = (w.getUTCMonth() + 1) * 100 + w.getUTCDate();
-    const a = ev.start[0] * 100 + ev.start[1], b = ev.end[0] * 100 + ev.end[1];
-    return a <= b ? md >= a && md <= b : md >= a || md <= b;
+    const ymd = w.getUTCFullYear() * 10000 + (w.getUTCMonth() + 1) * 100 + w.getUTCDate();
+    const num = (a) => a[0] * 10000 + a[1] * 100 + a[2];
+    return ymd >= num(ev.start) && ymd <= num(ev.end);
 }
 const RANK_ORDER = Object.keys(RANKS).sort((a, b) => RANKS[a].order - RANKS[b].order);
 for (const [id, rank] of Object.entries(RANKS)) rank.id = id;
