@@ -9,7 +9,7 @@ const zooDb = require('../../funeconomy/zoo/zooDb');
 const MAX_GRANT = 1000;
 // Discord membatasi pilihan command maksimal 25: special (8) + hidden (5) + bot (9) = 22.
 const GRANTABLE = ['special', 'hidden', 'bot'];
-const SPECIALS = Object.values(ANIMALS).filter((a) => GRANTABLE.includes(a.rank));
+const SPECIALS = Object.values(ANIMALS).filter((a) => GRANTABLE.includes(a.rank) && !a.event); // hewan event tidak masuk pilihan (batas 25)
 
 module.exports = {
     category: 'fun',
@@ -73,4 +73,3 @@ module.exports = {
         }
     }
 };
-                
