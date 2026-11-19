@@ -9,7 +9,7 @@ const weaponDb = require('../battle/weaponDb');
 const WeaponInterface = require('../battle/WeaponInterface');
 const ringShop = require('../shop/ringShop');
 
-const { toSmallNum } = require('../zoo/format');
+const { toSmallNum, chunkLines } = require('../zoo/format');
 
 const LOOTBOX_ID = 50;
 const FLOOT_ID = 49;
@@ -63,6 +63,10 @@ module.exports = {
         cooldown.start('inventory', message.author.id);
         const inv = formatItems(await collectItems(message.author.id));
         if (!inv) return send(message, 'Your inventory is empty :c');
-        return send(message, `**====== ${displayName(message)}'s Inventory ======**\n${inv}`);
+        // Batas Discord 2000 karakter per pesan: kalau isinya panjang, dipecah jadi beberapa pesan berurutan.
+        const parts = chunkLines(`**====== ${displayName(message)}'s Inventory ======**\n${inv}`);
+        let last;
+        for (const part of parts) last = await send(message, part);
+        return last;
     }
 };

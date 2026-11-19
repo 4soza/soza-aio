@@ -9,7 +9,6 @@ const { parseExchangeArgs, rankSummary } = require('../zoo/args');
 const ringShop = require('../shop/ringShop');
 const weaponDb = require('../battle/weaponDb');
 const weaponView = require('../battle/weaponView');
-const { track } = require('../inactivity');
 
 // Rank senjata untuk jual: cw uw rw ew mw lw fw (atau "uncommonweapons"). Kata "common"/"rare" sendiri tetap jual hewan.
 function weaponRank(token) {
@@ -61,9 +60,10 @@ module.exports = {
             cooldown.start('sell', userId);
             const weapons = await weaponDb.findRankWeapons(userId, wRank);
             if (!weapons.length) return err(message, name, 'You do not have any weapons of that rank to sell!');
-            return track(await message.channel.send({
+            // Tanpa kadaluarsa/abu-abu: edit dengan lampiran membuat gambar jadi dobel.
+            return message.channel.send({
                 ...weaponView.sellMessage(userId, wRank, weapons), allowedMentions: { parse: [] }
-            }));
+            });
         }
 
         const parsed = parseExchangeArgs(args);
