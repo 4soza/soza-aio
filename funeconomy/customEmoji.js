@@ -69,10 +69,11 @@ const ANIMAL_EMOJI = {
     // hewan hidden dan bot (buatan sendiri)
     sloth: '🦥', hedgehog: '🦔', beaver: '🦫', skunk: '🦨', kangaroo: '🦘', bsloth: '🦥', blobster: '🦞', bhedgehog: '🦔', bgiraffe: '🦒', btrex: '🦖',
     // hewan special (buatan sendiri)
-    sjelly: '🪼', shamster: '🐹', skoala: '🐨', sraccoon: '🦝', sseal: '🦭', schameleon: '🦎', shippo: '🦛', salpaca: '🦙'
+    sjelly: '🪼', shamster: '🐹', skoala: '🐨', sraccoon: '🦝', sseal: '🦭', rudolph: '🦌', polarbear: '🐻‍❄️', snowman: '⛄', gingerbread: '🍪', walrus: '🦭', yeti: '❄️', schameleon: '🦎', shippo: '🦛', salpaca: '🦙'
 };
 // Hewan lama: nama emoji/file memakai huruf depan rarity (l/g/f), key hewannya tetap.
-const OLD_PREFIX = { leopard: 'l', bison: 'l', mammoth: 'l', swan: 'l', peacock: 'g', parrot: 'g', flamingo: 'g', dolphin: 'g',
+const OLD_PREFIX = { rudolph: '2026dec_', polarbear: '2026dec_', snowman: '2026dec_', gingerbread: '2026dec_', walrus: '2026dec_', yeti: '2026dec_',
+     leopard: 'l', bison: 'l', mammoth: 'l', swan: 'l', peacock: 'g', parrot: 'g', flamingo: 'g', dolphin: 'g',
     elderdragon: 'f', scorpion: 'f', bat: 'f', otter: 'f' };
 const emojiName = (animalKey) => (OLD_PREFIX[animalKey] ? `${OLD_PREFIX[animalKey]}${animalKey}` : animalKey);
 for (const [key, fallback] of Object.entries(ANIMAL_EMOJI)) DEFS[emojiName(key)] = { animated: true, fallback };
