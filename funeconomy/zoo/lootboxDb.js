@@ -7,6 +7,7 @@ const { dayNumber } = require('./format');
 const DUPLICATE_KEY = 11000;
 const DAILY_LIMIT = 3;
 const MAX_OPEN = 100;
+const LOOTBOX_MAX_OPEN = 20; // batas buka lootbox biasa per command (sama seperti crate)
 // Fabled lootbox dari hunt: jarang (0,2% per hunt) dan maksimal 1 per hari.
 const FLOOT_CHANCE = 0.002;
 
@@ -112,5 +113,4 @@ async function addBoxes(userId, amount, fabled = false) {
 }
 
 module.exports = {
-    addBoxes, FLOOT_CHANCE, claimFabledFromHunt, getFabledCount, openFabledBoxes, DAILY_LIMIT, MAX_OPEN, claimFromHunt, getBoxCount, openBoxes };
-                   
+    addBoxes, FLOOT_CHANCE, claimFabledFromHunt, getFabledCount, openFabledBoxes, DAILY_LIMIT, MAX_OPEN, LOOTBOX_MAX_OPEN, claimFromHunt, getBoxCount, openBoxes };
