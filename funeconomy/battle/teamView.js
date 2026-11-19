@@ -94,7 +94,7 @@ async function teamPage(userId, ownerName, avatar, index, { expired = false } = 
 			button(`fbattle:tv:${userId}:${index}:page`, { label: `${index + 1}/${total}`, disabled: true }),
 			button(id('next'), { emoji: emojis.get('nav_next'), disabled: expired }),
 			button(id('star'), { emoji: '⭐', style: active ? 1 : 2, disabled: expired }),
-			button(id('gear'), { emoji: '⚙️', disabled: expired })
+			button(id('gear'), { emoji: emojis.get('gear'), disabled: expired })
 		]
 	}];
 	return { embeds: [embed], components };
