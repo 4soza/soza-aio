@@ -1,8 +1,12 @@
 // Based on OwO Bot by Christopher Thai, CC BY-NC-SA 4.0
-const { RANKS, RANK_ORDER, ANIMALS_BY_RANK, ANIMALS } = require('./data');
+const { RANKS, RANK_ORDER, ANIMALS_BY_RANK, ANIMALS, EVENTS, eventActive } = require('./data');
 
 const HUNT_COST = 5;
 const LOOTBOX_CHANCE = 0.05;
+const EVENT_SPECIAL_BONUS = 2; // tambahan persen rank special selama event
+const EVENT_ANIMAL_SHARE = 0.9; // saat event, porsi hewan event di dalam rank special
+
+const activeEvents = (now) => Object.keys(EVENTS).filter((name) => eventActive(name, now));
 
 /**
  * Peluang (persen) tiap rank. Rank conditional (bot) hanya aktif lewat opts; gem muncul dari hunt biasa dan dikali gem Lucky:
@@ -23,6 +27,11 @@ function getRarities(opts = {}) {
         const specialRarity = RANKS.special.rarity * opts.special.amount;
         rarity.common -= specialRarity - rarity.special;
         rarity.special = specialRarity;
+    }
+    // Selama event aktif, peluang rank special naik (hewan event ada di rank special). Berlaku untuk hunt biasa dan huntbot.
+    if (activeEvents(opts.now).length) {
+        rarity.common -= EVENT_SPECIAL_BONUS;
+        rarity.special += EVENT_SPECIAL_BONUS;
     }
     if (opts.huntbot) {
         rarity.bot = opts.huntbot;
@@ -49,7 +58,14 @@ function pickRank(rarities, rand = Math.random()) {
 
 function randomAnimal(opts = {}, rng = Math.random) {
     const rank = pickRank(getRarities(opts), rng());
-    const list = ANIMALS_BY_RANK[rank];
+    let list = ANIMALS_BY_RANK[rank];
+    if (rank === 'special') {
+        // Hewan event hanya keluar selama eventnya aktif.
+        const act = activeEvents(opts.now);
+        const evList = list.filter((k) => ANIMALS[k].event && act.includes(ANIMALS[k].event));
+        const normal = list.filter((k) => !ANIMALS[k].event);
+        list = evList.length && rng() < EVENT_ANIMAL_SHARE ? evList : normal;
+    }
     return ANIMALS[list[Math.floor(rng() * list.length)]];
 }
 

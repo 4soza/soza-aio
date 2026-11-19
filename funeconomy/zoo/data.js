@@ -18,6 +18,16 @@ const RANKS = {
     special:   { order: 11, emoji: '🌈', alias: ['sp'],             rarity: 0.01,    price: 100000,  points: 200000, essence: 200000, xp: 150000 },
     hidden:    { order: 14, emoji: '⚫', alias: ['h'],              rarity: 0.0001,  price: 1000000, points: 500000, essence: 500000, xp: 300000 }
 };
+// Jendela event (zona WIB, UTC+7). Ubah tanggal di sini untuk memperpanjang/memperpendek event.
+const EVENTS = { christmas: { start: [12, 24], end: [1, 1] } }; // 24 Des 00:00 s/d 1 Jan 23:59 WIB
+function eventActive(name, now = new Date()) {
+    const ev = EVENTS[name];
+    if (!ev) return false;
+    const w = new Date(now.getTime() + 7 * 3600 * 1000);
+    const md = (w.getUTCMonth() + 1) * 100 + w.getUTCDate();
+    const a = ev.start[0] * 100 + ev.start[1], b = ev.end[0] * 100 + ev.end[1];
+    return a <= b ? md >= a && md <= b : md >= a || md <= b;
+}
 const RANK_ORDER = Object.keys(RANKS).sort((a, b) => RANKS[a].order - RANKS[b].order);
 for (const [id, rank] of Object.entries(RANKS)) rank.id = id;
 
@@ -82,6 +92,12 @@ const ROSTER = [
     ["ffrog", "🐸", "fabled", [6, 6, 6, 8, 8, 7], "A tiny prince of magic.", ["ffrog"]],
     ["feagle", "🦅", "fabled", [6, 9, 5, 7, 7, 6], "Rules the sky above the clouds.", ["feagle"]],
     ["fboar", "🐗", "fabled", [9, 8, 8, 5, 4, 7], "Nothing stops its charge.", ["fboar"]],
+    ["rudolph", "🦌", "special", [7, 6, 6, 7, 8, 7], "Its red nose lights the way through the snowstorm.", ["rudolph", "reindeer"]],
+    ["polarbear", "🐻‍❄️", "special", [10, 7, 8, 5, 5, 8], "Keeps warm in a cozy red scarf and a santa hat.", ["polarbear", "pbear"]],
+    ["snowman", "⛄", "special", [8, 5, 6, 7, 9, 7], "Comes alive every time the first snow falls.", ["snowman", "frosty"]],
+    ["gingerbread", "🍪", "special", [5, 8, 5, 8, 7, 6], "Run, run, as fast as you can!", ["gingerbread", "cookie"]],
+    ["walrus", "🦭", "special", [9, 8, 7, 5, 6, 8], "Wears a santa hat over its mighty tusks.", ["walrus"]],
+    ["yeti", "❄️", "special", [9, 9, 7, 6, 6, 7], "A shy snow giant who loves the holidays.", ["yeti"]],
     ["sjelly", "🪼", "special", [6, 4, 5, 7, 9, 8], "Glows softly and leaves a trail of bubbles.", ["sjelly"]],
     ["shamster", "🐹", "special", [4, 6, 4, 8, 7, 5], "Stuffs its cheeks with sparkling seeds.", ["shamster", "hamster"]],
     ["skoala", "🐨", "special", [9, 5, 8, 6, 5, 8], "Naps on a branch while leaves float around it.", ["skoala", "koala"]],
@@ -97,11 +113,15 @@ const ROSTER = [
     ["kangaroo", "🦘", "hidden", [9, 10, 8, 7, 7, 8], "Hops over every obstacle with a mighty kick.", ["kangaroo", "roo"]],
 ];
 
+// Hewan special khusus event: hanya muncul dari hunt selama event aktif (key -> nama event).
+const EVENT_ANIMALS = { rudolph: 'christmas', polarbear: 'christmas', snowman: 'christmas', gingerbread: 'christmas', walrus: 'christmas', yeti: 'christmas' };
+
 const ANIMALS = {};
 const ANIMAL_ALIASES = {};
 for (const [key, uni, rank, s, desc, alias] of ROSTER) {
     ANIMALS[key] = {
         key, name: key, value: uni, uni, rank, desc, alias,
+        event: EVENT_ANIMALS[key] || null,
         hpr: s[0], attr: s[1], prr: s[2], wpr: s[3], magr: s[4], mrr: s[5]
     };
     for (const a of [key, ...alias]) ANIMAL_ALIASES[a.toLowerCase()] = key;
@@ -140,4 +160,4 @@ function zooPoints(counts) {
     return total;
 }
 
-module.exports = { RANKS, RANK_ORDER, ANIMALS, ANIMALS_BY_RANK, findAnimal, findRank, zooPoints };
+module.exports = { EVENT_ANIMALS, EVENTS, eventActive, RANKS, RANK_ORDER, ANIMALS, ANIMALS_BY_RANK, findAnimal, findRank, zooPoints };
