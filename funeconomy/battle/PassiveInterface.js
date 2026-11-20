@@ -21,7 +21,7 @@ module.exports = class PassiveInterface {
 		/* Emoji kustom (assets/emoji/p_<nama>.png) menggantikan emoji bawaan kalau sudah diunggah.
 		 * Harus dipasang sebelum getEmoji() supaya passive baru (mis. dari crate) langsung memakainya. */
 		const customEmoji = require('../customEmoji.js').gear('p', this.constructor.name, this.id);
-		if (customEmoji) this.emojis = Array(7).fill(customEmoji);
+		if (customEmoji) this.emojis = require('../customEmoji.js').gearTiers('p', this.constructor.name, this.id) || Array(7).fill(customEmoji);
 
 		let avgQuality = qualities.reduce((a, b) => a + b, 0) / qualities.length;
 		avgQuality += this.wearBuff;

@@ -113,8 +113,10 @@ module.exports = class WeaponInterface {
 		/* Emoji kustom (assets/emoji/w_<nama>.png) menggantikan emoji bawaan kalau sudah diunggah */
 		const customEmoji = require('../customEmoji.js').gear('w', this.constructor.name, this.id);
 		if (customEmoji) {
-			this.emojis = Array(7).fill(customEmoji);
-			this.pristineEmojis = Array(7).fill(customEmoji);
+			/* Bingkai berwarna sesuai rarity (w_<nama>_<rank>); kalau belum lengkap, satu emoji untuk semua rank */
+			const tiers = require('../customEmoji.js').gearTiers('w', this.constructor.name, this.id);
+			this.emojis = tiers || Array(7).fill(customEmoji);
+			this.pristineEmojis = tiers || Array(7).fill(customEmoji);
 			this.defaultEmoji = customEmoji;
 		}
 
