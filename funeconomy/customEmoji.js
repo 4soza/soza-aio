@@ -54,6 +54,10 @@ const PASSIVE_NAMES = ['Absolve', 'Critical', 'Discharge', 'Energize', 'Enrage',
     'Rend', 'Execute', 'Photosynthesis', 'Tide', 'Ferocity', 'Sharpness', 'Wildfire', 'Frostbite', 'Lifebloom'];
 for (const name of WEAPON_NAMES) DEFS[`w_${name.toLowerCase()}`] = { fallback: '' };
 for (const name of PASSIVE_NAMES) DEFS[`p_${name.toLowerCase()}`] = { fallback: '' };
+// Versi berbingkai warna rarity: w_<nama>_<rank> dan p_<nama>_<rank> (urutan sama dengan WeaponInterface.ranks).
+const GEAR_RANKS = ['common', 'uncommon', 'rare', 'epic', 'mythical', 'legendary', 'fabled'];
+for (const name of WEAPON_NAMES) for (const rank of GEAR_RANKS) DEFS[`w_${name.toLowerCase()}_${rank}`] = { fallback: '' };
+for (const name of PASSIVE_NAMES) for (const rank of GEAR_RANKS) DEFS[`p_${name.toLowerCase()}_${rank}`] = { fallback: '' };
 // Robot HuntBot per rarity: <huruf rank>hb (chb, uhb, rhb, ehb, mhb, lhb, fhb); legendary dan fabled animasi.
 const ROBOT_KEYS = { common: 'chb', uncommon: 'uhb', rare: 'rhb', epic: 'ehb', mythic: 'mhb', legendary: 'lhb', fabled: 'fhb' };
 for (const [rank, key] of Object.entries(ROBOT_KEYS)) DEFS[key] = { fallback: '🤖', animated: rank === 'legendary' || rank === 'fabled' };
@@ -130,6 +134,13 @@ const gear = (kind, className, id) => {
     const byId = id != null ? GEAR_BY_ID[kind === 'wi' ? 'w' : kind]?.get(Number(id)) : null; // wi_ = ikon inventory, id sama dengan weapon
     return live.get(`${kind}_${byId || String(className).toLowerCase()}`) || null;
 };
+/** 7 emoji senjata/passive berbingkai menurut rarity (indeks = rank); null kalau belum lengkap, pakai gear() biasa. */
+const gearTiers = (kind, className, id) => {
+    const byId = id != null ? GEAR_BY_ID[kind]?.get(Number(id)) : null;
+    const base = `${kind}_${byId || String(className).toLowerCase()}`;
+    const list = GEAR_RANKS.map((rank) => live.get(`${base}_${rank}`));
+    return list.every(Boolean) ? list : null;
+};
 /** Emoji kustom buff menurut id buff; null kalau belum tersedia. */
 const buff = (id) => live.get(BUFF_KEYS[id]) || null;
 const floot = () => get('floot');
@@ -200,7 +211,10 @@ async function sync(client) {
         try {
             let emoji = existing.find((e) => e.name === name);
             if (!emoji) {
-                emoji = await store.create({ attachment: fs.readFileSync(path.join(DIR, `${key}.${animated ? 'gif' : 'png'}`)), name });
+                // Emoji weapon/passive berbingkai rarity diunggah lewat `suploadgear` (tanpa file di assets): lewati diam-diam.
+                const file = path.join(DIR, `${key}.${animated ? 'gif' : 'png'}`);
+                if (!fs.existsSync(file)) continue;
+                emoji = await store.create({ attachment: fs.readFileSync(file), name });
             }
             live.set(key, `<${animated ? 'a' : ''}:${name}:${emoji.id}>`);
         } catch (error) {
@@ -223,4 +237,4 @@ function reset() { live.clear(); apply(); }
 /** id emoji kustom dari teks `<:nama:id>` (atau null untuk emoji Unicode). */
 const customId = (text) => /^<a?:\w+:(\d+)>$/.exec(String(text || ''))?.[1] || null;
 
-module.exports = { DEFS, get, gear, buff, robot, floot, flootShake, flootOpen, shard, essence, unknown, crate, crateShake, crateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId, button };
+module.exports = { DEFS, get, gear, gearTiers, buff, robot, floot, flootShake, flootOpen, shard, essence, unknown, crate, crateShake, crateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId, button };
