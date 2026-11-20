@@ -60,11 +60,14 @@ async function openCrates(userId, count) {
 		{ userId, boxcount: { $gte: count } }, { $inc: { boxcount: -count } }, { new: true }
 	).lean();
 	if (!taken) return { error: 'none' };
-	const weapons = [];
-	for (let i = 0; i < count; i++) {
-		weapons.push(await weaponDb.saveWeapon(userId, weaponDb.randomWeapon()));
+	const fresh = Array.from({ length: count }, () => weaponDb.randomWeapon());
+	try {
+		return { weapons: await weaponDb.saveWeapons(userId, fresh) };
+	} catch (error) {
+		// Gagal menyimpan: kembalikan crate supaya tidak hilang.
+		await Crate.updateOne({ userId }, { $inc: { boxcount: count } }).catch(() => {});
+		throw error;
 	}
-	return { weapons };
 }
 
 /* Hasil buka crate diingat sementara supaya tombol 🔍 bisa membuka detail tiap senjata selama 10 menit (hilang juga saat bot restart). */

@@ -113,6 +113,24 @@ async function saveWeapon(userId, weapon) {
 	return weapon;
 }
 
+/* Simpan banyak senjata sekaligus: satu kali ambil nomor id berurutan + satu kali insertMany (jauh lebih cepat dari satu per satu). */
+async function saveWeapons(userId, weapons) {
+	const n = weapons.length;
+	if (!n) return [];
+	const counter = await Counter.findOneAndUpdate({ _id: 'weapon' }, { $inc: { seq: n } }, { new: true, upsert: true }).lean();
+	const first = counter.seq - n + 1;
+	const docs = weapons.map((weapon, i) => toDoc(weapon, userId, first + i));
+	await Weapon.insertMany(docs);
+	weapons.forEach((weapon, i) => {
+		weapon.ruwid = first + i;
+		weapon.uwid = shortenUWID(first + i);
+		weapon.userId = userId;
+		weapon.favorite = false;
+		weapon.animalName = null;
+	});
+	return weapons;
+}
+
 async function getWeaponDoc(uwid, userId) {
 	if (!uwid) return null;
 	const filter = { uwid };
@@ -288,7 +306,7 @@ async function weaponsForAnimals(userId, names) {
 
 module.exports = {
 	SELL_PRICES, SHARD_PRICES, RANK_NAMES, REROLL_PRICE, SORTS,
-	rankFromAlias, shortenUWID, expandUWID, parseWeapon, toDoc, nextUwid, randomWeapon, saveWeapon,
+	rankFromAlias, shortenUWID, expandUWID, parseWeapon, toDoc, nextUwid, randomWeapon, saveWeapon, saveWeapons,
 	getWeaponDoc, getWeapon, listWeapons, countByType, equip, unequip, setFavorite, addKills, rankBounds,
 	removeWeapon, removeRank, findRankWeapons, startReroll, pendingWeapon, confirmReroll, cancelReroll, weaponsForAnimals
 };
