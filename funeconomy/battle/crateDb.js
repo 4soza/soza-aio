@@ -95,6 +95,30 @@ async function addCrates(userId, amount) {
 	return Crate.findOneAndUpdate({ userId }, { $inc: { boxcount: amount } }, { new: true }).lean();
 }
 
+/* Crate boss: tiap crate berisi 3 senjata acak, yang disimpan hanya yang kualitasnya paling tinggi. */
+async function addBossCrates(userId, amount) {
+	await ensure(userId);
+	return Crate.findOneAndUpdate({ userId }, { $inc: { bossbox: amount } }, { new: true }).lean();
+}
+
+async function openBossCrates(userId, count) {
+	count = Math.min(Math.max(1, count), MAX_OPEN);
+	const taken = await Crate.findOneAndUpdate(
+		{ userId, bossbox: { $gte: count } }, { $inc: { bossbox: -count } }, { new: true }
+	).lean();
+	if (!taken) return { error: 'none' };
+	const fresh = Array.from({ length: count }, () => {
+		const picks = Array.from({ length: 3 }, () => weaponDb.randomWeapon());
+		return picks.reduce((best, w) => (w.avgQuality > best.avgQuality ? w : best));
+	});
+	try {
+		return { weapons: await weaponDb.saveWeapons(userId, fresh) };
+	} catch (error) {
+		await Crate.updateOne({ userId }, { $inc: { bossbox: count } }).catch(() => {});
+		throw error;
+	}
+}
+
 async function getShards(userId) {
 	return (await getCrate(userId)).shards || 0;
 }
@@ -115,5 +139,5 @@ async function useShards(userId, amount) {
 module.exports = {
 	useShards,
 	CRATE_CHANCE, MAX_PER_DAY, MAX_OPEN, dayNumber, msUntilReset,
-	getCrate, crateFromBattle, openCrates, addCrates, rememberOpen, recallOpen, OPENED_TTL_MS, getShards, addShards
+	getCrate, crateFromBattle, openCrates, addCrates, addBossCrates, openBossCrates, rememberOpen, recallOpen, OPENED_TTL_MS, getShards, addShards
 };

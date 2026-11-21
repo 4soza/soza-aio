@@ -256,4 +256,4 @@ async function renderBattleImage(playerTeam, enemyTeam, info = {}) {
     return canvas.toBuffer('image/png');
 }
 
-module.exports = { renderBattleImage, twemojiCode, describe, _setEmojiLoader: (fn) => { emojiLoader = fn; emojiCache.clear(); } };
+module.exports = { renderBattleImage, twemojiCode, describe, loadEmoji, drawEmoji, ensureFont, font, canvasLib, _setEmojiLoader: (fn) => { emojiLoader = fn; emojiCache.clear(); } };
