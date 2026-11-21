@@ -17,6 +17,11 @@ module.exports = class PassiveInterface {
 		this.wear = WeaponInterface.getWear(opt.wear);
 
 		if (!qualities) qualities = this.randomQualities(statOverride);
+		else if (qualities.length != this.qualityList.length) {
+			/* Senjata lama yang passive-nya sudah berubah jumlah stat (mis. Rend -> Double Strike): sesuaikan, jangan error */
+			const base = qualities.length ? qualities.reduce((a, b) => a + b, 0) / qualities.length : 50;
+			qualities = Array.from({ length: this.qualityList.length }, (_, i) => (i < qualities.length ? qualities[i] : base));
+		}
 
 		/* Emoji kustom (assets/emoji/p_<nama>.png) menggantikan emoji bawaan kalau sudah diunggah.
 		 * Harus dipasang sebelum getEmoji() supaya passive baru (mis. dari crate) langsung memakainya. */

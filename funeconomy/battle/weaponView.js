@@ -198,8 +198,8 @@ function sellMessage(ownerId, rankIndex, weapons, { disabled = false, color = EM
 	}
 	const id = (action) => `${PREFIX}:sw:${action}:${ownerId}:${rankIndex}`;
 	const row = new ActionRowBuilder().addComponents(
-		new ButtonBuilder().setCustomId(id('sell')).setLabel('Sell').setEmoji('✅').setStyle(ButtonStyle.Success).setDisabled(disabled),
-		new ButtonBuilder().setCustomId(id('cancel')).setLabel('Cancel').setEmoji('❎').setStyle(ButtonStyle.Danger).setDisabled(disabled)
+		new ButtonBuilder().setCustomId(id('sell')).setLabel('Sell').setEmoji(emojis.button(emojis.get('check'))).setStyle(ButtonStyle.Success).setDisabled(disabled),
+		new ButtonBuilder().setCustomId(id('cancel')).setLabel('Cancel').setEmoji(emojis.button(emojis.get('cross'))).setStyle(ButtonStyle.Danger).setDisabled(disabled)
 	);
 	return { embeds: [embed], components: [row], ...(files.length ? { files } : {}) };
 }
