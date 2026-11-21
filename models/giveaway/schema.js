@@ -22,12 +22,12 @@ const giveawaySchema = new mongoose.Schema({
   },
   title: {
     type: String,
-    required: true,
+    default: '',
     maxlength: 256
   },
   description: {
     type: String,
-    required: true,
+    default: '',
     maxlength: 1024
   },
   prize: {

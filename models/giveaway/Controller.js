@@ -1,529 +1,162 @@
-const Giveaway = require('./schema');
-const { 
-    ButtonBuilder, 
-    ButtonStyle, 
-    ActionRowBuilder,
-    ContainerBuilder,
-    SectionBuilder,
-    TextDisplayBuilder,
-    ThumbnailBuilder,
-    SeparatorBuilder,
-    SeparatorSpacingSize,
-    MessageFlags,
-    EmbedBuilder
-} = require('discord.js');
+// Giveaway ala OwO: satu embed + satu tombol "Join Giveaway!".
+// Pesan asli selalu diedit (tidak ada pesan "ended" terpisah).
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const ms = require('ms');
+const Giveaway = require('./schema');
+
+const COLOR_ACTIVE = 8240363; // biru OwO
+const COLOR_ENDED = 6381923; // abu OwO
+
+function unix(date) {
+  return Math.floor(new Date(date).getTime() / 1000);
+}
 
 class GiveawayController {
-  
-  // Auto-update message helper - CORE FUNCTIONALITY
-  static async updateGiveawayMessage(client, giveaway) {
-    try {
-      const channel = await client.channels.fetch(giveaway.channelId);
-      const message = await channel.messages.fetch(giveaway.messageId);
-      
-      await message.edit({ ...this.createGiveawayMessage(giveaway) });
+  // ===== Tampilan =====
+  static buildMessage(g) {
+    const ended = g.status !== 'active';
+    const noWinners = ended && !(g.winnersList && g.winnersList.length);
+    const count = g.entries ? g.entries.length : 0;
 
-      return { success: true };
-    } catch (error) {
-      console.error('Error updating giveaway message:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // Create a new giveaway
-  static async createGiveaway(options) {
-    try {
-      const {
-        messageId, guildId, channelId, hostId, title, description, 
-        prize, duration, winners = 1, requirements = {}, settings = {}
-      } = options;
-
-      const endTime = new Date(Date.now() + ms(duration));
-      
-      const giveaway = new Giveaway({
-        messageId,
-        guildId,
-        channelId,
-        hostId,
-        title,
-        description,
-        prize,
-        endTime,
-        winners,
-        requirements,
-        settings
-      });
-
-      await giveaway.save();
-      return { success: true, giveaway };
-    } catch (error) {
-      console.error('Error creating giveaway:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // Get giveaway by message ID
-  static async getGiveaway(messageId) {
-    try {
-      const giveaway = await Giveaway.findOne({ messageId });
-      return { success: true, giveaway };
-    } catch (error) {
-      console.error('Error fetching giveaway:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // Update giveaway WITH AUTO-UPDATE
-  static async updateGiveaway(messageId, updates, client) {
-    try {
-      // Handle duration update
-      if (updates.duration) {
-        updates.endTime = new Date(Date.now() + ms(updates.duration));
-        delete updates.duration;
-      }
-  
-      // Get current giveaway to increment version
-      const currentGiveaway = await Giveaway.findOne({ messageId });
-      if (!currentGiveaway) {
-        return { success: false, error: 'Giveaway not found' };
-      }
-  
-      const giveaway = await Giveaway.findOneAndUpdate(
-        { messageId },
-        { 
-          $set: { 
-            ...updates,
-            'metadata.lastUpdated': new Date(),
-            'metadata.version': (currentGiveaway.metadata.version || 0) + 1
-          }
-        },
-        { new: true, runValidators: true }
-      );
-
-      // AUTO-UPDATE THE MESSAGE
-      if (client) {
-        await this.updateGiveawayMessage(client, giveaway);
-      }
-  
-      return { success: true, giveaway };
-    } catch (error) {
-      console.error('Error updating giveaway:', error);
-      return { success: false, error: error.message };
-    }
-  }
-  
-  // Delete giveaway
-  static async deleteGiveaway(messageId) {
-    try {
-      const result = await Giveaway.deleteOne({ messageId });
-      return { 
-        success: result.deletedCount > 0, 
-        message: result.deletedCount > 0 ? 'Giveaway deleted' : 'Giveaway not found' 
-      };
-    } catch (error) {
-      console.error('Error deleting giveaway:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // Add participant WITH AUTO-UPDATE
-  static async addParticipant(messageId, userId, username, client) {
-    try {
-      const giveaway = await Giveaway.findOne({ messageId });
-      if (!giveaway) {
-        return { success: false, error: 'Giveaway not found' };
-      }
-
-      if (giveaway.status !== 'active') {
-        return { success: false, error: 'Giveaway is not active' };
-      }
-
-      if (giveaway.endTime <= new Date()) {
-        return { success: false, error: 'Giveaway has ended' };
-      }
-
-      const existingEntry = giveaway.entries.find(entry => entry.userId === userId);
-      if (existingEntry && !giveaway.settings.allowMultipleEntries) {
-        return { success: false, error: 'Already entered' };
-      }
-
-      await giveaway.addEntry(userId, username);
-      
-      // AUTO-UPDATE THE MESSAGE
-      if (client) {
-        await this.updateGiveawayMessage(client, giveaway);
-      }
-
-      return { success: true, giveaway };
-    } catch (error) {
-      console.error('Error adding participant:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // Remove participant WITH AUTO-UPDATE
-  static async removeParticipant(messageId, userId, client) {
-    try {
-      const giveaway = await Giveaway.findOne({ messageId });
-      if (!giveaway) {
-        return { success: false, error: 'Giveaway not found' };
-      }
-
-      await giveaway.removeEntry(userId);
-      
-      // AUTO-UPDATE THE MESSAGE
-      if (client) {
-        await this.updateGiveawayMessage(client, giveaway);
-      }
-
-      return { success: true, giveaway };
-    } catch (error) {
-      console.error('Error removing participant:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // End giveaway and select winners WITH AUTO-UPDATE
-  static async endGiveaway(messageId, client) {
-    try {
-      const giveaway = await Giveaway.findOne({ messageId });
-      if (!giveaway) {
-        return { success: false, error: 'Giveaway not found' };
-      }
-
-      const winners = giveaway.selectWinners();
-      giveaway.status = 'ended';
-      await giveaway.save();
-
-      // AUTO-UPDATE THE MESSAGE
-      if (client) {
-        await this.updateGiveawayMessage(client, giveaway);
-      }
-
-      // Send DMs to winners if enabled
-      if (giveaway.settings.dmWinners && winners.length > 0) {
-        await this.dmWinners(client, winners, giveaway);
-      }
-
-      return { success: true, giveaway, winners };
-    } catch (error) {
-      console.error('Error ending giveaway:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // Reroll winners WITH AUTO-UPDATE
-  static async rerollWinners(messageId, count, client) {
-    try {
-      const giveaway = await Giveaway.findOne({ messageId });
-      if (!giveaway) {
-        return { success: false, error: 'Giveaway not found' };
-      }
-
-      const winners = giveaway.selectWinners(count || giveaway.winners);
-      await giveaway.save();
-
-      // AUTO-UPDATE THE MESSAGE
-      if (client) {
-        await this.updateGiveawayMessage(client, giveaway);
-      }
-
-      if (giveaway.settings.dmWinners && winners.length > 0) {
-        await this.dmWinners(client, winners, giveaway);
-      }
-
-      return { success: true, winners, giveaway };
-    } catch (error) {
-      console.error('Error rerolling winners:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // Get all giveaways for a guild
-  static async getGuildGiveaways(guildId, status = null) {
-    try {
-      const query = { guildId };
-      if (status) query.status = status;
-      
-      const giveaways = await Giveaway.find(query)
-        .sort({ createdAt: -1 })
-        .limit(50);
-      
-      return { success: true, giveaways };
-    } catch (error) {
-      console.error('Error fetching guild giveaways:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // Get expired giveaways
-  static async getExpiredGiveaways() {
-    try {
-      const giveaways = await Giveaway.findExpiredGiveaways();
-      return { success: true, giveaways };
-    } catch (error) {
-      console.error('Error fetching expired giveaways:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // Clear all participants WITH AUTO-UPDATE
-  static async clearParticipants(messageId, client) {
-    try {
-      const giveaway = await Giveaway.findOneAndUpdate(
-        { messageId },
-        { 
-          $set: { 
-            entries: [],
-            'metadata.totalEntries': 0,
-            'metadata.lastUpdated': new Date()
-          }
-        },
-        { new: true }
-      );
-
-      if (!giveaway) {
-        return { success: false, error: 'Giveaway not found' };
-      }
-
-      // AUTO-UPDATE THE MESSAGE
-      if (client) {
-        await this.updateGiveawayMessage(client, giveaway);
-      }
-
-      return { success: true, giveaway };
-    } catch (error) {
-      console.error('Error clearing participants:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // Pause/Resume giveaway WITH AUTO-UPDATE
-  static async toggleGiveawayStatus(messageId, status, client) {
-    try {
-      const giveaway = await Giveaway.findOneAndUpdate(
-        { messageId },
-        { 
-          $set: { 
-            status,
-            'metadata.lastUpdated': new Date()
-          }
-        },
-        { new: true }
-      );
-
-      if (!giveaway) {
-        return { success: false, error: 'Giveaway not found' };
-      }
-
-      // AUTO-UPDATE THE MESSAGE
-      if (client) {
-        await this.updateGiveawayMessage(client, giveaway);
-      }
-
-      return { success: true, giveaway };
-    } catch (error) {
-      console.error('Error toggling giveaway status:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // Validate user requirements
-  static async validateRequirements(member, giveaway) {
-    try {
-      const { requirements } = giveaway;
-      
-      // Check required roles
-      if (requirements.roles && requirements.roles.length > 0) {
-        const hasRequiredRole = requirements.roles.some(roleId => 
-          member.roles.cache.has(roleId)
-        );
-        if (!hasRequiredRole) {
-          return { valid: false, reason: 'Missing required role' };
-        }
-      }
-
-      // Check blacklisted roles
-      if (requirements.blacklistedRoles && requirements.blacklistedRoles.length > 0) {
-        const hasBlacklistedRole = requirements.blacklistedRoles.some(roleId => 
-          member.roles.cache.has(roleId)
-        );
-        if (hasBlacklistedRole) {
-          return { valid: false, reason: 'Has blacklisted role' };
-        }
-      }
-
-      // Check account age
-      if (requirements.minAccountAge > 0) {
-        const accountAge = (Date.now() - member.user.createdTimestamp) / (1000 * 60 * 60 * 24);
-        if (accountAge < requirements.minAccountAge) {
-          return { valid: false, reason: `Account must be at least ${requirements.minAccountAge} days old` };
-        }
-      }
-
-      // Check server join age
-      if (requirements.minServerAge > 0) {
-        const serverAge = (Date.now() - member.joinedTimestamp) / (1000 * 60 * 60 * 24);
-        if (serverAge < requirements.minServerAge) {
-          return { valid: false, reason: `Must be in server for at least ${requirements.minServerAge} days` };
-        }
-      }
-
-      return { valid: true };
-    } catch (error) {
-      console.error('Error validating requirements:', error);
-      return { valid: false, reason: 'Validation error' };
-    }
-  }
-
-  // Send DM to winners with v2 components
-  static async dmWinners(client, winners, giveaway) {
-    const link = `https://discord.com/channels/${giveaway.guildId}/${giveaway.channelId}/${giveaway.messageId}`;
-    for (const winner of winners) {
-      try {
-        const user = await client.users.fetch(winner.userId);
-        await user.send({ content: `🎉 **|** Congratulations! You won the giveaway in ${link}` });
-      } catch (error) {
-        console.error(`Failed to DM winner ${winner.userId}:`, error);
-      }
-    }
-  }
-
-  // Pesan giveaway gaya OwO: satu embed + satu tombol "Join Giveaway!" (tanpa Components V2).
-  static createGiveawayMessage(giveaway) {
-    const endUnix = Math.floor(new Date(giveaway.endTime).getTime() / 1000);
-    const entries = giveaway.entries?.length || 0;
-    const status = giveaway.status || 'active';
-    const winners = giveaway.winnersList || [];
-
-    let text = '';
-    if (giveaway.description && giveaway.description !== giveaway.title) text += `${giveaway.description}\n\n`;
-    text += `**${giveaway.winners} Lucky User${giveaway.winners === 1 ? '' : 's'}** will have a chance to win!\nWinners will win:\n\n**• ${giveaway.prize}**\n`;
-
-    const embed = new EmbedBuilder().setTimestamp().setFooter({ text: `${entries} Users` });
-    if (status === 'ended') {
-      embed.setColor(6381923).setAuthor({ name: '🎉 Giveaway has ended!' });
-      text += `\nGiveaway ended **<t:${endUnix}:R>**\n`;
-      text += winners.length
-        ? `Congrats to the following players for winning!\n\n${winners.map((w) => `<@${w.userId}>`).join('\n')}`
-        : 'Unfortunately, there were no winners.';
-    } else if (status === 'paused') {
-      embed.setColor(0xFFAA00).setAuthor({ name: '🎉 Giveaway paused' });
-      text += '\nThis giveaway is currently paused.';
-    } else if (status === 'cancelled') {
-      embed.setColor(6381923).setAuthor({ name: '🎉 Giveaway cancelled' });
-      text += '\nThis giveaway was cancelled.';
+    let text = `**${g.winners} Lucky User${g.winners === 1 ? '' : 's'}** will have a chance to win!\nWinners will win:\n\n**• ${g.prize}**\n`;
+    if (!ended) {
+      text += `\nGiveaway will end **<t:${unix(g.endTime)}:R>**\nGoodluck to those who join!`;
+    } else if (noWinners) {
+      text += `\nGiveaway ended **<t:${unix(g.endTime)}:R>**\nUnfortunately, there were no winners.`;
     } else {
-      embed.setColor(8240363).setAuthor({ name: `🎉 ${giveaway.title || 'A New Giveaway Appeared!'}` });
-      text += `\nGiveaway will end **<t:${endUnix}:R>**\nGoodluck to those who join!`;
+      text += `\nGiveaway ended **<t:${unix(g.endTime)}:R>**\nCongrats to the following players for winning!\n\n`;
+      text += g.winnersList.map((w) => `<@${w.userId}>`).join('\n');
     }
-    embed.setDescription(text);
+
+    const embed = new EmbedBuilder()
+      .setColor(ended ? COLOR_ENDED : COLOR_ACTIVE)
+      .setAuthor({ name: ended ? '🎉 Giveaway has ended!' : '🎉 A New Giveaway Appeared!' })
+      .setDescription(text.slice(0, 4000))
+      .setFooter({ text: `${count} Users` })
+      .setTimestamp();
 
     const button = new ButtonBuilder()
-      .setCustomId(`giveaway_enter_${giveaway.messageId}`)
+      .setCustomId(`giveaway_join_${g.messageId}`)
       .setLabel('Join Giveaway!')
       .setEmoji('🎉')
       .setStyle(ButtonStyle.Primary)
-      .setDisabled(status !== 'active');
+      .setDisabled(ended);
+
     return { content: '', embeds: [embed], components: [new ActionRowBuilder().addComponents(button)] };
   }
 
-  // Create giveaway container (v2 components)
-  static createGiveawayContainer(giveaway) {
-    const statusColors = {
-      active: 0x7289DA,
-      ended: 0x555555,
-      paused: 0xFFAA00,
-      cancelled: 0xFF0000
-    };
-
-    const container = new ContainerBuilder()
-      .setAccentColor(statusColors[giveaway.status] || 0x7289DA)
-      .addTextDisplayComponents(
-        new TextDisplayBuilder()
-          .setContent(`# 🎉 ${giveaway.title}\n${giveaway.description}`)
-      )
-      .addSeparatorComponents(
-        new SeparatorBuilder()
-          .setSpacing(SeparatorSpacingSize.Small)
-      )
-      .addTextDisplayComponents(
-        new TextDisplayBuilder()
-          .setContent(`**🎁 Prize:** ${giveaway.prize}\n**👥 Winners:** ${giveaway.winners}\n**🎯 Entries:** ${giveaway.entries.length}\n**📊 Status:** ${giveaway.status.charAt(0).toUpperCase() + giveaway.status.slice(1)}`)
-      );
-
-    if (giveaway.status === 'active') {
-      container.addSeparatorComponents(
-        new SeparatorBuilder()
-          .setSpacing(SeparatorSpacingSize.Small)
-      )
-      .addTextDisplayComponents(
-        new TextDisplayBuilder()
-          .setContent(`**⏰ Ends:** <t:${Math.floor(giveaway.endTime.getTime() / 1000)}:R>`)
-      );
-    } else if (giveaway.status === 'ended' && giveaway.winnersList.length > 0) {
-      container.addSeparatorComponents(
-        new SeparatorBuilder()
-          .setSpacing(SeparatorSpacingSize.Small)
-      )
-      .addTextDisplayComponents(
-        new TextDisplayBuilder()
-          .setContent(`**🏆 Winners:** ${giveaway.winnersList.map(w => `<@${w.userId}>`).join(', ')}`)
-      );
-    } else if (giveaway.status === 'paused') {
-      container.addSeparatorComponents(
-        new SeparatorBuilder()
-          .setSpacing(SeparatorSpacingSize.Small)
-      )
-      .addTextDisplayComponents(
-        new TextDisplayBuilder()
-          .setContent(`**⏸️ This giveaway is currently paused**`)
-      );
+  static async refresh(client, g) {
+    try {
+      const channel = await client.channels.fetch(g.channelId);
+      const message = await channel.messages.fetch(g.messageId);
+      await message.edit(this.buildMessage(g));
+      return true;
+    } catch (error) {
+      console.error('Giveaway refresh error:', error.message);
+      return false;
     }
-
-    return container;
   }
 
-  // Create giveaway buttons
-  static createGiveawayButtons(giveaway) {
-    const buttons = [];
+  // ===== Data =====
+  static parseDuration(text) {
+    const value = ms(String(text).trim());
+    if (!value || value < 10000 || value > 30 * 24 * 3600 * 1000) return null;
+    return value;
+  }
 
-    if (giveaway.status === 'active') {
-      buttons.push(
-        new ButtonBuilder()
-          .setCustomId(`giveaway_enter_${giveaway.messageId}`)
-          .setLabel(`🎉 Enter (${giveaway.entries.length})`)
-          .setStyle(ButtonStyle.Success)
-      );
-    } else if (giveaway.status === 'paused') {
-      buttons.push(
-        new ButtonBuilder()
-          .setCustomId(`giveaway_enter_${giveaway.messageId}`)
-          .setLabel(`⏸️ Paused (${giveaway.entries.length})`)
-          .setStyle(ButtonStyle.Secondary)
-          .setDisabled(true)
-      );
-    } else if (giveaway.status === 'ended') {
-      buttons.push(
-        new ButtonBuilder()
-          .setCustomId(`giveaway_enter_${giveaway.messageId}`)
-          .setLabel(`🏁 Ended (${giveaway.entries.length})`)
-          .setStyle(ButtonStyle.Secondary)
-          .setDisabled(true)
-      );
+  static async create({ channel, hostId, prize, durationMs, winners }) {
+    const placeholder = new Giveaway({
+      messageId: 'pending', guildId: channel.guild.id, channelId: channel.id, hostId,
+      prize, winners, endTime: new Date(Date.now() + durationMs)
+    });
+    const message = await channel.send(this.buildMessage(placeholder));
+    placeholder.messageId = message.id;
+    try {
+      await placeholder.save();
+    } catch (error) {
+      await message.delete().catch(() => {});
+      throw error;
     }
+    await message.edit(this.buildMessage(placeholder)).catch(() => {}); // pasang id tombol yang benar
+    return { giveaway: placeholder, message };
+  }
 
-    if (giveaway.settings.showParticipants) {
-      buttons.push(
-        new ButtonBuilder()
-          .setCustomId(`giveaway_participants_${giveaway.messageId}`)
-          .setLabel('👥 Participants')
-          .setStyle(ButtonStyle.Secondary)
-      );
+  static get(messageId) {
+    return Giveaway.findOne({ messageId });
+  }
+
+  static activeInChannel(channelId) {
+    return Giveaway.findOne({ channelId, status: 'active' });
+  }
+
+  static list(guildId, status = 'active') {
+    return Giveaway.find({ guildId, status }).sort({ endTime: 1 }).limit(25);
+  }
+
+  static expired() {
+    return Giveaway.find({ status: 'active', endTime: { $lte: new Date() } });
+  }
+
+  // Join: atomik, hanya berhasil kalau belum ada di entries dan giveaway masih aktif
+  static async join(messageId, user) {
+    return Giveaway.findOneAndUpdate(
+      { messageId, status: 'active', endTime: { $gt: new Date() }, 'entries.userId': { $ne: user.id } },
+      { $push: { entries: { userId: user.id, username: user.username } } },
+      { new: true }
+    );
+  }
+
+  static pickWinners(g, count = g.winners) {
+    const pool = g.entries.map((e) => ({ userId: e.userId, username: e.username }));
+    const picked = [];
+    while (picked.length < count && pool.length) {
+      picked.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
     }
+    return picked;
+  }
 
-    return buttons.length > 0 ? new ActionRowBuilder().addComponents(buttons) : null;
+  static async dmWinners(client, g, winners) {
+    const link = `https://discord.com/channels/${g.guildId}/${g.channelId}/${g.messageId}`;
+    for (const w of winners) {
+      try {
+        const user = await client.users.fetch(w.userId);
+        await user.send(`🎉 **|** Congratulations! You won the giveaway in ${link}`);
+      } catch (error) { /* DM ditutup, abaikan */ }
+    }
+  }
+
+  // Akhiri giveaway: pilih pemenang, edit pesan asli, DM pemenang
+  static async end(client, messageId) {
+    const g = await Giveaway.findOneAndUpdate(
+      { messageId, status: 'active' }, { $set: { status: 'ended' } }, { new: true }
+    );
+    if (!g) return null;
+    g.winnersList = this.pickWinners(g);
+    await g.save();
+    await this.refresh(client, g);
+    if (g.settings?.dmWinners !== false) await this.dmWinners(client, g, g.winnersList);
+    return g;
+  }
+
+  static async reroll(client, messageId, count) {
+    const g = await Giveaway.findOne({ messageId, status: 'ended' });
+    if (!g) return null;
+    g.winnersList = this.pickWinners(g, count || g.winners);
+    await g.save();
+    await this.refresh(client, g);
+    if (g.settings?.dmWinners !== false) await this.dmWinners(client, g, g.winnersList);
+    return g;
+  }
+
+  static async remove(client, messageId) {
+    const g = await Giveaway.findOneAndDelete({ messageId });
+    if (!g) return null;
+    try {
+      const channel = await client.channels.fetch(g.channelId);
+      const message = await channel.messages.fetch(g.messageId);
+      await message.delete();
+    } catch (error) { /* pesan sudah hilang */ }
+    return g;
   }
 }
 
