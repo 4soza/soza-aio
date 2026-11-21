@@ -10,7 +10,7 @@ const animalSchema = new mongoose.Schema({
 }, { _id: false });
 
 const guildBossSchema = new mongoose.Schema({
-    guildId: { type: String, required: true, index: true },
+    guildId: { type: String, required: true },
     no: { type: Number, default: 1 },
     level: { type: Number, default: 10 },
     status: { type: String, enum: ['active', 'defeated', 'fled'], default: 'active' },
@@ -28,6 +28,8 @@ const guildBossSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Hanya satu boss aktif per server (spawn bersamaan tidak membuat boss ganda).
-guildBossSchema.index({ guildId: 1 }, { unique: true, partialFilterExpression: { status: 'active' } });
+guildBossSchema.index({ guildId: 1 }, { name: 'one_active_boss_per_guild', unique: true, partialFilterExpression: { status: 'active' } });
+// Untuk hitung boss yang sudah dikalahkan per server.
+guildBossSchema.index({ guildId: 1, status: 1 });
 
 module.exports = mongoose.models.FunGuildBoss || mongoose.model('FunGuildBoss', guildBossSchema);
