@@ -9,7 +9,8 @@ const {
     ThumbnailBuilder,
     SeparatorBuilder,
     SeparatorSpacingSize,
-    MessageFlags
+    MessageFlags,
+    EmbedBuilder
 } = require('discord.js');
 const ms = require('ms');
 
@@ -21,14 +22,8 @@ class GiveawayController {
       const channel = await client.channels.fetch(giveaway.channelId);
       const message = await channel.messages.fetch(giveaway.messageId);
       
-      const container = this.createGiveawayContainer(giveaway);
-      const buttons = this.createGiveawayButtons(giveaway);
-      
-      await message.edit({ 
-        components: buttons ? [container, buttons] : [container],
-        flags: MessageFlags.IsComponentsV2 
-      });
-      
+      await message.edit({ ...this.createGiveawayMessage(giveaway) });
+
       return { success: true };
     } catch (error) {
       console.error('Error updating giveaway message:', error);
@@ -384,41 +379,54 @@ class GiveawayController {
 
   // Send DM to winners with v2 components
   static async dmWinners(client, winners, giveaway) {
+    const link = `https://discord.com/channels/${giveaway.guildId}/${giveaway.channelId}/${giveaway.messageId}`;
     for (const winner of winners) {
       try {
         const user = await client.users.fetch(winner.userId);
-        
-        const winnerContainer = new ContainerBuilder()
-          .setAccentColor(0x00FF00)
-          .addTextDisplayComponents(
-            new TextDisplayBuilder()
-              .setContent(`# 🎉 Congratulations! You Won!\nYou won **${giveaway.prize}** in the giveaway: **${giveaway.title}**`)
-          )
-          .addSeparatorComponents(
-            new SeparatorBuilder()
-              .setSpacing(SeparatorSpacingSize.Small)
-          )
-          .addTextDisplayComponents(
-            new TextDisplayBuilder()
-              .setContent(`**🎁 Prize:** ${giveaway.prize}\n**🎪 Giveaway:** ${giveaway.title}`)
-          )
-          .addSeparatorComponents(
-            new SeparatorBuilder()
-              .setSpacing(SeparatorSpacingSize.Small)
-          )
-          .addTextDisplayComponents(
-            new TextDisplayBuilder()
-              .setContent(`*Congratulations from the team! • ${new Date().toLocaleString()}*`)
-          );
-
-        await user.send({ 
-          components: [winnerContainer],
-          flags: MessageFlags.IsComponentsV2 
-        });
+        await user.send({ content: `🎉 **|** Congratulations! You won the giveaway in ${link}` });
       } catch (error) {
         console.error(`Failed to DM winner ${winner.userId}:`, error);
       }
     }
+  }
+
+  // Pesan giveaway gaya OwO: satu embed + satu tombol "Join Giveaway!" (tanpa Components V2).
+  static createGiveawayMessage(giveaway) {
+    const endUnix = Math.floor(new Date(giveaway.endTime).getTime() / 1000);
+    const entries = giveaway.entries?.length || 0;
+    const status = giveaway.status || 'active';
+    const winners = giveaway.winnersList || [];
+
+    let text = '';
+    if (giveaway.description && giveaway.description !== giveaway.title) text += `${giveaway.description}\n\n`;
+    text += `**${giveaway.winners} Lucky User${giveaway.winners === 1 ? '' : 's'}** will have a chance to win!\nWinners will win:\n\n**• ${giveaway.prize}**\n`;
+
+    const embed = new EmbedBuilder().setTimestamp().setFooter({ text: `${entries} Users` });
+    if (status === 'ended') {
+      embed.setColor(6381923).setAuthor({ name: '🎉 Giveaway has ended!' });
+      text += `\nGiveaway ended **<t:${endUnix}:R>**\n`;
+      text += winners.length
+        ? `Congrats to the following players for winning!\n\n${winners.map((w) => `<@${w.userId}>`).join('\n')}`
+        : 'Unfortunately, there were no winners.';
+    } else if (status === 'paused') {
+      embed.setColor(0xFFAA00).setAuthor({ name: '🎉 Giveaway paused' });
+      text += '\nThis giveaway is currently paused.';
+    } else if (status === 'cancelled') {
+      embed.setColor(6381923).setAuthor({ name: '🎉 Giveaway cancelled' });
+      text += '\nThis giveaway was cancelled.';
+    } else {
+      embed.setColor(8240363).setAuthor({ name: `🎉 ${giveaway.title || 'A New Giveaway Appeared!'}` });
+      text += `\nGiveaway will end **<t:${endUnix}:R>**\nGoodluck to those who join!`;
+    }
+    embed.setDescription(text);
+
+    const button = new ButtonBuilder()
+      .setCustomId(`giveaway_enter_${giveaway.messageId}`)
+      .setLabel('Join Giveaway!')
+      .setEmoji('🎉')
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(status !== 'active');
+    return { content: '', embeds: [embed], components: [new ActionRowBuilder().addComponents(button)] };
   }
 
   // Create giveaway container (v2 components)
