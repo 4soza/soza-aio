@@ -14,7 +14,8 @@ const BUTTON_PREFIX = 'fboss';
 const ASSETS = path.join(__dirname, '..', '..', 'assets');
 // Gambar kanan atas pada pesan konfirmasi: tanya = sell.png, setuju = fight.png, batal = cancel.png
 const PICS = { ask: ['sell.png', 'sell.png'], yes: ['boss/fight.png', 'fight.png'], no: ['boss/cancel.png', 'cancel.png'] };
-const CONFIRM_COLOR = 0xe74c3c;
+const CONFIRM_COLOR = { ask: 0x7dbceb, yes: 0x00ff00, no: 0xff0000 };
+const EPHEMERAL = 64;
 const V2 = 32768;
 const COLOR = 0x7ab8f5;
 const fmt = (n) => Math.round(n).toLocaleString('en-US');
@@ -101,7 +102,7 @@ async function refreshMessage(message, doc) {
 /* Detail boss (tombol 🔍): hewan, HP, senjata, dan passive. */
 async function showInfo(interaction, bossId) {
     const doc = await GuildBoss.findById(bossId);
-    if (!doc) return interaction.reply({ content: '🚫 | This boss is no longer here!', ephemeral: true });
+    if (!doc) return interaction.reply({ content: '🚫 | This boss is no longer here!', flags: EPHEMERAL });
     const embeds = bossService.buildAnimals(doc).map((a) => {
         const lines = [`HP: **${fmt(Math.max(0, a.stats.hp[0]))} / ${fmt(a.stats.hp[1] + a.stats.hp[3])}**`];
         if (a.weapon) {
@@ -110,22 +111,23 @@ async function showInfo(interaction, bossId) {
         }
         return { color: COLOR, title: `Lvl ${a.stats.lvl} ${cap(a.animal.rank)} ${a.animal.name}`, description: lines.join('\n').slice(0, 4000) };
     });
-    return interaction.reply({ embeds, ephemeral: true });
+    return interaction.reply({ embeds, flags: EPHEMERAL });
 }
 
-/* Pesan konfirmasi (embed + gambar kanan atas) */
-function confirmEmbed(kind, description) {
+/* Pesan konfirmasi ala OwO: kotak berwarna, gambar di atas, teks, lalu tombol (Components V2). */
+function confirmMessage(kind, text, { bossId, messageId = '0', disabled = false, buttons = true } = {}) {
     const [file, name] = PICS[kind];
     return {
-        embeds: [{ color: CONFIRM_COLOR, description, thumbnail: { url: `attachment://${name}` } }],
-        files: [{ attachment: path.join(ASSETS, file), name }]
+        components: [{ type: 17, accent_color: CONFIRM_COLOR[kind], components: [{ type: 12, items: [{ media: { url: `attachment://${name}` } }] }, { type: 10, content: text }, ...(buttons ? [confirmRow(bossId, messageId, disabled)] : [])] }],
+        files: [{ attachment: path.join(ASSETS, file), name }],
+        flags: V2
     };
 }
 
 /* Statistik pribadi (tombol grafik): peringkat dan damage kamu pada boss ini. */
 async function showStats(interaction, bossId) {
     const doc = await GuildBoss.findById(bossId);
-    if (!doc) return interaction.reply({ content: '🚫 | This boss is no longer here!', ephemeral: true });
+    if (!doc) return interaction.reply({ content: '🚫 | This boss is no longer here!', flags: EPHEMERAL });
     const all = bossService.topDamage(doc, 1000);
     const idx = all.findIndex((e) => e.userId === interaction.user.id);
     const total = all.reduce((sum, e) => sum + e.damage, 0);
@@ -133,14 +135,14 @@ async function showStats(interaction, bossId) {
         ? ['You have not fought this boss yet!']
         : [`Rank: **#${idx + 1}** of ${all.length}`, `Your damage: **${fmt(all[idx].damage)}**`, `Share of total damage: **${total ? Math.round(all[idx].damage / total * 100) : 0}%**`];
     lines.push(`Boss tickets left today: **${await bossService.ticketsLeft(interaction.user.id)}/${bossService.CONFIG.TICKETS_PER_DAY}**`);
-    return interaction.reply({ embeds: [{ color: COLOR, title: 'Guild Boss Stats', description: lines.join('\n') }], ephemeral: true });
+    return interaction.reply({ embeds: [{ color: COLOR, title: 'Guild Boss Stats', description: lines.join('\n') }], flags: EPHEMERAL });
 }
 
 const confirmRow = (bossId, messageId, disabled = false) => ({
     type: 1,
     components: [
-        btn({ style: 3, label: 'Fight!', custom_id: `${BUTTON_PREFIX}:yes:${bossId}:${messageId}`, emoji: { name: '✔️' }, disabled }),
-        btn({ style: 4, label: 'Cancel', custom_id: `${BUTTON_PREFIX}:no:${bossId}`, emoji: { name: '✖️' }, disabled })
+        btn({ style: 3, label: 'Fight!', custom_id: `${BUTTON_PREFIX}:yes:${bossId}:${messageId}`, emoji: emojis.button(emojis.get('check')), disabled }),
+        btn({ style: 4, label: 'Cancel', custom_id: `${BUTTON_PREFIX}:no:${bossId}`, emoji: emojis.button(emojis.get('cross')), disabled })
     ]
 });
 
@@ -151,7 +153,7 @@ async function startFight(interaction, bossId, { confirmed = false, messageId = 
     const bossMessage = confirmed
         ? await channel?.messages.fetch(messageId).catch(() => null)
         : interaction.message;
-    const ephemeral = (content) => interaction.reply({ content, ephemeral: true });
+    const ephemeral = (content) => interaction.reply({ content, flags: EPHEMERAL });
 
     const doc = await GuildBoss.findById(bossId);
     if (!doc || doc.status !== 'active' || doc.endsAt.getTime() <= Date.now()) {
@@ -167,20 +169,19 @@ async function startFight(interaction, bossId, { confirmed = false, messageId = 
     if (already && !confirmed) {
         const left = await bossService.ticketsLeft(userId);
         if (left <= 0) return ephemeral(`${emojis.bossTicket()} | **${name}**, you already fought this boss and have no boss tickets left! Tickets reset every day.`);
-        const ask = confirmEmbed('ask', `${emojis.bossTicket()} **| ${name}**, you already fought this boss!\nAre you sure you want to use another boss ticket?\nYou only have **${left}/${bossService.CONFIG.TICKETS_PER_DAY}** tickets left: ${ticketIcons(left)}`);
-        return interaction.reply({ ...ask, components: [confirmRow(bossId, interaction.message?.id || '0')], ephemeral: true });
+        const ask = confirmMessage('ask', `### ${emojis.bossTicket()}, you already fought this boss!\nAre you sure you want to use another boss ticket?\nYou only have **${left}/${bossService.CONFIG.TICKETS_PER_DAY}** tickets left: ${ticketIcons(left)}`, { bossId, messageId: interaction.message?.id || '0' });
+        return interaction.reply({ ...ask, flags: V2 | EPHEMERAL });
     }
     let paid = false;
     if (already) {
         paid = await bossService.useTicket(userId);
-        if (!paid) return interaction.update({ content: `${emojis.bossTicket()} | **${name}**, you have no boss tickets left!`, embeds: [], attachments: [], components: [] });
+        if (!paid) return interaction.update(confirmMessage('no', `### ${emojis.bossTicket()}, you have no boss tickets left!`, { bossId, messageId, disabled: true }));
     }
 
     running.add(userId);
     try {
         if (confirmed) {
-            const yes = confirmEmbed('yes', `${emojis.bossTicket()} **| ${name}**, you decided to fight!`);
-            await interaction.update({ ...yes, content: '', attachments: [], components: [confirmRow(bossId, messageId, true)] });
+            await interaction.update({ ...confirmMessage('yes', `### ${emojis.bossTicket()}, you decided to fight!`, { bossId, messageId, disabled: true }), attachments: [] });
         }
         else await interaction.deferUpdate();
 
@@ -210,12 +211,11 @@ async function handleButton(interaction) {
         if (action === 'fight') return await startFight(interaction, bossId);
         if (action === 'yes') return await startFight(interaction, bossId, { confirmed: true, messageId: extra });
         if (action === 'no') {
-            const no = confirmEmbed('no', `${emojis.bossTicket()} **| ${interaction.member?.displayName || interaction.user.username}**, you decided not to fight`);
-            return await interaction.update({ ...no, content: '', attachments: [], components: [confirmRow(bossId, '0', true)] });
+            return await interaction.update({ ...confirmMessage('no', `### ${emojis.bossTicket()}, you decided not to fight`, { bossId, disabled: true }), attachments: [] });
         }
     } catch (error) {
         console.error('[BOSS] Button failed:', error);
-        const body = { content: '🚫 | Something went wrong, please try again.', ephemeral: true };
+        const body = { content: '🚫 | Something went wrong, please try again.', flags: EPHEMERAL };
         if (interaction.deferred || interaction.replied) await interaction.followUp(body).catch(() => {});
         else await interaction.reply(body).catch(() => {});
     }
