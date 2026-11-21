@@ -61,7 +61,7 @@ async function equip(message, uwidToken, petToken) {
     } else {
         key = animalFromToken(petToken)?.key;
     }
-    const usage = `could not find that weapon or animal! The correct command is \`${cfg.PREFIX}weapon {weaponID} {animal}\`\n▫️ **|** The weaponID can be found in the command \`${cfg.PREFIX}weapon\``;
+    const usage = `could not find that weapon or animal! The correct command is \`${cfg.PREFIX}weapon {weaponID} {animal}\`\n${cfg.EMOJI.BLANK} **|** The weaponID can be found in the command \`${cfg.PREFIX}weapon\``;
     if (!uwid || !key || !(await teamUtil.ownsAnimal(userId, key))) return fail(message, usage);
     const doc = await weaponDb.equip(userId, uwid, key);
     if (!doc) return fail(message, usage);

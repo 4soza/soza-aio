@@ -6,7 +6,7 @@ const cooldown = require('../cooldown');
 const { fail } = require('../battle/commandUtil');
 const { weaponIcons } = require('../battle/weaponView');
 
-const BLANK = '▫️';
+const BLANK = require('../config').EMOJI?.BLANK || '▫️';
 
 // scrate [count|all] = buka weapon crate (dari hadiah battle)
 module.exports = {

@@ -36,7 +36,7 @@ async function add(message, args) {
     if (result.error === 'full') return fail(message, `Your team is full! Please specify a position with \`${cfg.PREFIX}team add {animal} {position}\`!`, 5000);
     if (result.error === 'notowned') return fail(message, 'you do not own this animal!', 3000);
     if (result.error) return fail(message, 'something went wrong... Try again!', 5000);
-    return reply(message, TEAM_EMOJI, `Your team has been updated!\n▫️ **|** Your team: ${slotsText(result.slots)}`);
+    return reply(message, TEAM_EMOJI, `Your team has been updated!\n${cfg.EMOJI.BLANK} **|** Your team: ${slotsText(result.slots)}`);
 }
 
 async function remove(message, args) {
@@ -54,7 +54,7 @@ async function remove(message, args) {
     if (result.error === 'empty') return fail(message, 'your team is already empty!', 3000);
     if (result.error === 'last') return fail(message, 'You need to keep at least one animal in the team!', 3000);
     if (result.error) return fail(message, 'I failed to remove that animal. Check your team with `' + cfg.PREFIX + 'team`!', 5000);
-    return reply(message, TEAM_EMOJI, `Successfully changed the team!\n▫️ **|** Your team: ${slotsText(result.slots)}`);
+    return reply(message, TEAM_EMOJI, `Successfully changed the team!\n${cfg.EMOJI.BLANK} **|** Your team: ${slotsText(result.slots)}`);
 }
 
 async function rename(message, args) {
