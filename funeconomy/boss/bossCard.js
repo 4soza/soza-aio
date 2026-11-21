@@ -3,6 +3,7 @@
  * Tiap kartu: level + nama, gambar hewan, bar HP merah, stat, dan senjata + passive.
  */
 const { RANKS } = require('../zoo/data');
+const emojis = require('../customEmoji');
 const WeaponInterface = require('../battle/WeaponInterface');
 const { ensureFont, font, loadEmoji, drawEmoji, canvasLib } = require('../battle/battleImage');
 
@@ -38,6 +39,8 @@ async function renderBossCards(animals) {
         wanted.add(a.animal.uni || a.animal.value);
         if (a.weapon) [a.weapon.rank?.emoji, a.weapon.emoji, ...a.weapon.passives.map((p) => p.emoji)].filter(Boolean).forEach((e) => wanted.add(e));
     }
+    const STAT_ICON = { hp: emojis.get('stat_hp'), wp: emojis.get('stat_wp'), str: emojis.get('stat_str'), mag: emojis.get('stat_mag'), pr: emojis.get('stat_pr'), mr: emojis.get('stat_mr') };
+    Object.values(STAT_ICON).forEach((e) => wanted.add(e));
     const images = new Map(await Promise.all([...wanted].map(async (e) => [e, await loadEmoji(e)])));
 
     const canvas = createCanvas(W * SCALE, H * SCALE);
@@ -94,21 +97,20 @@ async function renderBossCards(animals) {
         ctx.fillText(`${fmt(hp)} / ${fmt(hpMax)}`, x + CARD_W / 2, by + 16);
 
         // stat (dua baris)
-        const stat = (label, value, col, sx, sy) => {
+        const stat = (key, value, sx, sy) => {
+            drawEmoji(ctx, STAT_ICON[key], images.get(STAT_ICON[key]), sx, sy - 13, 16);
             ctx.textAlign = 'left';
-            ctx.fillStyle = col;
-            ctx.font = font(12, 'bold');
-            ctx.fillText(label, sx, sy);
             ctx.fillStyle = '#e8f3fb';
-            ctx.fillText(value, sx + 30, sy);
+            ctx.font = font(13, 'bold');
+            ctx.fillText(value, sx + 22, sy);
         };
-        const sx = x + 16;
-        stat('HP', fmt(hpMax), '#f87171', sx, y + 196);
-        stat('WP', fmt(s.wp[1] + s.wp[3]), '#60a5fa', sx + 100, y + 196);
-        stat('STR', fmt(s.att[0] + s.att[1]), '#fb923c', sx, y + 214);
-        stat('MAG', fmt(s.mag[0] + s.mag[1]), '#c084fc', sx + 100, y + 214);
-        stat('PR', WeaponInterface.resToPrettyPercent(s.pr), '#fbbf24', sx, y + 232);
-        stat('MR', WeaponInterface.resToPrettyPercent(s.mr), '#38bdf8', sx + 100, y + 232);
+        const sx = x + 18;
+        stat('hp', fmt(hpMax), sx, y + 198);
+        stat('wp', fmt(s.wp[1] + s.wp[3]), sx + 100, y + 198);
+        stat('str', fmt(s.att[0] + s.att[1]), sx, y + 218);
+        stat('mag', fmt(s.mag[0] + s.mag[1]), sx + 100, y + 218);
+        stat('pr', WeaponInterface.resToPrettyPercent(s.pr), sx, y + 238);
+        stat('mr', WeaponInterface.resToPrettyPercent(s.mr), sx + 100, y + 238);
 
         // senjata + passive
         if (a.weapon) {
