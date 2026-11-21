@@ -61,7 +61,7 @@ async function render(doc) {
         `⭐ **${fmt(r.xp)}** Experience`
     ].join('  •  ');
     const endUnix = Math.floor(doc.endsAt.getTime() / 1000);
-    const footer = `${active ? `⏳ runs away <t:${endUnix}:R>` : '⏳ no longer here'}   ⚔️ **${doc.fighters.length}** fighters   💀 **${defeated}** defeated`;
+    const footer = `${emojis.bossTime()} ${active ? `runs away <t:${endUnix}:R>` : 'no longer here'}   ${emojis.bossFighters()} **${doc.fighters.length}** fighters   ${emojis.bossDefeated()} **${defeated}** defeated`;
 
     const container = {
         type: 17,
@@ -74,7 +74,11 @@ async function render(doc) {
             },
             picture,
             sep(),
-            text(`### Top 10 Damage Dealt\n${board}`),
+            {
+                type: 9,
+                components: [text(`### Top 10 Damage Dealt\n${board}`)],
+                accessory: btn({ style: 2, custom_id: `${BUTTON_PREFIX}:stats:${doc._id}`, emoji: emojis.button(emojis.bossStats()) })
+            },
             sep(),
             text(`### Rewards\n${rewards}`),
             sep(),
@@ -116,6 +120,20 @@ function confirmEmbed(kind, description) {
         embeds: [{ color: CONFIRM_COLOR, description, thumbnail: { url: `attachment://${name}` } }],
         files: [{ attachment: path.join(ASSETS, file), name }]
     };
+}
+
+/* Statistik pribadi (tombol grafik): peringkat dan damage kamu pada boss ini. */
+async function showStats(interaction, bossId) {
+    const doc = await GuildBoss.findById(bossId);
+    if (!doc) return interaction.reply({ content: '🚫 | This boss is no longer here!', ephemeral: true });
+    const all = bossService.topDamage(doc, 1000);
+    const idx = all.findIndex((e) => e.userId === interaction.user.id);
+    const total = all.reduce((sum, e) => sum + e.damage, 0);
+    const lines = idx < 0
+        ? ['You have not fought this boss yet!']
+        : [`Rank: **#${idx + 1}** of ${all.length}`, `Your damage: **${fmt(all[idx].damage)}**`, `Share of total damage: **${total ? Math.round(all[idx].damage / total * 100) : 0}%**`];
+    lines.push(`Boss tickets left today: **${await bossService.ticketsLeft(interaction.user.id)}/${bossService.CONFIG.TICKETS_PER_DAY}**`);
+    return interaction.reply({ embeds: [{ color: COLOR, title: 'Guild Boss Stats', description: lines.join('\n') }], ephemeral: true });
 }
 
 const confirmRow = (bossId, messageId, disabled = false) => ({
@@ -193,6 +211,7 @@ async function handleButton(interaction) {
     const [, action, bossId, extra] = interaction.customId.split(':');
     try {
         if (action === 'info') return await showInfo(interaction, bossId);
+        if (action === 'stats') return await showStats(interaction, bossId);
         if (action === 'fight') return await startFight(interaction, bossId);
         if (action === 'yes') return await startFight(interaction, bossId, { confirmed: true, messageId: extra });
         if (action === 'no') {
