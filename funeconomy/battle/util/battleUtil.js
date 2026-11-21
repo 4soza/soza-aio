@@ -11,6 +11,26 @@ exports.attack = attack;
 const weapon = '🗡';
 exports.weapon = weapon;
 
+/* Double Strike (passive kelas Rend): peluang menyerang sekali lagi dengan efektivitas dan biaya WP lebih kecil */
+function doubleStrike(animal, team, enemy) {
+	const w = animal.weapon;
+	if (!w || !w.passives || animal.stats.hp[0] <= 0) return;
+	const p = w.passives.find((x) => x.constructor.name === 'Rend');
+	if (!p || Math.random() * 100 >= p.stats[0]) return;
+	if (!WeaponInterface.getAlive(enemy).length) return;
+	const orig = { stats: w.stats, manaCost: w.manaCost };
+	const costParts = w.manaRange ? w.stats.length - 1 : w.stats.length;
+	w.stats = w.stats.map((s, i) => (i < costParts ? (s * p.stats[1]) / 100 : s));
+	w.manaCost = (orig.manaCost * p.stats[2]) / 100;
+	try {
+		const log = w.attackWeapon(animal, team, enemy);
+		if (log && log.logs) return [`[DSTRIKE] ${animal.nickname} struck again!`, ...log.logs];
+	} finally {
+		w.stats = orig.stats;
+		w.manaCost = orig.manaCost;
+	}
+}
+
 /* Do stuff before the turn starts (usually for buffs) */
 exports.preTurn = function (team, enemy) {
 	const action = [weapon, weapon, weapon];
@@ -80,8 +100,15 @@ exports.executeTurn = function (team, enemy) {
 
 				// Animal has a weapon
 			} else if (animal.weapon) {
-				if (tempAction == weapon) log = animal.weapon.attackWeapon(animal, tempAlly, tempEnemy);
-				else log = animal.weapon.attackPhysical(animal, tempAlly, tempEnemy);
+				if (tempAction == weapon) {
+					log = animal.weapon.attackWeapon(animal, tempAlly, tempEnemy);
+					const extra = doubleStrike(animal, tempAlly, tempEnemy);
+					if (extra) {
+						if (log && log.logs) logs = logs.concat(log.logs);
+						logs = logs.concat(extra);
+						log = null;
+					}
+				} else log = animal.weapon.attackPhysical(animal, tempAlly, tempEnemy);
 
 				// Animal has no weapon
 			} else {
