@@ -6,8 +6,6 @@ const GuildBoss = require('../../models/funeconomy/guildBoss');
 const emojis = require('../customEmoji');
 const cfg = require('../config');
 const teamUtil = require('../battle/teamUtil');
-const settingsDb = require('../battle/settingsDb');
-const { displayBattle } = require('../battle/battleDisplay');
 const bossService = require('./bossService');
 const { renderBossCards } = require('./bossCard');
 
@@ -50,9 +48,11 @@ async function render(doc) {
 
     const title = active ? 'A Guild Boss Appeared!' : (doc.status === 'defeated' ? 'The Guild Boss was defeated!' : 'The Guild Boss ran away!');
     const top = bossService.topDamage(doc, 10);
+    const width = Math.max(6, ...top.map((e) => fmt(e.damage).length));
+    const head = ['Rank', 'Damage', 'Username'].map((h) => `__**\`${h}\`**__`).join(' ');
     const board = top.length
-        ? `\`Rank Damage Username\`\n${top.map((e, i) => `\`${String(i + 1).padEnd(4)} ${fmt(e.damage).padEnd(6)}\` <@${e.userId}>`).join('\n')}`
-        : 'No damage dealt yet...';
+        ? `${head}\n${top.map((e, i) => `**\`${String(i + 1).padEnd(4)}\`** \`${fmt(e.damage).padStart(width)}\` <@${e.userId}>`).join('\n')}`
+        : `${head}\nNo damage dealt yet...`;
     const r = doc.rewards;
     const rewards = [
         `${emojis.shard()} **${fmt(r.shards)}** Weapon Shards`,
@@ -189,11 +189,6 @@ async function startFight(interaction, bossId, { confirmed = false, messageId = 
             if (paid) await bossService.refundTicket(userId);
             return channel?.send({ content: `🚫 | **${name}**, the boss is no longer here!`, allowedMentions: { parse: [] } });
         }
-        const setting = await settingsDb.getBattleSetting(userId);
-        await displayBattle(result.event, setting,
-            (embed, files) => channel.send({ embeds: [embed], files, allowedMentions: { parse: [] } }),
-            { title: `${name} fights the Guild Boss!`, iconURL: interaction.user.displayAvatarURL?.({ extension: 'png', size: 64 }) });
-
         await refreshMessage(bossMessage, result.doc);
         if (result.finished) {
             const r = result.doc.rewards;
