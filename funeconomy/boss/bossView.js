@@ -11,7 +11,12 @@ const { displayBattle } = require('../battle/battleDisplay');
 const bossService = require('./bossService');
 const { renderBossCards } = require('./bossCard');
 
+const path = require('path');
 const BUTTON_PREFIX = 'fboss';
+const ASSETS = path.join(__dirname, '..', '..', 'assets');
+// Gambar kanan atas pada pesan konfirmasi: tanya = sell.png, setuju = fight.png, batal = cancel.png
+const PICS = { ask: ['sell.png', 'sell.png'], yes: ['boss/fight.png', 'fight.png'], no: ['boss/cancel.png', 'cancel.png'] };
+const CONFIRM_COLOR = 0xe74c3c;
 const V2 = 32768;
 const COLOR = 0x7ab8f5;
 const fmt = (n) => Math.round(n).toLocaleString('en-US');
@@ -64,7 +69,7 @@ async function render(doc) {
         components: [
             {
                 type: 9,
-                components: [text(`## 👹 ${title}`)],
+                components: [text(`## ${emojis.bossShock()} ${title}`)],
                 accessory: btn({ style: 2, custom_id: `${BUTTON_PREFIX}:info:${doc._id}`, emoji: emojis.button(emojis.get('search')) })
             },
             picture,
@@ -104,6 +109,15 @@ async function showInfo(interaction, bossId) {
     return interaction.reply({ embeds, ephemeral: true });
 }
 
+/* Pesan konfirmasi (embed + gambar kanan atas) */
+function confirmEmbed(kind, description) {
+    const [file, name] = PICS[kind];
+    return {
+        embeds: [{ color: CONFIRM_COLOR, description, thumbnail: { url: `attachment://${name}` } }],
+        files: [{ attachment: path.join(ASSETS, file), name }]
+    };
+}
+
 const confirmRow = (bossId, messageId, disabled = false) => ({
     type: 1,
     components: [
@@ -135,21 +149,21 @@ async function startFight(interaction, bossId, { confirmed = false, messageId = 
     if (already && !confirmed) {
         const left = await bossService.ticketsLeft(userId);
         if (left <= 0) return ephemeral(`${emojis.bossTicket()} | **${name}**, you already fought this boss and have no boss tickets left! Tickets reset every day.`);
-        return interaction.reply({
-            content: `${emojis.bossTicket()} | **${name}**, you already fought this boss!\nAre you sure you want to use another boss ticket?\nYou only have **${left}/${bossService.CONFIG.TICKETS_PER_DAY}** tickets left: ${ticketIcons(left)}`,
-            components: [confirmRow(bossId, interaction.message?.id || '0')],
-            ephemeral: true
-        });
+        const ask = confirmEmbed('ask', `${emojis.bossTicket()} **| ${name}**, you already fought this boss!\nAre you sure you want to use another boss ticket?\nYou only have **${left}/${bossService.CONFIG.TICKETS_PER_DAY}** tickets left: ${ticketIcons(left)}`);
+        return interaction.reply({ ...ask, components: [confirmRow(bossId, interaction.message?.id || '0')], ephemeral: true });
     }
     let paid = false;
     if (already) {
         paid = await bossService.useTicket(userId);
-        if (!paid) return interaction.update({ content: `${emojis.bossTicket()} | **${name}**, you have no boss tickets left!`, components: [] });
+        if (!paid) return interaction.update({ content: `${emojis.bossTicket()} | **${name}**, you have no boss tickets left!`, embeds: [], attachments: [], components: [] });
     }
 
     running.add(userId);
     try {
-        if (confirmed) await interaction.update({ content: `${emojis.bossTicket()} | **${name}**, you decided to fight!`, components: [confirmRow(bossId, messageId, true)] });
+        if (confirmed) {
+            const yes = confirmEmbed('yes', `${emojis.bossTicket()} **| ${name}**, you decided to fight!`);
+            await interaction.update({ ...yes, content: '', attachments: [], components: [confirmRow(bossId, messageId, true)] });
+        }
         else await interaction.deferUpdate();
 
         const result = await bossService.fight({ bossId, userId, playerTeam: team, playerName: name });
@@ -181,7 +195,10 @@ async function handleButton(interaction) {
         if (action === 'info') return await showInfo(interaction, bossId);
         if (action === 'fight') return await startFight(interaction, bossId);
         if (action === 'yes') return await startFight(interaction, bossId, { confirmed: true, messageId: extra });
-        if (action === 'no') return await interaction.update({ content: 'Cancelled.', components: [] });
+        if (action === 'no') {
+            const no = confirmEmbed('no', `${emojis.bossTicket()} **| ${interaction.member?.displayName || interaction.user.username}**, you decided not to fight`);
+            return await interaction.update({ ...no, content: '', attachments: [], components: [confirmRow(bossId, '0', true)] });
+        }
     } catch (error) {
         console.error('[BOSS] Button failed:', error);
         const body = { content: '🚫 | Something went wrong, please try again.', ephemeral: true };
