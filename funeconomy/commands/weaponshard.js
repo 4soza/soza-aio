@@ -7,6 +7,9 @@ const { fmt, onCooldown, send } = require('../utils');
 const cooldown = require('../cooldown');
 const { fail, reply, DISMANTLE_EMOJI } = require('../battle/commandUtil');
 
+const { BLANK } = require('../zoo/format');
+const DISMANTLE_CONT = `${BLANK} **|** `;
+
 async function dismantleRank(message, rankIndex) {
     const userId = message.author.id;
     const result = await weaponDb.removeRank(userId, rankIndex);
@@ -14,18 +17,19 @@ async function dismantleRank(message, rankIndex) {
     const price = weaponDb.SHARD_PRICES[result.rank] * result.deleted;
     await crateDb.addShards(userId, price);
     const rankEmoji = result.weapons[0].rank.emoji;
-    const head = `You dismantled all of your ${rankEmoji} **${result.rank}** weapons for **${fmt(price)}** ${emojis.shard()} WeaponShards!\n▫️ **| Dismantled:** `;
+    const head = `You dismantled all of your ${rankEmoji} **${result.rank}** weapons for **${fmt(price)}** ${emojis.shard()} WeaponShards!\n${BLANK} **| Dismantled:** `;
     // Batas Discord 2000 karakter: daftar emoji yang panjang dipecah jadi beberapa pesan berurutan (pecah di antara emoji).
     const chunks = [];
     let cur = '';
     let limit = 1850 - head.length;
     for (const w of result.weapons) {
-        if (cur && cur.length + w.emoji.length > limit) { chunks.push(cur); cur = ''; limit = 1900; }
+        if (cur && cur.length + w.emoji.length > limit) { chunks.push(cur); cur = ''; limit = 1880; }
         cur += w.emoji;
     }
     if (cur) chunks.push(cur);
     let last = await reply(message, DISMANTLE_EMOJI, head + (chunks[0] || ''));
-    for (const part of chunks.slice(1)) last = await send(message, part);
+    // Awalan teks "**|**" mencegah Discord menampilkan pesan yang isinya emoji saja dengan ukuran besar (jumbo).
+    for (const part of chunks.slice(1)) last = await send(message, `${DISMANTLE_CONT}${part}`);
     return last;
 }
 
