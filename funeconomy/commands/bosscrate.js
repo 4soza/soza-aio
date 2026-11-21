@@ -11,7 +11,7 @@ const BLANK = cfg.EMOJI?.BLANK || '▫️';
 // sbcrate [count|all] = buka boss weapon crate (hadiah guild boss)
 module.exports = {
     name: 'bosscrate',
-    aliases: ['bcrate'],
+    aliases: ['bcrate', 'bc'],
     async execute(message, args) {
         const userId = message.author.id;
         const name = displayName(message);
