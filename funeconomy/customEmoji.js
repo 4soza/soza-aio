@@ -90,6 +90,7 @@ DEFS.search = { fallback: '🔍' }; DEFS.reroll = { fallback: '🔄' }; DEFS.rer
 DEFS.star_off = { fallback: '⭐' }; DEFS.star_on = { fallback: '⭐' };
 DEFS.blank_box = { fallback: '⬜' }; DEFS.check = { fallback: '✅' }; DEFS.cross = { fallback: '❎' };
 DEFS.gear = { fallback: '⚙️' };
+DEFS.afk = { fallback: '💤' }; // ikon AFK (assets/emoji/afk.png)
 DEFS.lock = { fallback: '🔒' }; DEFS.unlock = { fallback: '🔓' };
 DEFS.floot = { animated: true, fallback: '🎁' }; // fabled lootbox (diam)
 DEFS.floot2 = { animated: true, fallback: '🎁' }; // fabled lootbox bergetar
