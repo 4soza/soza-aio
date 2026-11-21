@@ -3,7 +3,7 @@ const emojis = require('../customEmoji');
 const cfg = require('../config');
 const weaponDb = require('../battle/weaponDb');
 const crateDb = require('../battle/crateDb');
-const { fmt, onCooldown } = require('../utils');
+const { fmt, onCooldown, send } = require('../utils');
 const cooldown = require('../cooldown');
 const { fail, reply, DISMANTLE_EMOJI } = require('../battle/commandUtil');
 
@@ -14,8 +14,19 @@ async function dismantleRank(message, rankIndex) {
     const price = weaponDb.SHARD_PRICES[result.rank] * result.deleted;
     await crateDb.addShards(userId, price);
     const rankEmoji = result.weapons[0].rank.emoji;
-    return reply(message, DISMANTLE_EMOJI,
-        `You dismantled all of your ${rankEmoji} **${result.rank}** weapons for **${fmt(price)}** ${emojis.shard()} WeaponShards!\n▫️ **| Dismantled:** ${result.weapons.map((w) => w.emoji).join('')}`);
+    const head = `You dismantled all of your ${rankEmoji} **${result.rank}** weapons for **${fmt(price)}** ${emojis.shard()} WeaponShards!\n▫️ **| Dismantled:** `;
+    // Batas Discord 2000 karakter: daftar emoji yang panjang dipecah jadi beberapa pesan berurutan (pecah di antara emoji).
+    const chunks = [];
+    let cur = '';
+    let limit = 1850 - head.length;
+    for (const w of result.weapons) {
+        if (cur && cur.length + w.emoji.length > limit) { chunks.push(cur); cur = ''; limit = 1900; }
+        cur += w.emoji;
+    }
+    if (cur) chunks.push(cur);
+    let last = await reply(message, DISMANTLE_EMOJI, head + (chunks[0] || ''));
+    for (const part of chunks.slice(1)) last = await send(message, part);
+    return last;
 }
 
 async function dismantleId(message, token) {
