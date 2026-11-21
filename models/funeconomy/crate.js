@@ -8,7 +8,9 @@ const crateSchema = new mongoose.Schema({
     // Crate yang ditemukan dari battle pada hari claimDay (maks 3 per hari)
     claimcount: { type: Number, default: 0, min: 0 },
     claimDay: { type: Number, default: -1 },
-    shards: { type: Number, default: 0, min: 0 }
+    shards: { type: Number, default: 0, min: 0 },
+    // Crate boss (hadiah mengalahkan guild boss)
+    bossbox: { type: Number, default: 0, min: 0 }
 }, { timestamps: true });
 
 module.exports = mongoose.models.FunCrate || mongoose.model('FunCrate', crateSchema);
