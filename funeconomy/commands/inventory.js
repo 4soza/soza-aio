@@ -13,6 +13,7 @@ const { toSmallNum, chunkLines } = require('../zoo/format');
 
 const LOOTBOX_ID = 50;
 const FLOOT_ID = 49;
+const BOSS_CRATE_ID = 99;
 const CRATE_ID = 100;
 
 /* All inventory entries [{ id, emoji, count }] from every source, unsorted. */
@@ -27,6 +28,7 @@ async function collectItems(userId) {
     for (const gem of Object.values(Gems.GEMS)) {
         if (gemInv.gems[gem.key] > 0) items.push({ id: gem.id, emoji: gem.emoji, count: gemInv.gems[gem.key] });
     }
+    if (crate.bossbox > 0) items.push({ id: BOSS_CRATE_ID, emoji: emojis.bossCrate(), count: crate.bossbox });
     if (crate.boxcount > 0) items.push({ id: CRATE_ID, emoji: emojis.crate(), count: crate.boxcount });
     for (const { wid, count } of byType) {
         const WeaponClass = WeaponInterface.weapons[wid];
