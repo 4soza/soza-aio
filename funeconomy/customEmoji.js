@@ -37,7 +37,12 @@ const DEFS = {
     lb3: { animated: true, fallback: '🎁' },
     cr1: { fallback: '📦' },
     cr2: { animated: true, fallback: '📦' },
-    cr3: { animated: true, fallback: '📦' }
+    cr3: { animated: true, fallback: '📦' },
+    // boss: tiket untuk melawan boss, crate boss (diam, bergetar, terbuka)
+    boss_ticket: { fallback: '🎟️' },
+    boss_crate: { fallback: '📦' },
+    boss_crate_shake: { animated: true, fallback: '📦' },
+    boss_crate_open: { animated: true, fallback: '📦' }
 };
 
 // Ikon senjata (w_<nama>) dan passive (p_<nama>), nama = nama class di funeconomy/battle/weapons|passives.
@@ -154,6 +159,10 @@ const unknown = () => get('unknown');
 const crate = () => get('cr1');
 const crateShake = () => get('cr2');
 const crateOpen = () => get('cr3');
+const bossTicket = () => get('boss_ticket');
+const bossCrate = () => get('boss_crate');
+const bossCrateShake = () => get('boss_crate_shake');
+const bossCrateOpen = () => get('boss_crate_open');
 const lootbox = () => get('lb1');
 const lootboxShake = () => get('lb2');
 const lootboxOpen = () => get('lb3');
@@ -238,4 +247,4 @@ function reset() { live.clear(); apply(); }
 /** id emoji kustom dari teks `<:nama:id>` (atau null untuk emoji Unicode). */
 const customId = (text) => /^<a?:\w+:(\d+)>$/.exec(String(text || ''))?.[1] || null;
 
-module.exports = { DEFS, get, gear, gearTiers, buff, robot, floot, flootShake, flootOpen, shard, essence, unknown, crate, crateShake, crateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId, button };
+module.exports = { DEFS, get, gear, gearTiers, buff, robot, floot, flootShake, flootOpen, shard, essence, unknown, crate, crateShake, crateOpen, bossTicket, bossCrate, bossCrateShake, bossCrateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId, button };
