@@ -19,7 +19,9 @@ const afkHandler = require('../../events/afkHandler');
 
 // Koya-style AFK. `/afk reason:<text>` and the prefix form (`soza afk <text>`)
 // both run through execute() below and give the same reply.
-const AFK_EMOJI = '💤'; // swap for your own emoji, e.g. '<:afk:1234567890>'
+// Emoji AFK: gambar assets/emoji/afk.png (diunggah otomatis oleh customEmoji.sync); cadangannya 💤.
+const customEmoji = require('../../funeconomy/customEmoji');
+const afkEmoji = () => customEmoji.get('afk') || '💤';
 const DEFAULT_REASON = 'AFK';
 const MAX_REASON = 500;
 
@@ -72,7 +74,7 @@ module.exports = {
             }
 
             await source.reply({
-                content: `${AFK_EMOJI} <@${user.id}>, your **AFK** is now set to: ${reason}.`,
+                content: `${afkEmoji()} <@${user.id}>, your **AFK** is now set to: ${reason}.`,
                 allowedMentions: { parse: [], repliedUser: false }
             });
         } catch (error) {
