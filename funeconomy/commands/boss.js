@@ -13,6 +13,8 @@ module.exports = {
         const doc = await bossService.currentBoss(message.guild.id);
         if (!doc) return fail(message, 'could not find the boss, try again!');
         const payload = await bossView.render(doc);
-        return message.channel.send(payload);
+        const sent = await message.channel.send(payload);
+        if (sent) bossView.scheduleInactive(sent, doc._id);
+        return sent;
     }
 };
