@@ -7,7 +7,8 @@ const emojis = require('../customEmoji');
 const cfg = require('../config');
 const teamUtil = require('../battle/teamUtil');
 const bossService = require('./bossService');
-const { renderBossCards } = require('./bossCard');
+const { renderBossCards, renderBossAnimal } = require('./bossCard');
+const WeaponInterface = require('../battle/WeaponInterface');
 
 const path = require('path');
 const BUTTON_PREFIX = 'fboss';
@@ -99,19 +100,74 @@ async function refreshMessage(message, doc) {
     await message.edit({ ...payload, attachments: [] }).catch((error) => console.error('[BOSS] Could not update boss message:', error.message));
 }
 
-/* Detail boss (tombol 🔍): hewan, HP, senjata, dan passive. */
-async function showInfo(interaction, bossId) {
+/* Tombol halaman: ◀ n/N ▶ (ikon panah sama seperti daftar senjata). */
+function pageRow(prefix, bossId, page, total, { edges = false } = {}) {
+    const b = (id, emoji, to, off) => btn({ style: 2, custom_id: `${BUTTON_PREFIX}:${prefix}:${bossId}:${to}`, emoji: emojis.button(emoji), disabled: off });
+    const row = [];
+    if (edges) row.push(b('first', emojis.get('nav_first'), 0, page <= 0));
+    row.push(b('prev', emojis.get('nav_prev'), Math.max(0, page - 1), page <= 0));
+    row.push(btn({ style: 2, label: `${page + 1}/${total}`, custom_id: `${BUTTON_PREFIX}:noop:${bossId}:${prefix}`, disabled: true }));
+    row.push(b('next', emojis.get('nav_next'), Math.min(total - 1, page + 1), page >= total - 1));
+    if (edges) row.push(b('last', emojis.get('nav_last'), total - 1, page >= total - 1));
+    return { type: 1, components: row };
+}
+
+function emojiImageUrl(emoji) {
+    const m = /^<(a?):\w+:(\d+)>$/.exec(emoji || '');
+    return m ? `https://cdn.discordapp.com/emojis/${m[2]}.${m[1] ? 'gif' : 'png'}?size=128` : null;
+}
+
+/* Detail satu hewan boss (tombol 🔍), satu halaman per hewan seperti OwO. */
+async function showInfo(interaction, bossId, index = 0, update = false) {
     const doc = await GuildBoss.findById(bossId);
     if (!doc) return interaction.reply({ content: '🚫 | This boss is no longer here!', flags: EPHEMERAL });
-    const embeds = bossService.buildAnimals(doc).map((a) => {
-        const lines = [`HP: **${fmt(Math.max(0, a.stats.hp[0]))} / ${fmt(a.stats.hp[1] + a.stats.hp[3])}**`];
-        if (a.weapon) {
-            lines.push(`\n**${a.weapon.rank?.emoji || ''} ${a.weapon.name}** (${a.weapon.avgQuality}%)\n${a.weapon.desc || ''}`);
-            for (const p of a.weapon.passives || []) lines.push(`${p.emoji} **${p.name}** - ${p.desc || ''}`);
-        }
-        return { color: COLOR, title: `Lvl ${a.stats.lvl} ${cap(a.animal.rank)} ${a.animal.name}`, description: lines.join('\n').slice(0, 4000) };
-    });
-    return interaction.reply({ embeds, flags: EPHEMERAL });
+    const animals = bossService.buildAnimals(doc);
+    const page = Math.min(Math.max(0, index), animals.length - 1);
+    const a = animals[page];
+    const s = a.stats;
+    const i = (k) => emojis.get(`stat_${k}`);
+    const pct = (v) => WeaponInterface.resToPrettyPercent(v);
+    const statRow = [
+        [i('hp'), fmt(s.hp[1] + s.hp[3])], [i('wp'), fmt(s.wp[1] + s.wp[3])], [i('str'), fmt(s.att[0] + s.att[1])],
+        [i('pr'), pct(s.pr)], [i('mag'), fmt(s.mag[0] + s.mag[1])], [i('mr'), pct(s.mr)]
+    ].map(([e, v]) => `${e} \`${v}\``).join(' ');
+
+    const components = [text(`### Lvl ${s.lvl} ${cap(a.animal.rank)} ${a.animal.name}`)];
+    const files = [];
+    try {
+        files.push({ attachment: await renderBossAnimal(a), name: 'boss_animal.png' });
+        components.push({ type: 12, items: [{ media: { url: 'attachment://boss_animal.png' } }] });
+    } catch (error) {
+        console.error('[BOSS] Could not render animal image:', error.message);
+        components.push(text(`${a.animal.uni || a.animal.value} **${fmt(Math.max(0, s.hp[0]))} / ${fmt(s.hp[1] + s.hp[3])}**`));
+    }
+    components.push(text(`${statRow}\n${a.animal.desc || ''}`.trim()));
+
+    const w = a.weapon;
+    if (w) {
+        const cost = Math.ceil(w.manaCost || 0);
+        const head = [
+            `**${w.fullName || w.name}**`,
+            `Quality: ${w.rank?.emoji || ''} ${w.avgQuality}%`,
+            `Wear: \`${String(w.wearName || '').toUpperCase()}\``,
+            'Type: `BOSS`',
+            ...(w.hasTakedownTracker ? [`Kills: \`${Number(w.kills || 0).toLocaleString('en-US')}\``] : []),
+            `Weapon Cost: ${cost > 0 ? `${cost} ${WeaponInterface.wpEmoji}` : 'no cost'}`
+        ].join('\n');
+        const image = emojiImageUrl(w.emoji);
+        components.push(sep());
+        components.push(image
+            ? { type: 9, components: [text(head)], accessory: { type: 11, media: { url: image } } }
+            : text(head));
+        const more = [`__**Description**__\n${w.desc || ''}`];
+        for (const buff of (w.buffList?.length ? w.getBuffs() : [])) more.push(`${buff.emoji} **${buff.name}** - ${buff.desc}`);
+        for (const p of w.passives || []) more.push(`${p.emoji} **${p.name}** - ${p.desc || ''}`);
+        components.push(text(more.join('\n').slice(0, 3500)));
+    }
+    components.push(pageRow('ip', bossId, page, animals.length));
+    const payload = { components: [{ type: 17, accent_color: COLOR, components }], files, flags: V2 };
+    if (update) return interaction.update({ ...payload, attachments: [] });
+    return interaction.reply({ ...payload, flags: V2 | EPHEMERAL });
 }
 
 /* Pesan konfirmasi ala OwO: kotak berwarna, gambar di atas, teks, lalu tombol (Components V2). */
@@ -124,18 +180,31 @@ function confirmMessage(kind, text, { bossId, messageId = '0', disabled = false,
     };
 }
 
-/* Statistik pribadi (tombol grafik): peringkat dan damage kamu pada boss ini. */
-async function showStats(interaction, bossId) {
+/* Tombol grafik: "Current boss leaderboard" 10 per halaman (⏪ ◀ n/N ▶ ⏩). */
+const LB_PER_PAGE = 10;
+async function showLeaderboard(interaction, bossId, pageIndex = 0, update = false) {
     const doc = await GuildBoss.findById(bossId);
     if (!doc) return interaction.reply({ content: '🚫 | This boss is no longer here!', flags: EPHEMERAL });
     const all = bossService.topDamage(doc, 1000);
-    const idx = all.findIndex((e) => e.userId === interaction.user.id);
-    const total = all.reduce((sum, e) => sum + e.damage, 0);
-    const lines = idx < 0
-        ? ['You have not fought this boss yet!']
-        : [`Rank: **#${idx + 1}** of ${all.length}`, `Your damage: **${fmt(all[idx].damage)}**`, `Share of total damage: **${total ? Math.round(all[idx].damage / total * 100) : 0}%**`];
-    lines.push(`Boss tickets left today: **${await bossService.ticketsLeft(interaction.user.id)}/${bossService.CONFIG.TICKETS_PER_DAY}**`);
-    return interaction.reply({ embeds: [{ color: COLOR, title: 'Guild Boss Stats', description: lines.join('\n') }], flags: EPHEMERAL });
+    const total = Math.max(1, Math.ceil(all.length / LB_PER_PAGE));
+    const page = Math.min(Math.max(0, pageIndex), total - 1);
+    const rows = all.slice(page * LB_PER_PAGE, (page + 1) * LB_PER_PAGE);
+    const width = Math.max(6, ...rows.map((e) => fmt(e.damage).length));
+    const head = ['Rank', 'Damage', 'Username'].map((h) => `__**\`${h}\`**__`).join(' ');
+    const body = rows.length
+        ? rows.map((e, k) => `**\`${String(page * LB_PER_PAGE + k + 1).padEnd(4)}\`** \`${fmt(e.damage).padStart(width)}\` <@${e.userId}>`).join('\n')
+        : 'No damage dealt yet...';
+    const icon = interaction.client?.user?.displayAvatarURL?.({ extension: 'png', size: 64 });
+    const title = '**Current boss leaderboard**';
+    const components = [
+        icon ? { type: 9, components: [text(title)], accessory: { type: 11, media: { url: icon } } } : text(title),
+        text(`${head}\n${body}`),
+        text(`Updated on | <t:${Math.floor(Date.now() / 1000)}:f>`),
+        pageRow('lb', bossId, page, total, { edges: true })
+    ];
+    const payload = { components: [{ type: 17, accent_color: COLOR, components }], flags: V2 };
+    if (update) return interaction.update(payload);
+    return interaction.reply({ ...payload, flags: V2 | EPHEMERAL });
 }
 
 const confirmRow = (bossId, messageId, disabled = false) => ({
@@ -207,7 +276,10 @@ async function handleButton(interaction) {
     const [, action, bossId, extra] = interaction.customId.split(':');
     try {
         if (action === 'info') return await showInfo(interaction, bossId);
-        if (action === 'stats') return await showStats(interaction, bossId);
+        if (action === 'ip') return await showInfo(interaction, bossId, Number(extra) || 0, true);
+        if (action === 'stats') return await showLeaderboard(interaction, bossId);
+        if (action === 'lb') return await showLeaderboard(interaction, bossId, Number(extra) || 0, true);
+        if (action === 'noop') return await interaction.deferUpdate();
         if (action === 'fight') return await startFight(interaction, bossId);
         if (action === 'yes') return await startFight(interaction, bossId, { confirmed: true, messageId: extra });
         if (action === 'no') {

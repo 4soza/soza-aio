@@ -134,4 +134,33 @@ async function renderBossCards(animals) {
     return canvas.toBuffer('image/png');
 }
 
-module.exports = { renderBossCards };
+/* Gambar satu hewan boss + bar HP (halaman detail tombol 🔍). Return Buffer PNG. */
+async function renderBossAnimal(a) {
+    ensureFont();
+    const { createCanvas } = canvasLib();
+    const W = 300, H = 120;
+    const key = a.animal.uni || a.animal.value;
+    const img = await loadEmoji(key);
+    const canvas = createCanvas(W * SCALE, H * SCALE);
+    const ctx = canvas.getContext('2d');
+    ctx.scale(SCALE, SCALE);
+    drawEmoji(ctx, key, img, W / 2 - 34, 6, 68);
+    const hp = Math.max(0, Math.ceil(a.stats.hp[0]));
+    const hpMax = Math.ceil(a.stats.hp[1] + a.stats.hp[3]);
+    const bx = 8, bw = W - 16, by = 84, bh = 22;
+    ctx.fillStyle = '#3a1418';
+    roundRect(ctx, bx, by, bw, bh, 5);
+    ctx.fill();
+    if (hp > 0) {
+        ctx.fillStyle = '#d63a3a';
+        roundRect(ctx, bx, by, Math.max(8, bw * Math.min(1, hp / hpMax)), bh, 5);
+        ctx.fill();
+    }
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = font(13, 'bold');
+    ctx.fillText(`${fmt(hp)} / ${fmt(hpMax)}`, W / 2, by + 16);
+    return canvas.toBuffer('image/png');
+}
+
+module.exports = { renderBossCards, renderBossAnimal };
