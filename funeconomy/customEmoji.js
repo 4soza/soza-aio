@@ -45,6 +45,7 @@ const DEFS = {
     boss_defeated: { fallback: '💀' },
     boss_stats: { fallback: '📊' },
     boss_ticket: { fallback: '🎟️' },
+    boss_ticket_used: { fallback: '▫️' },
     boss_crate: { fallback: '📦' },
     boss_crate_shake: { animated: true, fallback: '📦' },
     boss_crate_open: { animated: true, fallback: '📦' }
@@ -170,6 +171,7 @@ const bossFighters = () => get('boss_fighters');
 const bossDefeated = () => get('boss_defeated');
 const bossStats = () => get('boss_stats');
 const bossTicket = () => get('boss_ticket');
+const bossTicketUsed = () => get('boss_ticket_used');
 const bossCrate = () => get('boss_crate');
 const bossCrateShake = () => get('boss_crate_shake');
 const bossCrateOpen = () => get('boss_crate_open');
@@ -257,4 +259,4 @@ function reset() { live.clear(); apply(); }
 /** id emoji kustom dari teks `<:nama:id>` (atau null untuk emoji Unicode). */
 const customId = (text) => /^<a?:\w+:(\d+)>$/.exec(String(text || ''))?.[1] || null;
 
-module.exports = { DEFS, get, gear, gearTiers, buff, robot, floot, flootShake, flootOpen, shard, essence, unknown, crate, crateShake, crateOpen, bossShock, bossTime, bossFighters, bossDefeated, bossStats, bossTicket, bossCrate, bossCrateShake, bossCrateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId, button };
+module.exports = { DEFS, get, gear, gearTiers, buff, robot, floot, flootShake, flootOpen, shard, essence, unknown, crate, crateShake, crateOpen, bossShock, bossTime, bossFighters, bossDefeated, bossStats, bossTicket, bossTicketUsed, bossCrate, bossCrateShake, bossCrateOpen, lootbox, lootboxShake, lootboxOpen, apply, sync, reset, customId, button };
