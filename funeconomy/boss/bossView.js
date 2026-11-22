@@ -28,7 +28,7 @@ const running = new Set(); // satu pertarungan boss per user pada satu waktu
 
 function ticketIcons(left) {
     const t = emojis.bossTicket();
-    return Array.from({ length: bossService.CONFIG.TICKETS_PER_DAY }, (_, i) => (i < left ? t : '▫️')).join(' ');
+    return Array.from({ length: bossService.CONFIG.TICKETS_PER_DAY }, (_, i) => (i < left ? t : emojis.bossTicketUsed())).join(' ');
 }
 
 /* Isi pesan boss: { components, files, flags }. */
