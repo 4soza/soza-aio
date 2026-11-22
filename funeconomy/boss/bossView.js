@@ -17,6 +17,8 @@ const ASSETS = path.join(__dirname, '..', '..', 'assets');
 const PICS = { ask: ['boss/ask.png', 'ask.png'], yes: ['boss/fight.png', 'fight.png'], no: ['boss/cancel.png', 'cancel.png'] };
 const CONFIRM_COLOR = { ask: 0x7dbceb, yes: 0x00ff00, no: 0xff0000 };
 const EPHEMERAL = 64;
+const INACTIVE_MS = 10 * 60 * 1000; // setelah 10 menit pesan boss jadi abu-abu dan tombolnya mati
+const GREY = 0x4f545c;
 const V2 = 32768;
 const COLOR = 0x7ab8f5;
 const fmt = (n) => Math.round(n).toLocaleString('en-US');
@@ -32,7 +34,7 @@ function ticketIcons(left) {
 }
 
 /* Isi pesan boss: { components, files, flags }. */
-async function render(doc) {
+async function render(doc, { inactive = false } = {}) {
     const active = doc.status === 'active' && doc.endsAt.getTime() > Date.now();
     const animals = bossService.buildAnimals(doc);
     const defeated = await bossService.defeatedCount(doc.guildId);
@@ -67,19 +69,19 @@ async function render(doc) {
 
     const container = {
         type: 17,
-        accent_color: COLOR,
+        accent_color: inactive ? GREY : COLOR,
         components: [
             {
                 type: 9,
                 components: [text(`## ${emojis.bossShock()} ${title}`)],
-                accessory: btn({ style: 2, custom_id: `${BUTTON_PREFIX}:info:${doc._id}`, emoji: emojis.button(emojis.get('search')) })
+                accessory: btn({ style: 2, custom_id: `${BUTTON_PREFIX}:info:${doc._id}`, emoji: emojis.button(emojis.get('search')), disabled: inactive })
             },
             picture,
             sep(),
             {
                 type: 9,
                 components: [text(`### Top 10 Damage Dealt\n${board}`)],
-                accessory: btn({ style: 2, custom_id: `${BUTTON_PREFIX}:stats:${doc._id}`, emoji: emojis.button(emojis.bossStats()) })
+                accessory: btn({ style: 2, custom_id: `${BUTTON_PREFIX}:stats:${doc._id}`, emoji: emojis.button(emojis.bossStats()), disabled: inactive })
             },
             sep(),
             text(`### Rewards\n${rewards}`),
@@ -87,17 +89,34 @@ async function render(doc) {
             {
                 type: 9,
                 components: [text(footer)],
-                accessory: btn({ style: 3, label: 'Fight!', custom_id: `${BUTTON_PREFIX}:fight:${doc._id}`, emoji: emojis.button(emojis.bossTicket()), disabled: !active })
+                accessory: btn({ style: 3, label: 'Fight!', custom_id: `${BUTTON_PREFIX}:fight:${doc._id}`, emoji: emojis.button(emojis.bossTicket()), disabled: !active || inactive })
             }
         ]
     };
     return { components: [container], files, flags: V2, allowedMentions: { parse: [] } };
 }
 
+const isStale = (message) => !!message && Date.now() - message.createdTimestamp >= INACTIVE_MS;
+
 async function refreshMessage(message, doc) {
     if (!message) return;
-    const payload = await render(doc);
+    const payload = await render(doc, { inactive: isStale(message) });
     await message.edit({ ...payload, attachments: [] }).catch((error) => console.error('[BOSS] Could not update boss message:', error.message));
+}
+
+/* 10 menit setelah pesan boss dikirim: ubah jadi abu-abu dan matikan semua tombol. */
+function scheduleInactive(message, bossId) {
+    const timer = setTimeout(async () => {
+        try {
+            const doc = await GuildBoss.findById(bossId);
+            if (!doc) return;
+            const payload = await render(doc, { inactive: true });
+            await message.edit({ ...payload, attachments: [] });
+        } catch (error) {
+            console.error('[BOSS] Could not deactivate boss message:', error.message);
+        }
+    }, Math.max(0, INACTIVE_MS - (Date.now() - message.createdTimestamp)));
+    timer.unref?.();
 }
 
 /* Tombol halaman: ◀ n/N ▶ (ikon panah sama seperti daftar senjata). */
@@ -278,6 +297,12 @@ async function startFight(interaction, bossId, { confirmed = false, messageId = 
 async function handleButton(interaction) {
     const [, action, bossId, extra] = interaction.customId.split(':');
     try {
+        // Tombol di pesan boss yang sudah lewat 10 menit (mis. bot sempat restart): matikan saja.
+        if (['info', 'stats', 'fight'].includes(action) && isStale(interaction.message)) {
+            const doc = await GuildBoss.findById(bossId);
+            if (doc) return await interaction.update({ ...(await render(doc, { inactive: true })), attachments: [] });
+            return await interaction.reply({ content: '🚫 | This boss is no longer here!', flags: EPHEMERAL });
+        }
         if (action === 'info') return await showInfo(interaction, bossId);
         if (action === 'ip') return await showInfo(interaction, bossId, Number(extra) || 0, true);
         if (action === 'stats') return await showLeaderboard(interaction, bossId);
@@ -296,4 +321,4 @@ async function handleButton(interaction) {
     }
 }
 
-module.exports = { BUTTON_PREFIX, render, refreshMessage, handleButton, ticketIcons };
+module.exports = { BUTTON_PREFIX, render, refreshMessage, scheduleInactive, handleButton, ticketIcons };
