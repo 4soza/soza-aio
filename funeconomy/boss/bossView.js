@@ -102,7 +102,7 @@ async function refreshMessage(message, doc) {
 
 /* Tombol halaman: ◀ n/N ▶ (ikon panah sama seperti daftar senjata). */
 function pageRow(prefix, bossId, page, total, { edges = false } = {}) {
-    const b = (id, emoji, to, off) => btn({ style: 2, custom_id: `${BUTTON_PREFIX}:${prefix}:${bossId}:${to}`, emoji: emojis.button(emoji), disabled: off });
+    const b = (id, emoji, to, off) => btn({ style: 2, custom_id: `${BUTTON_PREFIX}:${prefix}:${bossId}:${to}:${id}`, emoji: emojis.button(emoji), disabled: off });
     const row = [];
     if (edges) row.push(b('first', emojis.get('nav_first'), 0, page <= 0));
     row.push(b('prev', emojis.get('nav_prev'), Math.max(0, page - 1), page <= 0));
