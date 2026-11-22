@@ -195,16 +195,19 @@ async function showLeaderboard(interaction, bossId, pageIndex = 0, update = fals
         ? rows.map((e, k) => `**\`${String(page * LB_PER_PAGE + k + 1).padEnd(4)}\`** \`${fmt(e.damage).padStart(width)}\` <@${e.userId}>`).join('\n')
         : 'No damage dealt yet...';
     const icon = interaction.client?.user?.displayAvatarURL?.({ extension: 'png', size: 64 });
-    const title = '**Current boss leaderboard**';
-    const components = [
-        icon ? { type: 9, components: [text(title)], accessory: { type: 11, media: { url: icon } } } : text(title),
-        text(`${head}\n${body}`),
-        text(`Updated on | <t:${Math.floor(Date.now() / 1000)}:f>`),
-        pageRow('lb', bossId, page, total, { edges: true })
-    ];
-    const payload = { components: [{ type: 17, accent_color: COLOR, components }], flags: V2 };
+    // Embed biasa (judul kecil dengan ikon di atas, seperti "goes into battle!"), waktu di footer.
+    const payload = {
+        embeds: [{
+            color: COLOR,
+            author: { name: 'Current boss leaderboard', ...(icon ? { icon_url: icon } : {}) },
+            description: `${head}\n${body}`,
+            footer: { text: 'Updated on' },
+            timestamp: new Date().toISOString()
+        }],
+        components: [pageRow('lb', bossId, page, total)]
+    };
     if (update) return interaction.update(payload);
-    return interaction.reply({ ...payload, flags: V2 | EPHEMERAL });
+    return interaction.reply({ ...payload, flags: EPHEMERAL });
 }
 
 const confirmRow = (bossId, messageId, disabled = false) => ({
