@@ -14,7 +14,7 @@ const path = require('path');
 const BUTTON_PREFIX = 'fboss';
 const ASSETS = path.join(__dirname, '..', '..', 'assets');
 // Gambar kanan atas pada pesan konfirmasi: tanya = sell.png, setuju = fight.png, batal = cancel.png
-const PICS = { ask: ['sell.png', 'sell.png'], yes: ['boss/fight.png', 'fight.png'], no: ['boss/cancel.png', 'cancel.png'] };
+const PICS = { ask: ['boss/ask.png', 'ask.png'], yes: ['boss/fight.png', 'fight.png'], no: ['boss/cancel.png', 'cancel.png'] };
 const CONFIRM_COLOR = { ask: 0x7dbceb, yes: 0x00ff00, no: 0xff0000 };
 const EPHEMERAL = 64;
 const V2 = 32768;

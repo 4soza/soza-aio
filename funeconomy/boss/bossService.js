@@ -16,7 +16,7 @@ const BattleEvent = require('../battle/battleEvent');
 const CONFIG = {
     BOSS_ANIMALS: 3,
     STAY_MS: 60 * 60 * 1000, // boss kabur setelah 1 jam
-    HP_MULT: 6, // pengali HP boss dari stat hewan biasa
+    HP_MULT: 330, // pengali HP boss dari stat hewan biasa (level 11-12 sekitar 200 ribu per hewan, seperti OwO)
     BASE_LEVEL: 10, // level boss pertama; naik 1 tiap boss dikalahkan (maks MAX_LEVEL)
     MAX_LEVEL: 60,
     TICKETS_PER_DAY: 3,
